@@ -68,4 +68,10 @@
 
 - **Message Logging**: All communications are documented to ensure accountability, fostering a professional and respectful communication environment.
 - **Controlled Interactions**: Teachers and admins can post updates, while students respond within existing threads, maintaining organized communication channels.
+
+</br>
+
+# ERD diagram
+![drawSQL-image-export-2024-11-15](https://github.com/user-attachments/assets/010aeb33-e053-4671-9d95-2055bf61f054)
+
   
