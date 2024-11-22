@@ -1,71 +1,97 @@
-# Sikshyalaya School Management System - Business Rules
+# Final Business Rule Document
+
+## **Roles and Features**
+
+### **1. Teachers**
+- **Core Functionalities**:
+  - Take attendance for their classes and view past attendance records.
+  - Create, assign, and collect assignments with deadlines and instructions.
+  - Post announcements for specific classes, including attached resources (e.g., links or documents).
+  - View student profiles, including basic personal details and academic records (attendance, grades, assignments).
+  - Enter and update subject-specific marks and grades, and view subject-wise grade breakdown.
+  - Access their scheduled class routines.
+  - Upload and organize subject-related materials for students (e.g., PDFs, videos, links).
+
+### **2. Students**
+- **Core Functionalities**:
+  - View personal profiles, attendance records, and grades.
+  - Check subject-wise marks, grades, and teacher-provided feedback.
+  - Submit assignments with file uploads or text inputs, and track submission status.
+  - View class schedules and routines.
+  - Access teacher contact details (e.g., email) for communication.
+  - Submit and track leave requests with reasons and dates.
+  - Download and filter subject-specific resources uploaded by teachers.
+
+### **3. School Management Department**
+- **Core Functionalities**:
+  - Add/enroll students and teachers.
+  - Address parent complaints and suggestions.
+  - Manage student counseling and academic growth.
+  - Assign subjects to classes and generate student report cards.
+  - Promote students based on academic performance.
+  - Oversee overall school operations.
+
+### **4. Finance Department**
+- **Core Functionalities**:
+  - Manage billing, receipts, and student fee collection.
+  - Process teacher salaries.
+  - Oversee accounting for events, programs, and school finances.
+
+### **5. Transportation Department**
+- **Core Functionalities**:
+  - Track school bus routes and student attendance on buses.
+  - Maintain records of student-specific routes and schedules.
+
+### **6. Parents' Portal (Optional)**
+- **Core Functionalities**:
+  - Submit feedback and suggestions to the School Management Department.
+  - View children’s academic reports, report cards, and performance summaries.
 
 ---
 
-### 1. Admin
+## **Academic Relationships**
 
-- **Admin Profile**: Admins have a name, email, phone number, and secure password for system access.
-- **System Management**: Admins maintain control over the entire system, including adding, editing, or removing users such as students, teachers, and parents.
-- **Academic Administration**: Manages class schedules, student enrollments, and class promotions.
-- **Financial Oversight**: Admins handle fee structures, monitor payment statuses, and generate financial reports for efficient tracking.
-- **Permissions and Access**: Admins have unrestricted access across all system modules to ensure smooth school operations.
-- **Uniqueness**: Each admin must have a unique email and phone number.
-- **Mandatory Fields**: Name, email, phone number, password.
+1. **Teacher ↔ Class**  
+   - **Relationship**: A teacher teaches one or more classes, but each class is taught by a single teacher per subject.  
+   - **Type**: One-to-Many.
 
----
+2. **Class ↔ Subject**  
+   - **Relationship**: Each class has multiple subjects, and each subject belongs to a specific class.  
+   - **Type**: One-to-Many.
 
-### 2. Teachers
+3. **Subject ↔ Student**  
+   - **Relationship**: Students enroll in multiple subjects, and each subject can have multiple students.  
+   - **Type**: Many-to-Many (via the Class entity).
 
-- **Teacher Profile**: Each teacher has a name, email, phone number, password, and an assigned role type (Teaching Staff or Managing Staff).
-- **Teaching Staff Responsibilities**:
-  - **Instructional Support**: Teaching staff can upload assignments, share course materials, and record exam results.
-  - **Student Progress Tracking**: Teachers can track and update student performance, manage attendance, and input term grades.
-  - **Direct Communication**: Can communicate with students, send important notices, and provide academic support.
-- **Managing Staff Responsibilities**:
-  - **Enrollment and Fees**: Managing staff can monitor and process student enrollments, track fee statuses, and oversee class assignment.
-  - **Event and Calendar Management**: Handles scheduling of class events, updates calendars, and coordinates school-wide activities.
-  - **Parent-Teacher Interaction**: Can respond to parent inquiries, providing a bridge between school administration and families.
-  
----
+4. **Teacher ↔ Subject**  
+   - **Relationship**: Teachers manage one or more subjects, and a subject is managed by a single teacher.  
+   - **Type**: One-to-Many.
 
-### 3. Students
+5. **Student ↔ Attendance**  
+   - **Relationship**: Each attendance entry is tied to a specific student, with multiple records for each student.  
+   - **Type**: One-to-Many.
 
-- **Student Profile**: Students have a name, email, password, and unique student ID.
-- **Academic Dashboard**: Provides access to personal academic data, including grades, attendance records, and assignment details.
-- **Assignment Submission**: Students can submit assignments, view feedback from teachers, and track their academic progress.
-- **Communication Hub**: Students can receive messages and announcements from teachers and admins and can respond within specified threads.
-- **Payment and Fees**: Students can view fee structures, payment histories, and upcoming payment deadlines.
-- **Uniqueness**: Each student must have a unique student ID and email.
-- **Mandatory Fields**: Name, email, password, student ID.
+6. **Student ↔ Grade**  
+   - **Relationship**: Each grade is unique to a student and linked to a subject.  
+   - **Type**: One-to-Many.
+
+7. **Teacher ↔ LeaveRequest**  
+   - **Relationship**: Teachers manage student leave requests.  
+   - **Type**: One-to-Many.
 
 ---
 
-### 4. Data Management
+## **Departments**
 
-- **Secure Student Records**: Student information, academic history, attendance, and fee statuses are managed and secured to ensure data privacy.
-- **Assignment and Material Management**: Teachers upload assignments and materials directly, making them easily accessible for students while allowing teachers to manage updates.
-- **Role-Based Access Control**: Permissions are strictly defined; admins have full access, teachers have functional access based on their role, and students have access limited to their own data and materials.
-- **Privacy and Security**: User data is encrypted and access is password-protected, safeguarding user information from unauthorized access.
+### **1. Academic Departments**
+- Includes teachers, students, and optionally, a class teacher.
 
----
+### **2. Non-Academic Departments**
+- **School Management Department**: Handles administration, counseling, and academic operations.
+- **Finance Department**: Manages finances, salaries, and fees.
+- **Transportation Department**: Oversees school transportation systems and logistics.
 
-### 5. Notifications and Alerts
-
-- **Academic Updates**: Automated notifications alert students about new assignments, grades, and any upcoming exams.
-- **Financial Reminders**: Students and parents are notified of pending fee payments and approaching due dates.
-- **Event and Schedule Reminders**: Updates on school events, holidays, and other scheduled activities keep users informed.
+### **3. Parents' Portal (Optional)**
+- Provides parents with access to children’s performance reports and a feedback mechanism.
 
 ---
-
-### 6. Attendance and Performance Tracking
-
-- **Daily Attendance**: Teachers log attendance records, visible to both students and admins for real-time tracking of attendance.
-- **Progress Reports**: Regularly updated to provide students and parents with a clear overview of academic standing and term results.
-
----
-
-### 7. Communication and Accountability
-
-- **Message Logging**: All communications are documented to ensure accountability, fostering a professional and respectful communication environment.
-- **Controlled Interactions**: Teachers and admins can post updates, while students respond within existing threads, maintaining organized communication channels.
-  
