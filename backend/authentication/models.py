@@ -10,18 +10,19 @@ class CustomUserManager(BaseUserManager):
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
-        user.save()
+        user.is_active = True
+        user.save(using=self._db)
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)
 
         return self.create_user(email, password, **extra_fields)
 
 
 class User(AbstractUser, PermissionsMixin):
-    # User role
     ROLE_STUDENT = 's'
     ROLE_TEACHER = 't'
     ROLE_ADMINISTRATOR = 'a'
@@ -31,7 +32,6 @@ class User(AbstractUser, PermissionsMixin):
         (ROLE_ADMINISTRATOR, 'Administrator'),
     ]
 
-    # User gender
     GENDER_MALE = 'm'
     GENDER_FEMALE = 'f'
     GENDER_OTHER = 'o'
@@ -41,38 +41,24 @@ class User(AbstractUser, PermissionsMixin):
         (GENDER_OTHER, 'Other'),
     ]
 
-    # Blood group
-    BLOOD_GROUP_A_POS = 'A+'
-    BLOOD_GROUP_A_NEG = 'A-'
-    BLOOD_GROUP_B_POS = 'B+'
-    BLOOD_GROUP_B_NEG = 'B-'
-    BLOOD_GROUP_AB_POS = 'AB+'
-    BLOOD_GROUP_AB_NEG = 'AB-'
-    BLOOD_GROUP_O_POS = 'O+'
-    BLOOD_GROUP_O_NEG = 'O-'
     BLOOD_GROUP_CHOICES = [
-        (BLOOD_GROUP_A_POS, 'A+'),
-        (BLOOD_GROUP_A_NEG, 'A-'),
-        (BLOOD_GROUP_B_POS, 'B+'),
-        (BLOOD_GROUP_B_NEG, 'B-'),
-        (BLOOD_GROUP_AB_POS, 'AB+'),
-        (BLOOD_GROUP_AB_NEG, 'AB-'),
-        (BLOOD_GROUP_O_POS, 'O+'),
-        (BLOOD_GROUP_O_NEG, 'O-'),
+        ('A+', 'A+'), ('A-', 'A-'),
+        ('B+', 'B+'), ('B-', 'B-'),
+        ('AB+', 'AB+'), ('AB-', 'AB-'),
+        ('O+', 'O+'), ('O-', 'O-'),
     ]
-    username_validator = None
-    username = None
 
+    username = None
     email = models.EmailField(max_length=255, unique=True)
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
     date_of_birth = models.DateField(blank=True, null=True)
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, null=True)
     role = models.CharField(max_length=1, choices=ROLE_CHOICES, default=ROLE_STUDENT)
-    profile_picture = models.FileField(upload_to='profile_pictures/', blank=True, null=True)
+    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
     blood_group = models.CharField(max_length=3, choices=BLOOD_GROUP_CHOICES, blank=True, null=True)
 
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -80,8 +66,13 @@ class User(AbstractUser, PermissionsMixin):
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'email'
-
     REQUIRED_FIELDS = ['first_name', 'last_name']
+
+    def save(self, *args, **kwargs):
+        if self.role == 't':
+            self.is_active = True
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'

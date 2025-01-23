@@ -1,8 +1,11 @@
+import {DashboardLayout} from "@/layouts/DashboardLayout.tsx";
+import {Dashboard} from "@/views/admin/Dashboard.tsx";
+
 function App() {
     return (
-        <div>
-            <h1>Hello</h1>
-        </div>
+        <DashboardLayout>
+            <Dashboard></Dashboard>
+        </DashboardLayout>
     )
 }
 
