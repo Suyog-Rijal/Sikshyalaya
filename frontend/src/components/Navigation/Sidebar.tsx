@@ -129,7 +129,7 @@ const menuItems: Menu[] = [
 
 export const Sidebar = () => {
     return (
-        <div className={'py-2 px-4 flex flex-col gap-4 text-sm'}>
+        <div className={'py-2 px-4 flex flex-col gap-4'}>
                 <div className={'px-2 flex items-center justify-center md:justify-start gap-2 sticky p-2 top-0 bg-white'}>
                     <img src={'/logo.png'} alt="" width={32} height={32}/>
                     <a href={'/'} className={'hidden lg:block text-lg text-text-primary font-medium'}>Sikshyalaya</a>
@@ -140,7 +140,7 @@ export const Sidebar = () => {
                         <span className={'hidden lg:block text-text-muted px-2'}>{each.title}</span>
                         {
                             each.items.map((element) => (
-                                <a href={element.href} key={element.label} className={'flex gap-2 items-center justify-center lg:justify-start text-text-primary hover:bg-text-hoverBackground hover:text-text-hover p-2 duration-500 rounded-md'}>
+                                <a href={element.href} key={element.label} className={'flex gap-2 items-center justify-center lg:justify-start hover:bg-[var(--tw-sidebar-hover)] hover:text-[var(--tw-text-hover)] p-2 duration-500 rounded-md'}>
                                     <img src={element.icon} alt={'x'} width={20} height={20}/>
                                     <span className={'hidden lg:block'}>{element.label}</span>
                                 </a>

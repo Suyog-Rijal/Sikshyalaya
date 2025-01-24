@@ -21,7 +21,7 @@ export const UserInfoCard = ({total, title, active, inactive, image, color}: Use
                         <h1 className={'text-2xl font-bold'}>{total}</h1>
                         <p className={`text-sm ${color} text-white flex items-center h-fit px-2 rounded-md`}>{percentage}%</p>
                     </div>
-                    <p className={'text-sm text-gray-700'}>{title}</p>
+                    <p className={'text-sm text-[var(--tw-text-primary)]'}>{title}</p>
                 </div>
             </div>
 

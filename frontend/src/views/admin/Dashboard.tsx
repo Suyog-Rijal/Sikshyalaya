@@ -40,7 +40,7 @@ const UserCardInfoData: UserInfoCardProps[] = [
 
 export const Dashboard = () => {
     return (
-        <div className={'gap-4 p-4 flex h-full flex-col bg-[#f8fafd]'}>
+        <div className={'gap-4 p-4 flex h-full flex-col bg-[#f8fafd] bg-gray-50'}>
 
             {/*UserCardInfo*/}
             <div className={'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2'}>

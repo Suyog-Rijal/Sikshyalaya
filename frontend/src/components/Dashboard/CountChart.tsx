@@ -31,8 +31,8 @@ export const CountChart = () => {
         <div className={'flex flex-col gap-2 h-full'}>
 
             <div className={'flex justify-between p-4'}>
-                <h1>Students</h1>
-                <p>All class</p>
+                <h1 className={'font-semibold text-lg'}>Students</h1>
+                <p className={'text-[var(--tw-text-hover)]'}>All class</p>
             </div>
 
             <div className={'flex flex-grow relative'}>
@@ -62,13 +62,13 @@ export const CountChart = () => {
 
                 <div className={'flex flex-col items-center'}>
                     <div className={`w-4 h-4 rounded-full bg-[${primaryColor}]`}></div>
-                    <h1 className={'text-xl'}>3002</h1>
+                    <h1 className={'font-semibold text-lg'}>3002</h1>
                     <p className={'text-sm'}>Boys 55%</p>
                 </div>
 
                 <div className={'flex flex-col items-center'}>
                     <div className={`w-4 h-4 rounded-full bg-[${secondaryColor}]`}></div>
-                    <h1 className={'text-xl'}>3002</h1>
+                    <h1 className={'font-semibold text-lg'}>3002</h1>
                     <p className={'text-sm'}>Girls 55%</p>
                 </div>
 

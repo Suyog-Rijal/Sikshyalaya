@@ -1,5 +1,31 @@
 @import "tailwindcss";
 
+:root {
+    /*Text*/
+    --color-text-primary: #202C4B;
+    --color-text-hover: #5649E8;
+    --color-sidebar-hover: rgba(229, 227, 251, 0.3);
+    --color-text-muted: #b4b4b4;
+    --color-text-accent: #FFFFFF;
+
+    /*Button*/
+    --color-button-primary: #5649E8;
+}
+
+@layer base {
+    :root {
+        /* Text */
+        --tw-text-primary: var(--color-text-primary);
+        --tw-text-hover: var(--color-text-hover);
+        --tw-sidebar-hover: var(--color-sidebar-hover);
+        --tw-text-muted: var(--color-text-muted);
+        --tw-text-accent: var(--color-text-accent);
+
+        /* Button */
+        --tw-button-primary: var(--color-button-primary);
+    }
+}
+
 .scrollbar {
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -8,3 +34,7 @@
 .scrollbar::-webkit-scrollbar {
     display: none;
 }
+
+
+
+

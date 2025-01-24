@@ -28,7 +28,7 @@
 
 export const Navbar = () => {
     return (
-        <div className={'flex bg-white text-text-primary items-center justify-between py-2 px-4 sticky top-0'}>
+        <div className={'flex bg-white items-center justify-between py-2 px-4 sticky top-0'}>
 
             {/* Left Section */}
             <div className={'p-1 rounded-md items-center w-44 md:w-52 lg:w-64 justify-center flex gap-1 border-2 border-gray-100'}>
@@ -49,7 +49,7 @@ export const Navbar = () => {
                 </p>
 
                 <div title={'Add New'}
-                     className={'relative hidden bg-white w-8 h-8 cursor-pointer border-2 border-gray-100 lg:flex items-center justify-center rounded-md hover:bg-background-hover duration-500 hover:text-text-hover'}>
+                     className={' relative hidden bg-white w-8 h-8 cursor-pointer border-2 border-gray-100 lg:flex items-center justify-center rounded-md hover:text-[var(--tw-text-hover)] duration-500 hover:-translate-y-1'}>
                     <div className={'flex items-center'}>
                         {/* @ts-expect-error: ion-icon is not recognized by TypeScript */}
                         <ion-icon name="add-circle-outline"></ion-icon>
@@ -66,7 +66,7 @@ export const Navbar = () => {
                 </div>
 
                 <div
-                    className={'hidden bg-white w-8 h-8 cursor-pointer border-2 border-gray-100 lg:flex items-center justify-center rounded-md hover:bg-background-hover duration-500 hover:text-text-hover'}>
+                    className={'hidden bg-white w-8 h-8 cursor-pointer border-2 border-gray-100 lg:flex items-center justify-center rounded-md hover:text-[var(--tw-text-hover)] duration-500 hover:-translate-y-1'}>
                     <div className={'flex items-center'}>
                         {/* @ts-expect-error: ion-icon is not recognized by TypeScript */}
                         <ion-icon name="moon-outline"></ion-icon>
@@ -74,7 +74,7 @@ export const Navbar = () => {
                 </div>
 
                 <div
-                    className={'hidden bg-white w-8 h-8 cursor-pointer border-2 border-gray-100 lg:flex items-center justify-center rounded-md hover:bg-background-hover duration-500 hover:text-text-hover'}>
+                    className={'hidden bg-white w-8 h-8 cursor-pointer border-2 border-gray-100 lg:flex items-center justify-center rounded-md hover:text-[var(--tw-text-hover)] duration-500 hover:-translate-y-1'}>
                     <div className={'flex items-center'}>
                         {/* @ts-expect-error: ion-icon is not recognized by TypeScript */}
                         <ion-icon name="chatbubbles-outline"></ion-icon>
@@ -82,7 +82,7 @@ export const Navbar = () => {
                 </div>
 
                 <div
-                    className={'hidden bg-white w-8 h-8 cursor-pointer border-2 border-gray-100 lg:flex items-center justify-center rounded-md hover:bg-background-hover duration-500 hover:text-text-hover'}>
+                    className={'hidden bg-white w-8 h-8 cursor-pointer border-2 border-gray-100 lg:flex items-center justify-center rounded-md hover:text-[var(--tw-text-hover)] duration-500 hover:-translate-y-1'}>
                     <div className={'flex items-center'}>
                         {/* @ts-expect-error: ion-icon is not recognized by TypeScript */}
                         <ion-icon name="bar-chart-outline"></ion-icon>
@@ -90,7 +90,7 @@ export const Navbar = () => {
                 </div>
 
                 <div
-                    className={'hidden bg-white w-8 h-8 cursor-pointer border-2 border-gray-100 lg:flex items-center justify-center rounded-md hover:bg-background-hover duration-500 hover:text-text-hover'}>
+                    className={'hidden bg-white w-8 h-8 cursor-pointer border-2 border-gray-100 lg:flex items-center justify-center rounded-md hover:text-[var(--tw-text-hover)] duration-500 hover:-translate-y-1'}>
                     <div className={'flex items-center'}>
                         {/* @ts-expect-error: ion-icon is not recognized by TypeScript */}
                         <ion-icon name="scan-outline"></ion-icon>

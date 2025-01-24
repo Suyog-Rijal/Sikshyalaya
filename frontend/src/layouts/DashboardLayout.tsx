@@ -4,7 +4,7 @@ import {Navbar} from "@/components/Navigation/Navbar.tsx";
 
 export const DashboardLayout = ({children}: Readonly<{ children: ReactNode }>) => {
     return (
-        <div className={'flex h-screen w-full relative'}>
+        <div className={'flex h-screen w-full relative text-[var(--tw-text-primary)]'}>
 
             {/*Mobile device sidebar*/}
             <div className={'absolute md:hidden w-5/12 h-full'}></div>
