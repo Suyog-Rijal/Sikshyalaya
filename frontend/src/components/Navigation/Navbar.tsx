@@ -28,7 +28,7 @@
 
 export const Navbar = () => {
     return (
-        <div className={'flex bg-white items-center justify-between py-2 px-4 sticky top-0'}>
+        <div className={'flex bg-white items-center justify-between p-2 sticky top-0'}>
 
             {/* Left Section */}
             <div className={'p-1 rounded-md items-center w-44 md:w-52 lg:w-64 justify-center flex gap-1 border-2 border-gray-100'}>

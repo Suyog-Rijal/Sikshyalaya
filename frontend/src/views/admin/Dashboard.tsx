@@ -1,6 +1,7 @@
 import {UserInfoCard, UserInfoCardProps} from "@/components/Dashboard/UserInfoCard.tsx";
 import {CountChart} from "@/components/Dashboard/CountChart.tsx";
 import {AttendanceChart} from "@/components/Dashboard/AttendanceChart.tsx";
+import {SimpleCalender} from "@/components/Dashboard/SimpleCalender.tsx";
 
 const UserCardInfoData: UserInfoCardProps[] = [
     {
@@ -40,7 +41,7 @@ const UserCardInfoData: UserInfoCardProps[] = [
 
 export const Dashboard = () => {
     return (
-        <div className={'gap-4 p-4 flex h-full flex-col bg-[#f8fafd] bg-gray-50'}>
+        <div className={'gap-2 p-2 flex h-full flex-col bg-[#f8fafd]'}>
 
             {/*UserCardInfo*/}
             <div className={'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2'}>
@@ -63,7 +64,7 @@ export const Dashboard = () => {
                 }
             </div>
 
-            {/*Chart*/}
+            {/*Chart and simple calender*/}
             <div className={'grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12'}>
                 <div className={'sm:col-span-2 md:col-span-1 lg:col-span-3 h-[400px] rounded-md bg-white'}>
                     <CountChart/>
@@ -73,10 +74,8 @@ export const Dashboard = () => {
                     <AttendanceChart/>
                 </div>
 
-                <div className={'lg:block flex items-center  lg:col-span-3 rounded-md '}>
-                    <div className="flex h-full w-full items-stretch">
-
-                    </div>
+                <div className={'hidden lg:block flex items-center  lg:col-span-3 rounded-md'}>
+                    <SimpleCalender/>
                 </div>
             </div>
 
