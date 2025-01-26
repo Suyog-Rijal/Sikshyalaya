@@ -39,7 +39,7 @@ const data = [
 
 export const AttendanceChart = () => {
     return (
-        <div className={'flex flex-col gap-2 h-full'}>
+        <div className={'flex flex-col gap-2 h-full shadow-xs'}>
 
             <div className={'p-4 flex justify-between items-center'}>
                 <h1 className={'text-lg font-semibold'}>Attendance</h1>

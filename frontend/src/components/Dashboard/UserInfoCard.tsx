@@ -10,7 +10,7 @@ export interface UserInfoCardProps {
 export const UserInfoCard = ({total, title, active, inactive, image, color}: UserInfoCardProps) => {
     const percentage = total > 0 ? Math.round((active / total) * 100) : 0;
     return (
-        <div className={'flex hover:-translate-y-1 duration-500 flex-col p-4 rounded-md gap-8 bg-white'}>
+        <div className={'flex hover:-translate-y-1 duration-500 flex-col p-4 rounded-md shadow-xs gap-8 bg-white'}>
 
             <div className={'flex items-center gap-2'}>
                 <div className={'bg-pink-100 w-20 p-1'}>

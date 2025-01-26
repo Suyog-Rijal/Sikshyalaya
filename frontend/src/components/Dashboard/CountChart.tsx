@@ -28,7 +28,7 @@ data.unshift({
 
 export const CountChart = () => {
     return (
-        <div className={'flex flex-col gap-2 h-full'}>
+        <div className={'flex flex-col gap-2 h-full shadow-xs'}>
 
             <div className={'flex justify-between p-4'}>
                 <h1 className={'font-semibold text-lg'}>Students</h1>

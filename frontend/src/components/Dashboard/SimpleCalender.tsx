@@ -8,7 +8,7 @@ export const SimpleCalender = () => {
     const [value, onChange] = useState<Value>(new Date());
 
     return (
-        <div className={'flex justify-center items-center h-full'}>
+        <div className={'flex justify-center items-center h-full shadow-xs'}>
             <Calendar onChange={onChange} value={value} />
         </div>
     );
