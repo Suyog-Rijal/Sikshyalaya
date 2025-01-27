@@ -1,8 +1,7 @@
+
 import {ProfileCard} from "@/components/Dashboard/ProfileCard.tsx";
 import {TodayClass, TodayClassProps} from "@/components/Dashboard/TodayClass.tsx";
 import {AttendanceDonutChart} from "@/components/Dashboard/AttendanceDonutChart.tsx";
-import {SimpleCalender} from "@/components/Dashboard/SimpleCalender.tsx";
-import {QuickLinkCard, QuickLinksProps} from "@/components/Dashboard/QuickLinkCard.tsx";
 
 
 const TodayClassData: TodayClassProps[] = [
@@ -44,37 +43,12 @@ const TodayClassData: TodayClassProps[] = [
 ];
 
 
-const QuickLinkData: QuickLinksProps[] = [
-    {
-        icon: 'checkmark-done-outline',
-        title: 'Attendance',
-        bgColor: 'bg-[#fbf4f4]',
-        fgColor: 'bg-red-400', // Red-400 for foreground
-        ringColor: 'ring-red-400', // Red-400 for ring
-    },
-    {
-        icon: 'book-outline',
-        title: 'Exam',
-        bgColor: 'bg-[#f4f7fb]',
-        fgColor: 'bg-blue-400', // Blue-400 for foreground
-        ringColor: 'ring-blue-400', // Blue-400 for ring
-    },
-    {
-        icon: 'chatbubble-ellipses-outline',
-        title: 'Messages',
-        bgColor: 'bg-[#f4fbf8]',
-        fgColor: 'bg-teal-400', // Teal-400 for foreground
-        ringColor: 'ring-teal-400', // Teal-400 for ring
-    },
-];
-
-
 export const Dashboard = () => {
     return (
         <div className={'gap-2 p-2 flex flex-col bg-[#f8fafd]'}>
 
-
-            <div className={'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2'}>
+            {/*Profile and Today's class*/}
+            <div className={'grid grid-cols-1 md:grid-cols-2  xl:grid-cols-3 gap-2'}>
 
                 {/*Profile and Today's class*/}
                 <div className={'h-[600px] flex flex-col gap-2'}>
@@ -82,13 +56,8 @@ export const Dashboard = () => {
                         <ProfileCard/>
                     </div>
 
-                    <div className={'col-span-3 lg:col-span-1 p-4 flex flex-col h-full gap-2 bg-white shadow-xs overflow-hidden'}>
-                        <div className={'flex items-center justify-between'}>
-                            <h1 className={'font-semibold text-lg'}>Today's class</h1>
-                            <p className={'text-[var(--tw-text-hover)]'}>Date: 2025-27-1</p>
-                        </div>
-
-                        <div className={'flex flex-col overflow-y-scroll scrollbar'}>
+                    <div className={'flex flex-col flex-grow overflow-hidden'}>
+                        <div className={'flex flex-col space-y-4 overflow-y-auto scrollbar h-full'}>
                             {
                                 TodayClassData.map((each) => (
                                     <TodayClass {...each}/>
@@ -98,36 +67,14 @@ export const Dashboard = () => {
                     </div>
                 </div>
 
-
                 {/*Attendance Donut Chart*/}
-                <div className={'bg-white shadow-xs p-4 h-[600px]'}>
+                <div>
                     <AttendanceDonutChart/>
                 </div>
 
-                <div className={'hidden p-4 xl:flex flex-col bg-white gap-2'}>
-                    <div className={'space-y-2 flex flex-col items-center'}>
-                        <h1 className={'font-semibold text-lg'}>Calender</h1>
-                        <SimpleCalender/>
-                    </div>
-                    <div className={'h-full px-4 pt-2 flex flex-col items-center gap-2'}>
-                        <h1 className={'font-semibold text-lg'}>Quick link</h1>
-                        <div className={'w-full h-full'}>
-                            <div className={'grid grid-cols-3 h-full gap-2'}>
-                                {
-                                    QuickLinkData.map((each) => (
-                                        <QuickLinkCard {...each}/>
-                                    ))
-                                }
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+                <div className={'hidden xl:block'}>Userinfo</div>
             </div>
 
-            <div>
-                sadfsfsadf
-            </div>
 
         </div>
     );
