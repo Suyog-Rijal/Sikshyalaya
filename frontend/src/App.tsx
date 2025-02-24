@@ -1,11 +1,12 @@
 import {DashboardLayout} from "@/layouts/DashboardLayout.tsx";
-// import {Dashboard} from "@/views/student/Dashboard.tsx";
-import {Dashboard} from "@/views/admin/Dashboard.tsx";
+import {AddStudent} from "@/components/Views/AddStudent.tsx";
+// import {Dashboard} from "@/views/admin/Dashboard.tsx";
 
 function App() {
     return (
         <DashboardLayout>
-            <Dashboard></Dashboard>
+            {/*<Dashboard></Dashboard>*/}
+            <AddStudent></AddStudent>
         </DashboardLayout>
     )
 }
