@@ -132,14 +132,19 @@ const menuItems: Menu[] = [
 export const Sidebar = () => {
     return (
         <div className={'py-2 px-4 flex flex-col gap-4'}>
-                <div className={'px-2 flex items-center justify-center md:justify-start gap-2 sticky p-2 top-0'}>
-                    <img src={'/logo.png'} alt="" width={32} height={32}/>
-                    <a href={'/'} className={'hidden lg:block text-lg font-medium'}>Sikshyalaya</a>
-                </div>
+            <div className={'px-2 flex items-center bg-white justify-center md:justify-start gap-2 sticky p-2 top-0'}>
+                <img src={'/logo.png'} alt="" width={32} height={32}/>
+                <a href={'/'} className={'hidden lg:block text-lg font-medium'}>Sikshyalaya</a>
+            </div>
             {
                 menuItems.map((each) => (
                     <div key={each.title} className={'flex flex-col gap-2'}>
-                        <span className={'hidden lg:block px-2'}>{each.title}</span>
+                        {
+                            each.title === "MENU" ?
+                                <span className={'hidden px-2'}>{each.title}</span>
+                                :
+                                <span className={'hidden lg:block px-2'}>{each.title}</span>
+                        }
                         {
                             each.items.map((element) => (
                                 element.visible.includes(role) && (
@@ -149,7 +154,7 @@ export const Sidebar = () => {
                                         <span className={'hidden lg:block'}>{element.label}</span>
                                     </a>
                                 )
-                                ))
+                            ))
                         }
                     </div>
                 ))

@@ -7,7 +7,7 @@ export const DashboardLayout = ({children}: Readonly<{ children: ReactNode }>) =
         <div className={'flex h-screen w-full relative text-[var(--tw-text-primary)]'}>
 
             {/*Mobile device sidebar*/}
-            <div className={'absolute md:hidden w-5/12 h-full'}></div>
+            {/*<div className={'absolute md:hidden w-5/12 h-full'}></div>*/}
 
             {/*Desktop sidebar*/}
             <div className={'hidden md:block md:w-1/12 lg:w-2/12 overflow-y-scroll scrollbar'}>

@@ -1,5 +1,14 @@
 import { useState, useRef, useEffect } from "react";
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday } from "date-fns";
+import {
+    format,
+    addMonths,
+    subMonths,
+    startOfMonth,
+    endOfMonth,
+    eachDayOfInterval,
+    isSameDay,
+    isToday,
+} from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface CustomDatePickerProps {
@@ -41,36 +50,49 @@ export function CustomDatePicker({ label, className = "" }: CustomDatePickerProp
     };
 
     return (
-        <div className={`flex flex-col gap-2 ${className}`} ref={pickerRef}>
-            <label className="text-sm font-semibold">{label}</label>
-            <div className="relative w-full">
+        <div className={`flex flex-col gap-1 rounded py-2 px-3 ${className}`} ref={pickerRef}>
+            <label htmlFor="datepicker" className="block text-sm text-gray-500">
+                {label}
+            </label>
+            <div className="relative">
                 <button
+                    id="datepicker"
                     onClick={() => setIsOpen(!isOpen)}
-                    className="w-full p-2 border border-gray-200 rounded-md text-left bg-white hover:bg-gray-50"
+                    className="w-full p-1.5 border border-gray-200 rounded text-left bg-white hover:bg-gray-50 transition"
                     aria-haspopup="true"
                     aria-expanded={isOpen}
                 >
-                    <span className={selectedDate ? "text-gray-900" : "text-gray-500"}>
-                        {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "Select a date"}
-                    </span>
+          <span className={`${selectedDate ? "text-gray-900" : "text-gray-700"} text-sm`}>
+            {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "Select a date"}
+          </span>
                     <ChevronRight className="h-4 w-4 rotate-90 text-gray-500 absolute right-3 top-1/2 -translate-y-1/2" />
                 </button>
 
                 {isOpen && (
-                    <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-md border border-gray-200 bg-white p-4 shadow-lg">
+                    <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-sm border border-dotted border-gray-300 bg-white p-2 shadow-md">
                         <div className="mb-4 flex items-center justify-between">
-                            <button onClick={previousMonth} className="rounded-lg p-2 hover:bg-gray-100" aria-label="Previous month">
-                                <ChevronLeft className="h-4 w-4" />
+                            <button
+                                onClick={previousMonth}
+                                className="rounded-sm p-2 hover:bg-gray-100 transition"
+                                aria-label="Previous month"
+                            >
+                                <ChevronLeft className="h-4 w-4 text-gray-500" />
                             </button>
-                            <h2 className="font-medium">{format(currentMonth, "MMMM yyyy")}</h2>
-                            <button onClick={nextMonth} className="rounded-lg p-2 hover:bg-gray-100" aria-label="Next month">
-                                <ChevronRight className="h-4 w-4" />
+                            <h2 className="text-xs font-medium text-gray-700">
+                                {format(currentMonth, "MMMM yyyy")}
+                            </h2>
+                            <button
+                                onClick={nextMonth}
+                                className="rounded-sm p-1 hover:bg-gray-100 transition"
+                                aria-label="Next month"
+                            >
+                                <ChevronRight className="h-4 w-4 text-gray-500" />
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-7 gap-x-2 gap-y-3">
+                        <div className="grid grid-cols-7 gap-2">
                             {weekDays.map((day) => (
-                                <div key={day} className="mb-2 text-center text-xs font-medium text-gray-500">
+                                <div key={day} className="text-center text-xs font-medium text-gray-500">
                                     {day}
                                 </div>
                             ))}
@@ -83,9 +105,9 @@ export function CustomDatePicker({ label, className = "" }: CustomDatePickerProp
                                     <button
                                         key={date.toString()}
                                         onClick={() => handleDateSelect(date)}
-                                        className={`aspect-square rounded-md text-sm w-full p-1
-                                            ${isSelected ? "bg-yellow-300 text-black" : "hover:bg-gray-100"}
-                                            ${isCurrentDay && !isSelected ? "font-bold text-white bg-[#5649E8]" : ""}`}
+                                        className={`aspect-square rounded-sm text-xs w-full p-3 transition flex justify-center items-center
+                      ${isSelected ? "bg-blue-400 text-white" : "hover:bg-gray-100"}
+                      ${isCurrentDay && !isSelected ? "font-bold text-blue-600" : "text-gray-700"}`}
                                     >
                                         {format(date, "d")}
                                     </button>
