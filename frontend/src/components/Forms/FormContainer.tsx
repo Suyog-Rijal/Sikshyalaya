@@ -6,7 +6,7 @@ interface FormContainerProps extends HTMLAttributes<HTMLDivElement> {
 
 export const FormContainer = ({ children, className = "", ...props }: Readonly<FormContainerProps>) => {
     return (
-        <div className={`rounded-md shadow-xs bg-white ${className}`} {...props}>
+        <div className={`rounded-md shadow-sm bg-white ${className}`} {...props}>
             {children}
         </div>
     );

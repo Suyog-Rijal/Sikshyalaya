@@ -1,178 +1,234 @@
 import {FormContainer} from "@/components/Forms/FormContainer.tsx";
 import {Heading} from "@/components/Forms/Heading.tsx";
+import {FormContentContainer} from "@/components/Forms/FormContentContainer.tsx";
+import {addressInfo, parentInfo, personalInfo, previousSchoolInfo, transportInfo} from "@/utils/addStudentData.ts";
 import {CustomInput} from "@/components/Forms/CustomInput.tsx";
+import * as z from "zod";
+import {FormProvider, useForm} from "react-hook-form";
+import {zodResolver} from "@hookform/resolvers/zod";
+import {DevTool} from "@hookform/devtools";
 import {CustomDropdown} from "@/components/Forms/CustomDropdown.tsx";
-import {
-    AddStudentAddressInformation,
-    AddStudentParentInfo,
-    AddStudentPersonalInfo, AddStudentPreviousSchoolInformation,
-    AddStudentTransportationInformation
-} from "@/utils/data.ts";
 import {CustomFileInput} from "@/components/Forms/CustomFileInput.tsx";
-import {CustomDatePicker} from "@/components/Forms/CustomDatePicker.tsx";
+import {CustomSingleFileInputV1} from "@/components/Forms/CustomSingleFileInputV1.tsx";
+import {CustomButton} from "@/components/Forms/CustomButton.tsx";
+
+
+const addStudentSchema = z.object({
+    accountStatus: z.number(),
+    files: z.array(z.object({
+        name: z.string(),
+        size: z.number(),
+    })),
+});
+type tAddStudent = z.infer<typeof addStudentSchema>;
+
 
 export const AddStudent = () => {
+    const form = useForm<tAddStudent>({
+        resolver: zodResolver(addStudentSchema),
+        defaultValues: {
+            accountStatus: 1,
+            files: [],
+        },
+    });
+    const {control, handleSubmit} = form;
+    const onSubmit = (data: tAddStudent) => {
+        console.log(data);
+    }
 
-    const PersonalInformation = () => {
+
+    const PersonalInfo = () => {
         return (
             <FormContainer>
-                <Heading label={'Personal Information'} icon={'alert-circle-outline'}/>
-                <div className={'px-4'}>
-                    <CustomFileInput label={'Upload image size 4MB, Format JPG, PNG, SVG'}/>
+                <Heading label={'Personal Information'}></Heading>
+                <div className={'px-4 pt-4'}>
+                    <CustomSingleFileInputV1 className={'col-span-full'} name={'profilePicture'}/>
                 </div>
-                <div className={'p-4 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6'}>
+                <FormContentContainer>
                     {
-                        AddStudentPersonalInfo.map((each, index) => (
-                            each.type === 'text' ?
-                                <CustomInput label={each.label} type={each.type} key={index}/>
+                        personalInfo.map((each, index) => (
+                            each.type === 'text' || each.type === 'date' ?
+                                <CustomInput name={each.name} label={each.label} type={each.type}
+                                             required={each.required} key={index}/>
                                 :
                                 each.type === 'dropdown' ?
-                                    <CustomDropdown label={each.label} options={['A', 'B', 'C']} key={index}/>
+                                    <CustomDropdown name={each.name} label={each.label} required={each.required}
+                                                    key={index} options={each?.options || []}/>
                                     :
-                                    each.type === 'date' ?
-                                        <CustomDatePicker label={each.label} key={index}/>
-                                        :
-                                        <CustomInput label={each.label} disabled={true} key={index}/>
+                                    null
 
                         ))
                     }
-                </div>
+                </FormContentContainer>
             </FormContainer>
         )
     }
 
-    const ParentInformation = () => {
+    const ParentInfo = () => {
+        const SubHeading = ({label}: { label: string }) => {
+            return (
+                <h2 className={'text-md p-4 font-semibold'}>{label}</h2>
+            );
+        };
+
         return (
             <FormContainer>
-                <Heading label={'Parents Information'} icon={'alert-circle-outline'}/>
+                <Heading label={'Parent Information'}/>
                 {
-                    AddStudentParentInfo.map((each, index) => (
-                        <div key={index} className={'p-4 space-y-8'}>
-                            <div className={'space-y-4'}>
-                                <h1 className="font-semibold">Father Info</h1>
-                                <CustomFileInput label={'Upload image size 4MB, Format JPG, PNG, SVG'}/>
-                                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
-                                    {each.fatherInfo.map((info, i) => (
-                                        <CustomInput label={info.label} key={`father-${i}`}/>
-                                    ))}
+                    parentInfo.map((parent, index) => (
+                        <div key={index}>
+                            {/* Father Information */}
+                            <div className={'space-y-0'}>
+                                <SubHeading label={parent.fatherInfo.heading}/>
+                                <div className={'px-4'}>
+                                    <CustomSingleFileInputV1 className={'col-span-full'} name={'fatherPicture'}/>
                                 </div>
+                                <FormContentContainer>
+                                    {parent.fatherInfo.fields.map((field, fieldIndex) => (
+                                        <CustomInput
+                                            name={field.name}
+                                            label={field.label}
+                                            type={field.type}
+                                            required={field.required}
+                                            key={fieldIndex}
+                                        />
+                                    ))}
+                                </FormContentContainer>
                             </div>
 
-                            <div className={'space-y-4'}>
-                                <h1 className="font-semibold">Mother Info</h1>
-                                <CustomFileInput label={'Upload image size 4MB, Format JPG, PNG, SVG'}/>
-                                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
-                                    {each.motherInfo.map((info, i) => (
-                                        <CustomInput label={info.label} key={`mother-${i}`}/>
-                                    ))}
+                            {/* Mother Information */}
+                            <div className={'space-y-0'}>
+                                <SubHeading label={parent.motherInfo.heading}/>
+                                <div className={'px-4'}>
+                                    <CustomSingleFileInputV1 className={'col-span-full'} name={'motherPicture'}/>
                                 </div>
+                                <FormContentContainer>
+                                    {parent.motherInfo.fields.map((field, fieldIndex) => (
+                                        <CustomInput
+                                            name={field.name}
+                                            label={field.label}
+                                            type={field.type}
+                                            required={field.required}
+                                            key={fieldIndex}
+                                        />
+                                    ))}
+                                </FormContentContainer>
                             </div>
 
-                            <div className={'space-y-4'}>
-                                <h1 className="font-semibold">Guardian Info</h1>
-                                <CustomFileInput label={'Upload image size 4MB, Format JPG, PNG, SVG'}/>
-                                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
-                                    {each.guardianInfo.map((info, i) => (
-                                        <CustomInput label={info.label} key={`guardian-${i}`}/>
-                                    ))}
+                            {/* Guardian Information */}
+                            <div className={'space-y-0'}>
+                                <SubHeading label={parent.guardianInfo.heading}/>
+                                <div className={'px-4'}>
+                                    <CustomSingleFileInputV1 className={'col-span-full'} name={'guardianPicture'}/>
                                 </div>
+                                <FormContentContainer>
+                                    {parent.guardianInfo.fields.map((field, fieldIndex) => (
+                                        <CustomInput
+                                            name={field.name}
+                                            label={field.label}
+                                            type={field.type}
+                                            required={field.required}
+                                            key={fieldIndex}
+                                        />
+                                    ))}
+                                </FormContentContainer>
                             </div>
                         </div>
                     ))
                 }
-
-
             </FormContainer>
-        )
-    }
+        );
+    };
 
-    const AddressInformation = () => {
+    const AddressInfo = () => {
         return (
             <FormContainer>
-                <Heading label={'Address Information'} icon={'alert-circle-outline'}/>
-                <div className={'p-4 grid grid-cols-1 lg:grid-cols-2 gap-6'}>
+                <Heading label={'Address Information'}></Heading>
+                <FormContentContainer>
                     {
-                        AddStudentAddressInformation.map((each, index) => (
-                            <CustomInput label={each.label} type={each.type} key={index}/>
+                        addressInfo.map((each, index) => (
+                            <CustomInput name={each.name} label={each.label} type={each.type}
+                                         required={each.required} key={index} className={'col-span-1 xl:col-span-2'}/>
                         ))
                     }
-                </div>
+                </FormContentContainer>
             </FormContainer>
-
         )
     }
 
-    const TransportInformation = () => {
+    const TransportInfo = () => {
         return (
             <FormContainer>
-                <Heading label={'Transportation Information'} icon={'alert-circle-outline'}/>
-                <div className={'p-4 grid grid-cols-1 lg:grid-cols-2 gap-6'}>
+                <Heading label={'Transport Information'}></Heading>
+                <FormContentContainer>
                     {
-                        AddStudentTransportationInformation.map((each, index) => (
-                            each.type === 'text'
-                                ?
-                                <CustomInput label={each.label} type={each.type} key={index}/>
+                        transportInfo.map((each, index) => (
+                            each.type === 'text' ?
+                                <CustomInput key={index} name={each.name} label={each.label} type={each.type}
+                                             className={'col-span-1 xl:col-span-2'}></CustomInput>
                                 :
-                                <CustomDropdown label={each.label} options={['School bus', 'On foot']} key={index}/>
+                                each.type === 'dropdown' ?
+                                    <CustomDropdown key={index} name={each.name} label={each.label}
+                                                    options={each.options}
+                                                    className={'col-span-1 xl:col-span-2'}></CustomDropdown>
+                                    :
+                                    null
                         ))
                     }
-                </div>
+                </FormContentContainer>
             </FormContainer>
         )
     }
 
-    const PreviousSchoolInformation = () => {
+    const PreviousSchoolInfo = () => {
         return (
             <FormContainer>
-                <Heading label={'Previous School Information'} icon={'alert-circle-outline'}/>
-                <div className={'p-4 grid grid-cols-1 lg:grid-cols-2 gap-6'}>
+                <Heading label={'Previous School Information'}></Heading>
+                <FormContentContainer>
                     {
-                        AddStudentPreviousSchoolInformation.map((each, index) => (
-                            <CustomInput label={each.label} type={each.type} key={index}/>
+                        previousSchoolInfo.map((each, index) => (
+                            <CustomInput name={each.name} label={each.label} type={each.type}
+                                         required={each.required} key={index} className={'col-span-1 xl:col-span-2'}/>
                         ))
                     }
-                </div>
+                </FormContentContainer>
             </FormContainer>
         )
     }
-    const Documents = () => {
-        interface UploadComponentProps {
-            label?: string;
-        }
-        const UploadComponent = ({label}: UploadComponentProps) => {
-            return (
-                <div className={'space-y-2'}>
-                    <label htmlFor={label} className={'text-sm font-semibold'}>{label}</label>
-                    <input type="file" id={label} className="hidden"/>
-                    <p className={'text-sm text-gray-500'}>Upload image size 4MB, Format PDF</p>
-                    <button className={'bg-[var(--tw-button-primary)] text-white py-1.5 px-4 rounded-md shadow cursor-pointer'}>
-                        Upload Document
-                    </button>
-                </div>
-            );
-        }
+
+    const DocumentInfo = () => {
         return (
             <FormContainer>
-                <Heading label={'Documents'} icon={'alert-circle-outline'}/>
-                <div className={'p-4 grid grid-cols-1 lg:grid-cols-4 gap-6'}>
-                    <UploadComponent label={'Birth Certificate'}/>
-                    <UploadComponent label={'Transfer Certificate'}/>
-                    <UploadComponent label={'Character Certificate'}/>
-                    <UploadComponent label={'Mark sheet'}/>
-                </div>
+                <Heading label={'Document Information'}></Heading>
+                <FormContentContainer>
+                    <CustomFileInput name={'files'}
+                                     label={'Upload Documents'}
+                                     maxFiles={3}
+                                     multiple={true}
+                                     maxSize={2}
+                                     accept='.pdf,.png'
+                                     className={'col-span-full'}
+                                     required={true}/>
+                </FormContentContainer>
             </FormContainer>
         )
     }
 
     return (
-        // bg-[#f8fafd]
-        <div className={'gap-4 p-2 flex flex-col bg-gray-100'}>
-            <PersonalInformation/>
-            <ParentInformation/>
-            <AddressInformation/>
-            <TransportInformation/>
-            <PreviousSchoolInformation/>
-            <Documents/>
-        </div>
-    );
+        <FormProvider {...form}>
+            <form onSubmit={handleSubmit(onSubmit)} className={'p-4 space-y-4 bg-gray-50'}>
+                <PersonalInfo/>
+                <ParentInfo/>
+                <AddressInfo/>
+                <TransportInfo/>
+                <PreviousSchoolInfo/>
+                <DocumentInfo/>
+                <div className={'flex gap-4 w-1/3 ml-auto justify-end px-4'}>
+                    <CustomButton variant={'neutral'} className={'w-full'} size={'md'}>Cancel</CustomButton>
+                    <CustomButton type={'submit'} variant={'primary'} className={'w-full'} size={'md'}>Submit</CustomButton>
+                </div>
+            </form>
+            <DevTool control={control}/>
+        </FormProvider>
+    )
 };

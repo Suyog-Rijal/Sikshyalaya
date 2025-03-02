@@ -1,19 +1,28 @@
 "use client"
 
 import { useFormContext } from "react-hook-form"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle } from 'lucide-react'
 import { useState, useRef, useEffect } from "react"
 
-export interface CustomInputProps {
+export interface CustomTextareaProps {
     label?: string
-    type?: string
     name: string
     placeholder?: string
     required?: boolean
     className?: string
+    rows?: number
+    maxLength?: number
 }
 
-export const CustomInput = ({ label, type = "text", name, placeholder, required = false, className = ""}: CustomInputProps) => {
+export const CustomTextarea = ({
+                                   label,
+                                   name,
+                                   placeholder,
+                                   required = false,
+                                   className = "",
+                                   rows = 4,
+                                   maxLength
+                               }: CustomTextareaProps) => {
     const {
         register,
         formState: { errors },
@@ -21,17 +30,17 @@ export const CustomInput = ({ label, type = "text", name, placeholder, required 
 
     const [showTooltip, setShowTooltip] = useState(false)
     const [tooltipPosition, setTooltipPosition] = useState<"top" | "bottom">("top")
-    const inputRef = useRef<HTMLDivElement>(null)
+    const textareaRef = useRef<HTMLDivElement>(null)
     const tooltipRef = useRef<HTMLDivElement>(null)
     const error = errors[name]
     const errorMessage = error?.message as string | undefined
 
     useEffect(() => {
-        if (showTooltip && inputRef.current && tooltipRef.current) {
-            const inputRect = inputRef.current.getBoundingClientRect()
+        if (showTooltip && textareaRef.current && tooltipRef.current) {
+            const textareaRect = textareaRef.current.getBoundingClientRect()
             const tooltipRect = tooltipRef.current.getBoundingClientRect()
-            const spaceAbove = inputRect.top
-            const spaceBelow = window.innerHeight - inputRect.bottom
+            const spaceAbove = textareaRect.top
+            const spaceBelow = window.innerHeight - textareaRect.bottom
 
             if (spaceAbove > spaceBelow && spaceAbove >= tooltipRect.height + 8) {
                 setTooltipPosition("top")
@@ -51,19 +60,20 @@ export const CustomInput = ({ label, type = "text", name, placeholder, required 
                     {required && <span className="text-red-500">*</span>}
                 </label>
             )}
-            <div ref={inputRef} className="relative">
-                <input
+            <div ref={textareaRef} className="relative">
+                <textarea
                     id={name}
-                    type={type}
                     placeholder={placeholder}
-                    className={`w-full px-3 py-2 text-sm text-black bg-white border ${error ? "border-red-500" : "border-gray-200"} rounded focus:outline-none ${error ? null : 'focus:border-[#5649E8]'} transition-colors`}
+                    rows={rows}
+                    maxLength={maxLength}
+                    className={`w-full px-3 py-2 text-sm text-black bg-white border ${error ? "border-red-500" : "border-gray-200"} rounded focus:outline-none ${error ? null : 'focus:border-[#5649E8]'} transition-colors resize-none`}
                     aria-invalid={error ? "true" : "false"}
                     aria-describedby={error ? `${name}-error` : undefined}
                     {...register(name)}
                 />
                 {error && (
                     <div
-                        className="absolute right-3 top-1/2 -translate-y-1/2"
+                        className="absolute right-3 top-4"
                         onMouseEnter={() => setShowTooltip(true)}
                         onMouseLeave={() => setShowTooltip(false)}
                     >
@@ -87,4 +97,3 @@ export const CustomInput = ({ label, type = "text", name, placeholder, required 
         </div>
     )
 }
-
