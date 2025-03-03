@@ -12,12 +12,10 @@ class EnrollmentApiView(APIView):
 
 	def get(self, request):
 		try:
-			academic_year = AcademicYear.objects.get(is_active=True)
 			classes = Class.objects.all()
 			sections = Section.objects.all()
 			houses = House.objects.all()
 			serializer = EnrollmentGetSerializer({
-				"academic_year": academic_year,
 				"classes": classes,
 				"sections": sections,
 				"houses": houses,

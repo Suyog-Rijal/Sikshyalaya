@@ -1,15 +1,5 @@
-from .models import AcademicYear, Class, House, Section, Subject
+from .models import Class, House, Section
 from rest_framework.serializers import ModelSerializer, Serializer
-
-
-class AcademicYearSerializer(ModelSerializer):
-	class Meta:
-		model = AcademicYear
-		fields = [
-			'id',
-			'year',
-			'created_at',
-		]
 
 
 class EnrollmentGetHouseSerializer(ModelSerializer):
@@ -44,7 +34,6 @@ class EnrollmentGetClassSerializer(ModelSerializer):
 
 
 class EnrollmentGetSerializer(Serializer):
-	academic_year = AcademicYearSerializer()
 	classes = EnrollmentGetClassSerializer(many=True)
 	sections = EnrollmentGetSectionSerializer(many=True)
 
