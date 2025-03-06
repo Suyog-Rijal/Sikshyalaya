@@ -2,25 +2,31 @@ from django.shortcuts import render
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import AcademicYear, Class, House, Section, Subject
-from .serializer import EnrollmentGetSerializer
+from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
+
+from user.serializer import AddStudentSerializer
 
 
 class EnrollmentApiView(APIView):
 	permission_classes = [AllowAny]
 
-	def get(self, request):
-		try:
-			classes = Class.objects.all()
-			sections = Section.objects.all()
-			houses = House.objects.all()
-			serializer = EnrollmentGetSerializer({
-				"classes": classes,
-				"sections": sections,
-				"houses": houses,
-			})
-			return Response(serializer.data, status=status.HTTP_200_OK)
+	# def get(self, request):
+	# 	try:
+	# 		classes = Class.objects.prefetch_related(
+	# 			'sections',
+	# 			'sections__house'
+	# 		)
+	# 		serializer = EnrollmentClassGetSerializer(classes, many=True)
+	# 		return Response(serializer.data, status=status.HTTP_200_OK)
+	# 	except Exception as e:
+	# 		return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-		except AcademicYear.DoesNotExist:
-			return Response({"detail": "No active academic year found."}, status=status.HTTP_404_NOT_FOUND)
+	def post(self, request):
+		try:
+			serializer = AddStudentSerializer(data=request.data.get('personal_info'))
+			serializer.is_valid(raise_exception=True)
+			serializer.save()
+			return Response(serializer.data, status=status.HTTP_201_CREATED)
+		except Exception as e:
+			return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

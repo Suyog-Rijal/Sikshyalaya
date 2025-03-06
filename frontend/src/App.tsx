@@ -1,23 +1,20 @@
 import {DashboardLayout} from "@/layouts/DashboardLayout.tsx";
-// import {AddStaff} from "@/components/Views/AddStaff.tsx";
-// import {BrowserRouter, Route, Routes} from "react-router-dom";
-// import {Dashboard} from "@/views/admin/Dashboard.tsx";
-import {TeacherView} from "@/views/admin/TeacherView.tsx";
+import {BrowserRouter, Route, Routes} from "react-router-dom";
+import {Dashboard} from "@/views/admin/Dashboard.tsx";
+import {AddStudent} from "@/pages/AddStudent.tsx";
+
 
 function App() {
     return (
-        // <BrowserRouter>
-        //     <DashboardLayout>
-        //         <Routes>
-        //             <Route index element={<Dashboard />} />
-        //             <Route path="/list/teachers" element={<AddStaff />} />
-        //         </Routes>
-        //     </DashboardLayout>
-        // </BrowserRouter>
+        <BrowserRouter>
+            <DashboardLayout>
+                <Routes>
+                    <Route index element={<Dashboard />} />
+                    <Route path="/list/students" element={<AddStudent/>} />
+                </Routes>
+            </DashboardLayout>
+        </BrowserRouter>
 
-        <DashboardLayout>
-            <TeacherView />
-        </DashboardLayout>
 
     )
 }

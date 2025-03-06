@@ -46,8 +46,6 @@ INSTALLED_APPS = [
     'academic',
 ]
 
-AUTH_USER_MODEL = 'user.User'
-
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -63,6 +61,7 @@ ROOT_URLCONF = 'backend.urls'
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
+    'https://7063-27-34-73-74.ngrok-free.app'
 ]
 
 TEMPLATES = [
