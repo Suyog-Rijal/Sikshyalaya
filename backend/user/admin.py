@@ -1,8 +1,7 @@
 from django.contrib import admin
-from .models import Student
+from .models import Student, Parent
 
 
-# Register the Student model in the admin
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
 	list_display = [
@@ -12,9 +11,19 @@ class StudentAdmin(admin.ModelAdmin):
 		'updated_at',
 	]
 
-	# Optional: Add search fields to search through specific fields
 	search_fields = ['first_name', 'last_name', 'personal_email']
-
-	# Optional: Add filters for better filtering of students
 	list_filter = ['gender', 'account_status', 'blood_group', 'transportation']
 
+
+@admin.register(Parent)
+class ParentAdmin(admin.ModelAdmin):
+	list_display = [
+		'full_name',
+		'student',
+		'relationship',
+		'created_at',
+		'updated_at',
+	]
+
+	search_fields = ['full_name', 'email', 'phone_number']
+	list_filter = ['relationship']

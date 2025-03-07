@@ -9,13 +9,16 @@ import {
 import {Input} from "@/components/ui/input";
 import {useForm, useFormContext, FormProvider} from "react-hook-form";
 import {Button} from "@/components/ui/button";
-import {tAddStudentSchema} from "@/schema/AddStudent.ts";
+import {addStudentSchema, tAddStudentSchema} from "@/schema/AddStudent.ts";
 import {FormContainer} from "@/components/Forms/FormContainer.tsx";
 import {Heading} from "@/components/Forms/Heading.tsx";
 import {FormContent} from "@/components/Forms/FormContent.tsx";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select.tsx";
 import {addressInfo, parentInfo, personalInfo, previousSchoolInfo, transportInfo} from "@/utils/addStudentData.ts";
 import AxiosInstance from "@/auth/AxiosInstance.ts";
+import {Dropzone} from "@/components/ui/dropzone.tsx";
+import {zodResolver} from "@hookform/resolvers/zod";
+import {removeEmptyFields} from "@/utils/cleanData.ts";
 
 const PersonalInfo = () => {
     const form = useFormContext();
@@ -23,6 +26,9 @@ const PersonalInfo = () => {
     return (
         <FormContainer>
             <Heading title="Personal Information"/>
+            <div className={'mx-4 mt-4'}>
+                <Dropzone name={'student_info.profile_picture'}/>
+            </div>
             <FormContent>
                 {personalInfo.map((each, index) => (
                     each.type === 'select' ? (
@@ -32,7 +38,9 @@ const PersonalInfo = () => {
                             name={each.name}
                             render={({field}) => (
                                 <FormItem>
-                                    <FormLabel>{each.label}</FormLabel>
+                                    <FormLabel>
+                                        {each.label}{each.required && <span className="-ml-2 text-red-500">*</span>}
+                                    </FormLabel>
                                     <Select onValueChange={field.onChange}
                                             value={field.value}>
                                         <FormControl className={'w-full'}>
@@ -61,7 +69,9 @@ const PersonalInfo = () => {
                             name={each.name}
                             render={({field}) => (
                                 <FormItem>
-                                    <FormLabel>{each.label}</FormLabel>
+                                    <FormLabel>
+                                        {each.label}{each.required && <span className="-ml-2 text-red-500">*</span>}
+                                    </FormLabel>
                                     <FormControl>
                                         <Input type={each.type} {...field} />
                                     </FormControl>
@@ -82,11 +92,14 @@ const ParentInfo = () => {
         <FormContainer>
             <Heading title="Parent Information"/>
             {parentInfo.map((info, index) => (
-                <div key={index} className="space-y-6">
+                <div key={index} className="space-y-6 mt-4">
                     {/* Father Information */}
                     {info.fatherInfo && (
                         <div>
                             <h2 className="text-lg px-4 font-semibold">Father Information</h2>
+                            <div className={'mx-4 mt-4'}>
+                                <Dropzone name={'father_info.profile_picture'}/>
+                            </div>
                             <FormContent>
                                 {info.fatherInfo.fields.map((field, i) => (
                                     <FormField
@@ -95,7 +108,10 @@ const ParentInfo = () => {
                                         name={field.name}
                                         render={({field: formField}) => (
                                             <FormItem>
-                                                <FormLabel>{field.label}</FormLabel>
+                                                <FormLabel>
+                                                    {field.label}{field.required &&
+                                                    <span className="-ml-2 text-red-500">*</span>}
+                                                </FormLabel>
                                                 <FormControl>
                                                     <Input type={field.type} {...formField} />
                                                 </FormControl>
@@ -112,6 +128,9 @@ const ParentInfo = () => {
                     {info.motherInfo && (
                         <div>
                             <h2 className="text-lg px-4 font-semibold">Mother Information</h2>
+                            <div className={'mx-4 mt-4'}>
+                                <Dropzone name={'mother_info.profile_picture'}/>
+                            </div>
                             <FormContent>
                                 {info.motherInfo.fields.map((field, i) => (
                                     <FormField
@@ -120,7 +139,10 @@ const ParentInfo = () => {
                                         name={field.name}
                                         render={({field: formField}) => (
                                             <FormItem>
-                                                <FormLabel>{field.label}</FormLabel>
+                                                <FormLabel>
+                                                    {field.label}{field.required &&
+                                                    <span className="-ml-2 text-red-500">*</span>}
+                                                </FormLabel>
                                                 <FormControl>
                                                     <Input type={field.type} {...formField} />
                                                 </FormControl>
@@ -133,30 +155,35 @@ const ParentInfo = () => {
                         </div>
                     )}
 
-                    {/* Guardian Information */}
-                    {/*{info.guardianInfo && (*/}
-                    {/*    <div>*/}
-                    {/*        <h2 className="text-lg px-4 font-semibold">Guardian Information</h2>*/}
-                    {/*        <FormContent>*/}
-                    {/*            {info.guardianInfo.fields.map((field, i) => (*/}
-                    {/*                <FormField*/}
-                    {/*                    key={i}*/}
-                    {/*                    control={form.control}*/}
-                    {/*                    name={field.name}*/}
-                    {/*                    render={({ field: formField }) => (*/}
-                    {/*                        <FormItem>*/}
-                    {/*                            <FormLabel>{field.label}</FormLabel>*/}
-                    {/*                            <FormControl>*/}
-                    {/*                                <Input type={field.type} {...formField} />*/}
-                    {/*                            </FormControl>*/}
-                    {/*                            <FormMessage />*/}
-                    {/*                        </FormItem>*/}
-                    {/*                    )}*/}
-                    {/*                />*/}
-                    {/*            ))}*/}
-                    {/*        </FormContent>*/}
-                    {/*    </div>*/}
-                    {/*)}*/}
+                    {info.guardianInfo && (
+                        <div>
+                            <h2 className="text-lg px-4 font-semibold">Guardian Information</h2>
+                            <div className={'mx-4 mt-4'}>
+                                <Dropzone name={'guardian_info.profile_picture'}/>
+                            </div>
+                            <FormContent>
+                                {info.guardianInfo.fields.map((field, i) => (
+                                    <FormField
+                                        key={i}
+                                        control={form.control}
+                                        name={field.name}
+                                        render={({field: formField}) => (
+                                            <FormItem>
+                                                <FormLabel>
+                                                    {field.label}{field.required &&
+                                                    <span className="-ml-2 text-red-500">*</span>}
+                                                </FormLabel>
+                                                <FormControl>
+                                                    <Input type={field.type} {...formField} />
+                                                </FormControl>
+                                                <FormMessage/>
+                                            </FormItem>
+                                        )}
+                                    />
+                                ))}
+                            </FormContent>
+                        </div>
+                    )}
                 </div>
             ))}
         </FormContainer>
@@ -175,13 +202,15 @@ const AddressInfo = () => {
                             key={index}
                             control={form.control}
                             name={each.name}
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{each.label}</FormLabel>
+                            render={({field}) => (
+                                <FormItem className={'col-span-1 xl:col-span-2'}>
+                                    <FormLabel>
+                                        {each.label}{each.required && <span className="-ml-2 text-red-500">*</span>}
+                                    </FormLabel>
                                     <FormControl>
                                         <Input type={each.type} {...field} />
                                     </FormControl>
-                                    <FormMessage />
+                                    <FormMessage/>
                                 </FormItem>
                             )}
                         />
@@ -205,24 +234,27 @@ const TransportInfo = () => {
                                     key={index}
                                     control={form.control}
                                     name={each.name}
-                                    render={({ field }) => (
-                                        <FormItem className={'w-full'}>
-                                            <FormLabel>{each.label}</FormLabel>
+                                    render={({field}) => (
+                                        <FormItem className={'col-span-1 xl:col-span-2'}>
+                                            <FormLabel>
+                                                {each.label}{each.required && <span className="-ml-2 text-red-500">*</span>}
+                                            </FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                <FormControl className={'w-full'}>
+                                                <FormControl>
                                                     <SelectTrigger>
-                                                        <SelectValue placeholder="Select option" />
+                                                        <SelectValue placeholder="Select option"/>
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent>
                                                     {
                                                         each?.options?.map((option, index) => (
-                                                            <SelectItem key={index} value={`${option.id}`}>{option.value}</SelectItem>
+                                                            <SelectItem key={index}
+                                                                        value={`${option.id}`}>{option.value}</SelectItem>
                                                         ))
                                                     }
                                                 </SelectContent>
                                             </Select>
-                                            <FormMessage />
+                                            <FormMessage/>
                                         </FormItem>
                                     )}
                                 />
@@ -232,13 +264,15 @@ const TransportInfo = () => {
                                 key={index}
                                 control={form.control}
                                 name={each.name}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>{each.label}</FormLabel>
+                                render={({field}) => (
+                                    <FormItem className={'col-span-1 xl:col-span-2'}>
+                                        <FormLabel>
+                                            {each.label}{each.required && <span className="-ml-2 text-red-500">*</span>}
+                                        </FormLabel>
                                         <FormControl>
                                             <Input type={each.type} {...field} />
                                         </FormControl>
-                                        <FormMessage />
+                                        <FormMessage/>
                                     </FormItem>
                                 )}
                             />
@@ -261,13 +295,15 @@ const PreviousSchool = () => {
                             key={index}
                             control={form.control}
                             name={each.name}
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{each.label}</FormLabel>
+                            render={({field}) => (
+                                <FormItem className={'col-span-1 xl:col-span-2'}>
+                                    <FormLabel>
+                                        {each.label}{each.required && <span className="-ml-2 text-red-500">*</span>}
+                                    </FormLabel>
                                     <FormControl>
                                         <Input type={each.type} {...field} />
                                     </FormControl>
-                                    <FormMessage />
+                                    <FormMessage/>
                                 </FormItem>
                             )}
                         />
@@ -280,31 +316,67 @@ const PreviousSchool = () => {
 
 export function AddStudent() {
     const form = useForm<tAddStudentSchema>({
+        resolver: zodResolver(addStudentSchema),
         defaultValues: {
-            personal_info: {
+            student_info: {
                 first_name: '',
                 last_name: '',
-                date_of_birth: new Date(),
-                gender: '1',
+                date_of_birth: undefined,
+                gender: undefined,
                 account_status: 'A',
                 blood_group: '',
                 personal_email: '',
                 phone_number: '',
-                admission_date: new Date(),
                 current_address: '',
                 permanent_address: '',
-                transportation: 'SB',
+                transportation: undefined,
                 pickup_address: '',
-                profile_picture: '',
                 previous_school: '',
                 previous_school_address: '',
             },
-        },
+
+            enrollment_info: {
+                enrollment_date: new Date(),
+                student_class: '',
+                section: '',
+            },
+
+            father_info: {
+                full_name: '',
+                phone_number: '',
+                email: '',
+                occupation: '',
+            },
+
+            mother_info: {
+                full_name: '',
+                phone_number: '',
+                email: '',
+                occupation: '',
+            },
+
+            guardian_info: {
+                full_name: '',
+                guardian_relation: '',
+                phone_number: '',
+                email: '',
+                occupation: '',
+                address: '',
+            },
+
+            house: '',
+        }
     });
 
     const onSubmit = (data: tAddStudentSchema) => {
-        console.log(data);
-        AxiosInstance.post('api/academic/enrollment/', data)
+        const cleanedData = {
+            ...data,
+            father_info: removeEmptyFields(data.father_info),
+            mother_info: removeEmptyFields(data.mother_info),
+            guardian_info: removeEmptyFields(data.guardian_info)
+        };
+        console.log(cleanedData);
+        AxiosInstance.post('api/academic/enrollment/', cleanedData)
             .then((res) => {
                 console.log(res);
             })

@@ -2,43 +2,43 @@ export const personalInfo = [
     {
         label: 'Admission Date',
         type: 'date',
-        name: 'personal_info.admission_date',
+        name: 'enrollment_info.enrollment_date',
         required: true
     },
     {
         label: 'First Name',
         type: 'text',
-        name: 'personal_info.first_name',
+        name: 'student_info.first_name',
         required: true
     },
     {
         label: 'Last Name',
         type: 'text',
-        name: 'personal_info.last_name',
+        name: 'student_info.last_name',
         required: true
     },
     {
         label: 'Date of Birth',
         type: 'date',
-        name: 'personal_info.date_of_birth',
+        name: 'student_info.date_of_birth',
         required: true
     },
     {
         label: 'Gender',
         type: 'select',
-        name: 'personal_info.gender',
+        name: 'student_info.gender',
         placeholder: 'Select gender',
         required: true,
         options: [
-            { id: 1, value: 'Male', key: '1' },
-            { id: 2, value: 'Female', key: '2' },
-            { id: 3, value: 'Other', key: '3' }
+            { id: 'M', value: 'Male'},
+            { id: 'F', value: 'Female'},
+            { id: 'O', value: 'Other'}
         ]
     },
     {
         label: 'Class',
         type: 'select',
-        name: 'student_class',
+        name: 'enrollment_info.student_class',
         placeholder: 'Select class',
         required: true,
         options: [
@@ -55,7 +55,7 @@ export const personalInfo = [
     {
         label: 'Section',
         type: 'select',
-        name: 'section',
+        name: 'enrollment_info.section',
         placeholder: 'Select section',
         required: true,
         options: [
@@ -80,9 +80,9 @@ export const personalInfo = [
     {
         label: 'Account Status',
         type: 'select',
-        name: 'personal_info.account_status',
+        name: 'student_info.account_status',
         placeholder: 'Select Account Status',
-        required: true,
+        required: false,
         options: [
             { value: 'Active', id: 'A' },
             { value: 'Inactive', id: 'I' },
@@ -92,7 +92,7 @@ export const personalInfo = [
     {
         label: 'Blood Group',
         type: 'select',
-        name: 'personal_info.blood_group',
+        name: 'student_info.blood_group',
         placeholder: 'Select blood group',
         required: false,
         options: [
@@ -110,13 +110,13 @@ export const personalInfo = [
     {
         label: 'Personal Email',
         type: 'text',
-        name: 'personal_info.personal_email',
+        name: 'student_info.personal_email',
         required: false
     },
     {
         label: 'Phone Number',
         type: 'text',
-        name: 'personal_info.phone_number',
+        name: 'student_info.phone_number',
         required: false
     },
 ]
@@ -129,28 +129,28 @@ export const parentInfo = [
                 {
                     label: 'Father name',
                     type: 'text',
-                    name: 'father_name',
+                    name: 'father_info.full_name',
                     placeholder: 'Father name',
-                    required: true
+                    required: false
                 },
                 {
                     label: 'Phone Number',
                     type: 'text',
-                    name: 'father_number',
+                    name: 'father_info.phone_number',
                     placeholder: 'Phone Number',
-                    required: true
+                    required: false
                 },
                 {
                     label: 'Email',
                     type: 'text',
-                    name: 'father_email',
+                    name: 'father_info.email',
                     placeholder: 'Email',
                     required: false
                 },
                 {
                     label: 'Occupation',
                     type: 'text',
-                    name: 'father_occupation',
+                    name: 'father_info.occupation',
                     placeholder: 'Occupation',
                     required: false
                 },
@@ -162,28 +162,28 @@ export const parentInfo = [
                 {
                     label: 'Mother name',
                     type: 'text',
-                    name: 'mother_name',
+                    name: 'mother_info.full_name',
                     placeholder: 'Mother name',
-                    required: true
+                    required: false
                 },
                 {
                     label: 'Phone Number',
                     type: 'text',
-                    name: 'mother_number',
+                    name: 'mother_info.phone_number',
                     placeholder: 'Phone Number',
-                    required: true
+                    required: false
                 },
                 {
                     label: 'Email',
                     type: 'text',
-                    name: 'mother_email',
+                    name: 'mother_info.email',
                     placeholder: 'Email',
                     required: false
                 },
                 {
                     label: 'Occupation',
                     type: 'text',
-                    name: 'mother_occupation',
+                    name: 'mother_info.occupation',
                     placeholder: 'Occupation',
                     required: false
                 }
@@ -195,42 +195,42 @@ export const parentInfo = [
                 {
                     label: 'Guardian name',
                     type: 'text',
-                    name: 'guardian_name',
+                    name: 'guardian_info.full_name',
                     placeholder: 'Guardian name',
                     required: true
                 },
                 {
                     label: 'Relationship',
                     type: 'text',
-                    name: 'guardian_relationship',
+                    name: 'guardian_info.guardian_relation',
                     placeholder: 'Relationship',
                     required: true
                 },
                 {
                     label: 'Phone Number',
                     type: 'text',
-                    name: 'guardian_number',
+                    name: 'guardian_info.phone_number',
                     placeholder: 'Phone Number',
                     required: true
                 },
                 {
                     label: 'Address',
                     type: 'text',
-                    name: 'guardian_address',
+                    name: 'guardian_info.address',
                     placeholder: 'Address',
                     required: true
                 },
                 {
                     label: 'Email',
                     type: 'text',
-                    name: 'guardian_email',
+                    name: 'guardian_info.email',
                     placeholder: 'Email',
                     required: false
                 },
                 {
                     label: 'Occupation',
                     type: 'text',
-                    name: 'guardian_occupation',
+                    name: 'guardian_info.occupation',
                     placeholder: 'Occupation',
                     required: false
                 },
@@ -243,14 +243,14 @@ export const addressInfo = [
     {
         label: 'Current Address',
         type: 'text',
-        name: 'personal_info.current_address',
+        name: 'student_info.current_address',
         placeholder: 'Current Address',
         required: true
     },
     {
         label: 'Permanent Address',
         type: 'text',
-        name: 'personal_info.permanent_address',
+        name: 'student_info.permanent_address',
         placeholder: 'Permanent Address',
         required: true
     }
@@ -260,7 +260,7 @@ export const transportInfo = [
     {
         label: 'Transportation mode',
         type: 'select',
-        name: 'personal_info.transportation',
+        name: 'student_info.transportation',
         options: [
             {value: 'School Bus', id: 'SB' },
             {value: 'Private', id: 'PV' },
@@ -273,7 +273,7 @@ export const transportInfo = [
     {
         label: 'Pickup address',
         type: 'text',
-        name: 'personal_info.pickup_address',
+        name: 'student_info.pickup_address',
         placeholder: 'Pickup location',
         required: false
     }
@@ -283,14 +283,14 @@ export const previousSchoolInfo = [
     {
         label: 'School Name',
         type: 'text',
-        name: 'personal_info.previous_school',
+        name: 'student_info.previous_school',
         placeholder: 'Previous School Name',
         required: false
     },
     {
         label: 'School Address',
         type: 'text',
-        name: 'personal_info.previous_school_address',
+        name: 'student_info.previous_school_address',
         placeholder: 'Previous School Address',
         required: false
     }
