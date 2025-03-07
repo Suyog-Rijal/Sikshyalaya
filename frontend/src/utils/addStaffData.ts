@@ -1,18 +1,3 @@
-export const staffType = {
-    teaching: {
-        id: 1,
-        value: 'Teaching Staff'
-    },
-    nonTeaching: {
-        id: 2,
-        value: 'Non-Teaching Staff'
-    },
-    management: {
-        id: 3,
-        value: 'Management Staff'
-    }
-}
-
 export const personalInfo = [
     {
         label: 'Staff Type',
@@ -23,10 +8,6 @@ export const personalInfo = [
             {
                 id: 1,
                 value: 'Teaching Staff'
-            },
-            {
-                id: 2,
-                value: 'Non-Teaching Staff'
             },
             {
                 id: 3,
@@ -43,13 +24,6 @@ export const personalInfo = [
         required: true
     },
     {
-        label: 'Middle Name',
-        type: 'text',
-        name: 'middleName',
-        placeholder: 'Middle Name',
-        required: false
-    },
-    {
         label: 'Last Name',
         type: 'text',
         name: 'lastName',
@@ -62,18 +36,9 @@ export const personalInfo = [
         name: 'gender',
         required: true,
         options: [
-            {
-                id: 1,
-                value: 'Male',
-            },
-            {
-                id: 2,
-                value: 'Female',
-            },
-            {
-                id: 3,
-                value: 'Other'
-            }
+            { id: 'M', value: 'Male'},
+            { id: 'F', value: 'Female'},
+            { id: 'O', value: 'Other'}
         ]
     },
     {
@@ -82,38 +47,15 @@ export const personalInfo = [
         name: 'bloodGroup',
         required: false,
         options: [
-            {
-                id: 1,
-                value: 'A+'
-            },
-            {
-                id: 2,
-                value: 'A-'
-            },
-            {
-                id: 3,
-                value: 'B+'
-            },
-            {
-                id: 4,
-                value: 'B-'
-            },
-            {
-                id: 5,
-                value: 'O+'
-            },
-            {
-                id: 6,
-                value: 'O-'
-            },
-            {
-                id: 7,
-                value: 'AB+'
-            },
-            {
-                id: 8,
-                value: 'AB-'
-            }
+            {value: 'A+', id: 'A+' },
+            {value: 'A-', id: 'A-' },
+            {value: 'B+', id: 'B+' },
+            {value: 'B-', id: 'B-' },
+            {value: 'O+', id: 'O+' },
+            {value: 'O-', id: 'O-' },
+            {value: 'AB+', id: 'AB+' },
+            {value: 'AB-', id: 'AB-' },
+            {value: 'Rh Null', id: 'RN' }
         ]
     },
     {

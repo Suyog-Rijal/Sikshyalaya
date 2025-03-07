@@ -16,6 +16,10 @@ class StudentSerializer(serializers.ModelSerializer):
 			'personal_email',
 			'phone_number',
 
+			'father',
+			'mother',
+			'guardian',
+
 			'current_address',
 			'permanent_address',
 
@@ -37,7 +41,6 @@ class ParentSerializer(serializers.ModelSerializer):
 		model = Parent
 		fields = [
 			'id',
-			'student',
 			'full_name',
 			'email',
 			'phone_number',

@@ -5,20 +5,11 @@ export const addStudentSchema = z.object({
         first_name: z.string().trim().min(1, 'First name is required'),
         last_name: z.string().trim().min(1, 'Last name is required'),
         date_of_birth: z
-            .string()
-            .refine(date => date.length > 0, {
-                message: "Date of birth is required",
+            .date({
+                required_error: "Please select date of birth.",
             })
-            .transform(date => {
-                const parsedDate = new Date(date);
-                return isNaN(parsedDate.getTime()) ? "" : parsedDate.toISOString().split("T")[0];
-            })
-            .refine(date => date !== "", {
-                message: "Invalid date format",
-            })
-            .refine(date => new Date(date) <= new Date(), {
-                message: "Date of birth cannot be in the future",
-            }),
+            .refine((date) => date <= new Date(), {message: "Date cannot be in the future"})
+            .refine((date) => date >= new Date("1900-01-01"), {message: "Date must be after January 1, 1900"}),
         gender: z.enum(['M', 'F', 'O'], {
             required_error: "Please select a gender",
         }), account_status: z.enum(['A', 'I', 'D']),
@@ -50,13 +41,14 @@ export const addStudentSchema = z.object({
     }),
 
     enrollment_info: z.object({
+        house: z.string().optional(),
         enrollment_date: z
-            .string()
-            .transform((val) => new Date(val))
-            .refine((date) => !isNaN(date.getTime()), {
-                message: 'Invalid date',
-            }),
-        student_class: z.string().min(1, 'Please select class'),
+            .date({
+                required_error: "Please select admission date.",
+            })
+            .refine((date) => date <= new Date(), { message: "Date cannot be in the future" })
+            .refine((date) => date >= new Date("1900-01-01"), { message: "Date must be after January 1, 1900" }),
+        school_class: z.string().min(1, 'Please select class'),
         section: z.string().min(1, 'Please select section'),
     }),
 
@@ -120,8 +112,6 @@ export const addStudentSchema = z.object({
         occupation: z.string().optional(),
         address: z.string().trim().min(1, 'Address is required'),
     }),
-
-    house: z.string().optional(),
 });
 
 export type tAddStudentSchema = z.infer<typeof addStudentSchema>;

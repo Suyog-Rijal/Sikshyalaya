@@ -1,6 +1,7 @@
 import {ReactNode} from "react";
 import {Sidebar} from "@/components/Navigation/Sidebar.tsx";
 import {Navbar} from "@/components/Navigation/Navbar.tsx";
+import {Toaster} from "@/components/ui/sonner.tsx";
 
 export const DashboardLayout = ({children}: Readonly<{ children: ReactNode }>) => {
     return (
@@ -20,6 +21,7 @@ export const DashboardLayout = ({children}: Readonly<{ children: ReactNode }>) =
                 {children}
             </div>
 
+            <Toaster richColors  />
         </div>
     );
 };

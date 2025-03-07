@@ -5,10 +5,10 @@ from .models import Student, Parent
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
 	list_display = [
+		'id',
 		'first_name',
 		'last_name',
-		'created_at',
-		'updated_at',
+		'get_enrolled_class',
 	]
 
 	search_fields = ['first_name', 'last_name', 'personal_email']
@@ -19,7 +19,6 @@ class StudentAdmin(admin.ModelAdmin):
 class ParentAdmin(admin.ModelAdmin):
 	list_display = [
 		'full_name',
-		'student',
 		'relationship',
 		'created_at',
 		'updated_at',

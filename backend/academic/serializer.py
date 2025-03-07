@@ -12,6 +12,7 @@ class EnrollmentSerializer(serializers.ModelSerializer):
 			'student',
 			'academic_year',
 			'school_class',
+			'house',
 			'section',
 			'enrollment_date',
 		]

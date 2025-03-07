@@ -38,16 +38,16 @@ export const personalInfo = [
     {
         label: 'Class',
         type: 'select',
-        name: 'enrollment_info.student_class',
+        name: 'enrollment_info.school_class',
         placeholder: 'Select class',
         required: true,
         options: [
             {
-                id: '68d4f5d7-9320-41f8-88bd-7151ba198079',
+                id: '55d992f6-c8bf-4474-8705-0691a1288f0f',
                 value: 'One'
             },
             {
-                id: '6d3f66f7-2ced-445f-ad70-a61e701ceb2b',
+                id: '35d992f6-c8bf-4474-8705-0691a1288f0f',
                 value: 'Two'
             }
         ]
@@ -60,7 +60,7 @@ export const personalInfo = [
         required: true,
         options: [
             {
-                id: '638bf627-1a24-448a-bf0d-ff060ccd6bec',
+                id: '73ed7d11-c279-4a0f-a683-80798e31359b',
                 value: 'A'
             },
             {
@@ -72,7 +72,7 @@ export const personalInfo = [
     {
         label: 'House',
         type: 'select',
-        name: 'house',
+        name: 'enrollment_info.house',
         placeholder: 'Select house',
         required: false,
         options: []

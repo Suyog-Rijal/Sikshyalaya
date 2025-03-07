@@ -18,7 +18,11 @@ import {addressInfo, parentInfo, personalInfo, previousSchoolInfo, transportInfo
 import AxiosInstance from "@/auth/AxiosInstance.ts";
 import {Dropzone} from "@/components/ui/dropzone.tsx";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {removeEmptyFields} from "@/utils/cleanData.ts";
+import {dateFormater, removeEmptyFields} from "@/utils/cleanData.ts";
+import {DatePicker} from "@/components/ui/date-picker.tsx";
+import { toast } from "sonner"
+
+
 
 const PersonalInfo = () => {
     const form = useFormContext();
@@ -32,54 +36,80 @@ const PersonalInfo = () => {
             <FormContent>
                 {personalInfo.map((each, index) => (
                     each.type === 'select' ? (
-                        <FormField
-                            key={index}
-                            control={form.control}
-                            name={each.name}
-                            render={({field}) => (
-                                <FormItem>
-                                    <FormLabel>
-                                        {each.label}{each.required && <span className="-ml-2 text-red-500">*</span>}
-                                    </FormLabel>
-                                    <Select onValueChange={field.onChange}
-                                            value={field.value}>
-                                        <FormControl className={'w-full'}>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder={each?.placeholder || 'Select an option'}/>
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {
-                                                each?.options?.map((option: { id: number | string, value: string }) => (
-                                                    <SelectItem key={option.id} value={`${option.id}`}>
-                                                        {option.value}
-                                                    </SelectItem>
-                                                ))
-                                            }
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage/>
-                                </FormItem>
-                            )}
-                        />
-                    ) : (
-                        <FormField
-                            key={index}
-                            control={form.control}
-                            name={each.name}
-                            render={({field}) => (
-                                <FormItem>
-                                    <FormLabel>
-                                        {each.label}{each.required && <span className="-ml-2 text-red-500">*</span>}
-                                    </FormLabel>
-                                    <FormControl>
-                                        <Input type={each.type} {...field} />
-                                    </FormControl>
-                                    <FormMessage/>
-                                </FormItem>
-                            )}
-                        />
-                    )
+                            <FormField
+                                key={index}
+                                control={form.control}
+                                name={each.name}
+                                render={({field}) => (
+                                    <FormItem>
+                                        <FormLabel>
+                                            {each.label}{each.required && <span className="-ml-2 text-red-500">*</span>}
+                                        </FormLabel>
+                                        <Select onValueChange={field.onChange}
+                                                value={field.value}>
+                                            <FormControl className={'w-full'}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder={each?.placeholder || 'Select an option'}/>
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {
+                                                    each?.options?.map((option: { id: number | string, value: string }) => (
+                                                        <SelectItem key={option.id} value={`${option.id}`}>
+                                                            {option.value}
+                                                        </SelectItem>
+                                                    ))
+                                                }
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage/>
+                                    </FormItem>
+                                )}
+                            />
+                        ) :
+                        each.type === 'date' ? (
+                                <FormField
+                                    key={index}
+                                    control={form.control}
+                                    name={each.name}
+                                    render={({ field, fieldState: { error } }) => (
+                                        <FormItem>
+                                            <FormLabel>
+                                                {each.label}
+                                                {each.required && <span className="-ml-2 text-red-500">*</span>}
+                                            </FormLabel>
+                                            <FormControl>
+                                                <DatePicker
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    error={!!error}
+                                                />
+                                            </FormControl>
+                                            <FormMessage>{error?.message}</FormMessage>
+                                        </FormItem>
+                                    )}
+                                />
+                            )
+                            :
+                            (
+                                <FormField
+                                    key={index}
+                                    control={form.control}
+                                    name={each.name}
+                                    render={({field}) => (
+                                        <FormItem>
+                                            <FormLabel>
+                                                {each.label}{each.required &&
+                                                <span className="-ml-2 text-red-500">*</span>}
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input {...field} />
+                                            </FormControl>
+                                            <FormMessage/>
+                                        </FormItem>
+                                    )}
+                                />
+                            )
                 ))}
             </FormContent>
         </FormContainer>
@@ -337,8 +367,10 @@ export function AddStudent() {
 
             enrollment_info: {
                 enrollment_date: new Date(),
-                student_class: '',
+                school_class: '',
                 section: '',
+                house: '',
+
             },
 
             father_info: {
@@ -364,13 +396,14 @@ export function AddStudent() {
                 address: '',
             },
 
-            house: '',
         }
     });
 
     const onSubmit = (data: tAddStudentSchema) => {
         const cleanedData = {
             ...data,
+            enrollment_info: dateFormater(data.enrollment_info),
+            student_info: dateFormater(data.student_info),
             father_info: removeEmptyFields(data.father_info),
             mother_info: removeEmptyFields(data.mother_info),
             guardian_info: removeEmptyFields(data.guardian_info)
@@ -378,10 +411,12 @@ export function AddStudent() {
         console.log(cleanedData);
         AxiosInstance.post('api/academic/enrollment/', cleanedData)
             .then((res) => {
+                toast.success('Student enrolled successfully');
                 console.log(res);
             })
             .catch((err) => {
                 console.log(err);
+                toast.error(err.message);
             });
     };
 
