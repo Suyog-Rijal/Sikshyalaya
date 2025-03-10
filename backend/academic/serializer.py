@@ -80,3 +80,5 @@ class AddTeacherGetSerializer(serializers.ModelSerializer):
 			'name',
 			'subjects',
 		]
+
+

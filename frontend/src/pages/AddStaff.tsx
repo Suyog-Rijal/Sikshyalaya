@@ -677,6 +677,7 @@ export function AddStaff() {
                 social_linkedin: '',
                 social_github: '',
             },
+            // @ts-expect-error: Conditionally applied validation
             managementStaff_info: {
                 department: '',
                 pan_number: 0,
@@ -692,17 +693,14 @@ export function AddStaff() {
     const onSubmit = (data: tAddStaffSchema) => {
         console.log(data)
     }
+
     return (
         <FormProvider {...form}>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 p-4 bg-[#fbfbfd]">
                     <PersonalInfo></PersonalInfo>
                     {
-                        form.watch('staff_type') === 'T' ? (
-                            <TeacherOtherInfo></TeacherOtherInfo>
-                        ) : (
-                            <ManagementOtherInfo></ManagementOtherInfo>
-                        )
+                        form.watch('staff_type') === 'T' ? <TeacherOtherInfo></TeacherOtherInfo> : <ManagementOtherInfo></ManagementOtherInfo>
                     }
                     <PayrollInfo></PayrollInfo>
                     <BankInfo></BankInfo>
