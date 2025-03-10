@@ -1,6 +1,7 @@
+import uuid
+
 from django.core.exceptions import ValidationError
 from django.db import models
-import uuid
 from django.utils.text import slugify
 
 
@@ -68,12 +69,19 @@ class Student(models.Model):
 	def get_fullname(self):
 		return f"{self.first_name} {self.last_name}"
 
-	def get_enrolled_class(self):
+	def get_enrollment(self):
 		latest_enrollment = self.enrollments.order_by("-academic_year__start_date").first()
 		if latest_enrollment:
-			return f"{latest_enrollment.school_class.name} ({latest_enrollment.academic_year})"
+			return f"{latest_enrollment.school_class.name} ({latest_enrollment.section.name})"
 		return "Not Enrolled"
-	get_enrolled_class.short_description = "Enrolled Class"
+	get_enrollment.short_description = "Enrollment"
+
+	def get_house(self):
+		latest_enrollment = self.enrollments.order_by("-academic_year__start_date").first()
+		if latest_enrollment:
+			return latest_enrollment.house.color
+		return "Not Enrolled"
+	get_house.short_description = "House"
 
 	def save(self, *args, **kwargs):
 		if not self.email:
@@ -130,3 +138,117 @@ class Parent(models.Model):
 
 	def __str__(self):
 		return self.full_name
+
+
+class Staff(models.Model):
+	# Gender Choices
+	GENDER_CHOICES = [
+		('M', 'Male'),
+		('F', 'Female'),
+		('O', 'Other'),
+	]
+
+	# Marital Status Choices
+	MARITAL_STATUS_CHOICES = [
+		('S', 'Single'),
+		('M', 'Married'),
+		('D', 'Divorced'),
+		('W', 'Widowed'),
+	]
+
+	# Blood Group Choices
+	BLOOD_GROUP_CHOICES = [
+		('A+', 'A+'), ('A-', 'A-'),
+		('B+', 'B+'), ('B-', 'B-'),
+		('AB+', 'AB+'), ('AB-', 'AB-'),
+		('O+', 'O+'), ('O-', 'O-'),
+		('RN', 'Rh Null'),
+	]
+
+	# Account Status Choices
+	ACCOUNT_STATUS_CHOICES = [
+		('A', 'Active'),
+		('I', 'Inactive'),
+		('D', 'Disabled'),
+	]
+
+	# Employment Type
+	EMPLOYMENT_TYPE_CHOICES = [
+		('FT', 'Full Time'),
+		('PT', 'Part Time'),
+	]
+
+	# Transportation Choices
+	TRANSPORTATION_CHOICES = [
+		('SB', 'School Bus'),
+		('PV', 'Private'),
+		('PB', 'Public'),
+		('OF', 'On Foot'),
+	]
+
+	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+	profile_picture = models.ImageField(upload_to='Profile Pictures/', blank=True, null=True)
+	first_name = models.CharField(max_length=30)
+	last_name = models.CharField(max_length=30)
+	phone_number = models.CharField(max_length=10)
+	gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
+	date_of_birth = models.DateField()
+	permanent_address = models.TextField()
+	current_address = models.TextField()
+	marital_status = models.CharField(max_length=1, choices=MARITAL_STATUS_CHOICES, blank=True, null=True)
+	blood_group = models.CharField(max_length=4, choices=Student.BLOOD_GROUP_CHOICES, blank=True, null=True)
+	account_status = models.CharField(max_length=1, choices=ACCOUNT_STATUS_CHOICES, default='A')
+	personal_email = models.EmailField(blank=True, null=True)
+	email = models.EmailField(unique=True, blank=True)
+	date_of_joining = models.DateField()
+	note = models.TextField(blank=True, null=True)
+
+	employment_type = models.CharField(max_length=2, choices=EMPLOYMENT_TYPE_CHOICES)
+	salary = models.DecimalField(max_digits=10, decimal_places=2)
+
+	bank_name = models.CharField(max_length=100, blank=True, null=True)
+	account_holder = models.CharField(max_length=100, blank=True, null=True)
+	account_number = models.CharField(max_length=20, blank=True, null=True)
+
+	transportation = models.CharField(max_length=2, choices=TRANSPORTATION_CHOICES)
+	pickup_address = models.TextField(blank=True, null=True)
+
+	social_facebook = models.URLField(blank=True, null=True)
+	social_instagram = models.URLField(blank=True, null=True)
+	social_linkedin = models.URLField(blank=True, null=True)
+	social_github = models.URLField(blank=True, null=True)
+
+	qualification = models.CharField(max_length=100, blank=True, null=True)
+	experience = models.PositiveSmallIntegerField(default=0)
+	previous_workplace = models.CharField(max_length=100, blank=True, null=True)
+	previous_workplace_address = models.TextField(blank=True, null=True)
+	previous_workplace_phone_number = models.CharField(max_length=10, blank=True, null=True)
+
+	created_at = models.DateTimeField(auto_now_add=True)
+	updated_at = models.DateTimeField(auto_now=True)
+
+	def get_fullname(self):
+		return f"{self.first_name} {self.last_name}"
+
+	def __str__(self):
+		return f"{self.first_name} {self.last_name}"
+
+
+class Teacher(models.Model):
+	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+	staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='teacher')
+	school_class = models.ManyToManyField('academic.SchoolClass')
+	subject = models.ManyToManyField('academic.Subject')
+
+	def __str__(self):
+		return self.staff.get_fullname()
+
+
+class ManagementStaff(models.Model):
+	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+	staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='management_staff')
+	department = models.ForeignKey('academic.Department', on_delete=models.CASCADE)
+	pan_number = models.CharField(max_length=10, blank=True, null=True)
+
+	def __str__(self):
+		return self.staff.get_fullname()

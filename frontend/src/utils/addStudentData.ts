@@ -41,16 +41,7 @@ export const personalInfo = [
         name: 'enrollment_info.school_class',
         placeholder: 'Select class',
         required: true,
-        options: [
-            {
-                id: '55d992f6-c8bf-4474-8705-0691a1288f0f',
-                value: 'One'
-            },
-            {
-                id: '35d992f6-c8bf-4474-8705-0691a1288f0f',
-                value: 'Two'
-            }
-        ]
+        options: []
     },
     {
         label: 'Section',
@@ -58,16 +49,7 @@ export const personalInfo = [
         name: 'enrollment_info.section',
         placeholder: 'Select section',
         required: true,
-        options: [
-            {
-                id: '73ed7d11-c279-4a0f-a683-80798e31359b',
-                value: 'A'
-            },
-            {
-                id: 'bde892b6-b68b-4248-b03f-8e24fe5abb8e',
-                value: 'B'
-            }
-        ]
+        options: []
     },
     {
         label: 'House',

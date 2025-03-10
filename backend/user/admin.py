@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Student, Parent
+from .models import Student, Parent, Staff, Teacher, ManagementStaff
 
 
 @admin.register(Student)
@@ -8,7 +8,8 @@ class StudentAdmin(admin.ModelAdmin):
 		'id',
 		'first_name',
 		'last_name',
-		'get_enrolled_class',
+		'get_enrollment',
+		'get_house',
 	]
 
 	search_fields = ['first_name', 'last_name', 'personal_email']
@@ -26,3 +27,25 @@ class ParentAdmin(admin.ModelAdmin):
 
 	search_fields = ['full_name', 'email', 'phone_number']
 	list_filter = ['relationship']
+
+
+class TeacherInline(admin.TabularInline):
+	model = Teacher
+	extra = 1
+	autocomplete_fields = ['staff']
+
+
+class ManagementStaffInline(admin.TabularInline):
+	model = ManagementStaff
+	extra = 1
+	autocomplete_fields = ['staff']
+
+
+@admin.register(Staff)
+class StaffAdmin(admin.ModelAdmin):
+	list_display = [
+		'id',
+		'get_fullname',
+	]
+	search_fields = ['first_name', 'last_name', 'personal_email']
+	inlines = [TeacherInline, ManagementStaffInline]

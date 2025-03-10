@@ -1,16 +1,16 @@
 export const personalInfo = [
     {
         label: 'Staff Type',
-        type: 'dropdown',
-        name: 'staffType',
+        type: 'select',
+        name: 'staff_type',
         required: true,
         options: [
             {
-                id: 1,
+                id: 'T',
                 value: 'Teaching Staff'
             },
             {
-                id: 3,
+                id: 'M',
                 value: 'Management staff'
             }
         ]
@@ -19,21 +19,27 @@ export const personalInfo = [
     {
         label: 'First Name',
         type: 'text',
-        name: 'firstName',
+        name: 'staff_info.first_name',
         placeholder: 'First Name',
         required: true
     },
     {
         label: 'Last Name',
         type: 'text',
-        name: 'lastName',
+        name: 'staff_info.last_name',
         placeholder: 'Last Name',
         required: true
     },
     {
+        label: 'Phone Number',
+        type: 'text',
+        name: 'staff_info.phone_number',
+        required: true
+    },
+    {
         label: 'Gender',
-        type: 'dropdown',
-        name: 'gender',
+        type: 'select',
+        name: 'staff_info.gender',
         required: true,
         options: [
             { id: 'M', value: 'Male'},
@@ -42,9 +48,51 @@ export const personalInfo = [
         ]
     },
     {
+        label: 'Date of Birth',
+        type: 'date',
+        name: 'staff_info.date_of_birth',
+        required: true
+    },
+    {
+        label: 'Permanent Address',
+        type: 'text',
+        name: 'staff_info.permanent_address',
+        required: true
+    },
+    {
+        label: 'Current Address',
+        type: 'text',
+        name: 'staff_info.current_address',
+        required: true
+    },
+    {
+        label: 'Marital Status',
+        type: 'select',
+        name: 'staff_info.marital_status',
+        required: false,
+        options: [
+            {
+                id: 'S',
+                value: 'Single'
+            },
+            {
+                id: 'M',
+                value: 'Married'
+            },
+            {
+                id: 'D',
+                value: 'Divorced'
+            },
+            {
+                id: 'W',
+                value: 'Widowed'
+            }
+        ]
+    },
+    {
         label: 'Blood Group',
-        type: 'dropdown',
-        name: 'bloodGroup',
+        type: 'select',
+        name: 'staff_info.blood_group',
         required: false,
         options: [
             {value: 'A+', id: 'A+' },
@@ -59,208 +107,164 @@ export const personalInfo = [
         ]
     },
     {
-        label: 'Date of Birth',
-        type: 'date',
-        name: 'dob',
-        required: true
-    },
-    {
-        label: 'Marital Status',
-        type: 'dropdown',
-        name: 'maritalStatus',
-        required: true,
+        label: 'Account status',
+        type: 'select',
+        name: 'staff_info.account_status',
+        required: false,
         options: [
             {
-                id: 1,
-                value: 'Single'
+                id: 'A',
+                value: 'Active'
             },
             {
-                id: 2,
-                value: 'Married'
+                id: 'I',
+                value: 'Inactive'
             },
             {
-                id: 3,
-                value: 'Rather Not Say'
+                id: 'D',
+                value: 'Disabled'
             }
         ]
     },
     {
-        label: 'Permanent Address',
-        type: 'text',
-        name: 'permanentAddress',
-        required: true
-    },
-    {
-        label: 'Current Address',
-        type: 'text',
-        name: 'currentAddress',
-        required: true
-    },
-    {
         label: 'Email',
         type: 'text',
-        name: 'email',
+        name: 'staff_info.personal_email',
         required: false
-    },
-    {
-        label: 'Phone Number',
-        type: 'text',
-        name: 'phoneNumber',
-        required: true
     },
 ]
 
 export const otherInfoTeaching = [
     {
+        label: 'Date of Joining',
+        type: 'date',
+        name: 'staff_info.date_of_joining',
+        required: true
+    },
+    {
         label: 'Class',
-        type: 'dropdown',
-        name: 'grade',
+        type: 'select',
+        name: 'teacher_info.school_class',
         required: true,
+        placeholder: 'Select class',
+        options: [] as { id: string; value: string }[],
     },
     {
         label: 'Subject',
-        type: 'dropdown',
-        name: 'subject',
+        type: 'select',
+        name: 'teacher_info.subject',
         required: true,
+        placeholder: 'Select subject',
+        options: [] as { id: string; value: string }[],
     },
     {
         label: 'Qualification',
         type: 'text',
-        name: 'qualification',
+        name: 'staff_info.qualification',
         required: true,
     },
     {
         label: 'Work Experience',
         type: 'text',
-        name: 'workExperience',
+        name: 'staff_info.experience',
         required: true,
     },
     {
         label: 'Previous School (If Any)',
         type: 'text',
-        name: 'previousSchool',
+        name: 'staff_info.previous_workplace',
         required: false,
     },
     {
         label: 'Previous School Address',
         type: 'text',
-        name: 'previousSchoolAddress',
+        name: 'staff_info.previous_workplace_address',
         required: false,
     },
     {
         label: 'Previous School Phone Number',
         type: 'text',
-        name: 'previousSchoolPhoneNumber',
+        name: 'staff_info.previous_workplace_phone_number',
         required: false,
     },
-    {
-        label: 'PAN Number / ID number',
-        type: 'text',
-        name: 'panNumber',
-        required: false,
-    },
-    {
-        label: 'Date of Joining',
-        type: 'date',
-        name: 'doj',
-        required: true
-    },
-    {
-        label: 'Account status',
-        type: 'dropdown',
-        name: 'accountStatus',
-        required: true,
-        options: [
-            {
-                id: 1,
-                value: 'Active'
-            },
-            {
-                id: 2,
-                value: 'Inactive'
-            },
-        ]
-    },
-    {
-        label: 'Notes',
-        type: 'textarea',
-        name: 'notes',
-        required: false
-    }
 ]
 
 export const otherInfoManagement = [
     {
+        label: 'Date of Joining',
+        type: 'date',
+        name: 'staff_info.date_of_join',
+        required: true
+    },
+    {
         label: 'Department',
-        type: 'dropdown',
-        name: 'department',
+        type: 'select',
+        name: 'managementStaff_info.department',
         required: true,
+        placeholder: 'Select department',
+        options: [] as { id: string; value: string }[],
     },
     {
         label: 'Qualification',
         type: 'text',
-        name: 'qualification',
+        name: 'staff_info.qualification',
         required: true,
     },
     {
         label: 'Work Experience',
         type: 'text',
-        name: 'workExperience',
+        name: 'staff_info.experience',
         required: true,
     },
     {
         label: 'Previous Work Place (If Any)',
         type: 'text',
-        name: 'previousSchool',
+        name: 'staff_info.previous_workplace',
         required: false,
     },
     {
         label: 'Previous Work Place Address',
         type: 'text',
-        name: 'previousSchoolAddress',
+        name: 'staff_info.previous_workplace_address',
         required: false,
     },
     {
         label: 'Previous Work Place Phone Number',
         type: 'text',
-        name: 'previousSchoolPhoneNumber',
+        name: 'staff_info.previous_workplace_phone_number',
         required: false,
     },
     {
         label: 'PAN Number / ID number',
-        type: 'text',
-        name: 'panNumber',
+        type: 'number',
+        name: 'managementStaff_info.pan_number',
         required: false,
     },
+]
+
+export const payrollInfo = [
     {
-        label: 'Date of Joining',
-        type: 'date',
-        name: 'doj',
+        label: 'Basic Salary',
+        type: 'number',
+        name: 'staff_info.salary',
         required: true
     },
     {
-        label: 'Account status',
-        type: 'dropdown',
-        name: 'accountStatus',
+        label: 'Employment Type',
+        type: 'select',
+        name: 'staff_info.employment_type',
         required: true,
+        placeholder: 'Select employment type',
         options: [
             {
-                id: 1,
-                value: 'Active'
+                id: 'FT',
+                value: 'Full Time'
             },
             {
-                id: 2,
-                value: 'Inactive'
+                id: 'PT',
+                value: 'Part Time'
             },
         ]
-    },
-    {
-        label: 'Notes',
-        type: 'textarea',
-        name: 'notes',
-        required: false
-    },
-    {
     }
 ]
 
@@ -268,25 +272,19 @@ export const bankInfo = [
     {
         label: 'Bank Name',
         type: 'text',
-        name: 'bankName',
+        name: 'staff_info.bank_name',
         required: false
     },
     {
-        label: 'Branch Name',
+        label: 'Account Holder Name',
         type: 'text',
-        name: 'branchName',
-        required: false
-    },
-    {
-        label: 'Account Name',
-        type: 'text',
-        name: 'accountName',
+        name: 'staff_info.account_holder',
         required: false
     },
     {
         label: 'Account Number',
         type: 'text',
-        name: 'accountNumber',
+        name: 'staff_info.account_number',
         required: false
     }
 ]
@@ -294,34 +292,49 @@ export const bankInfo = [
 export const transportInfo = [
     {
         label: 'Transportation mode',
-        type: 'dropdown',
-        name: 'transportMode',
+        type: 'select',
+        name: 'staff_info.transportation',
         options: [
-            {
-                id: 1,
-                value: 'School bus'
-            },
-            {
-                id: 2,
-                value: 'Private vehicle'
-            },
-            {
-                id: 3,
-                value: 'Public transport'
-            },
-            {
-                id: 4,
-                value: 'On foot'
-            }
+            {value: 'School Bus', id: 'SB' },
+            {value: 'Private', id: 'PV' },
+            {value: 'Public', id: 'PB' },
+            {value: 'On Foot', id: 'OF' }
         ],
         placeholder: 'Select transportation mode',
         required: true
     },
     {
-        label: 'Pickup location',
+        label: 'Pickup address',
         type: 'text',
-        name: 'pickupLocation',
+        name: 'staff_info.pickup_address',
         placeholder: 'Pickup location',
         required: false
     }
+]
+
+export const socialMediaInfo = [
+    {
+        label: 'Facebook',
+        type: 'text',
+        name: 'staff_info.social_facebook',
+        required: false
+    },
+    {
+        label: 'Instagram',
+        type: 'text',
+        name: 'staff_info.social_instagram',
+        required: false
+    },
+    {
+        label: 'LinkedIn',
+        type: 'text',
+        name: 'staff_info.social_linkedin',
+        required: false
+    },
+    {
+        label: 'Github',
+        type: 'text',
+        name: 'staff_info.social_github',
+        required: false
+    },
 ]

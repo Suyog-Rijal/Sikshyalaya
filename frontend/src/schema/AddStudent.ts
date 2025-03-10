@@ -12,7 +12,8 @@ export const addStudentSchema = z.object({
             .refine((date) => date >= new Date("1900-01-01"), {message: "Date must be after January 1, 1900"}),
         gender: z.enum(['M', 'F', 'O'], {
             required_error: "Please select a gender",
-        }), account_status: z.enum(['A', 'I', 'D']),
+        }),
+        account_status: z.enum(['A', 'I', 'D']),
         blood_group: z.enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'RN', '']).nullable(),
         personal_email: z
             .string()

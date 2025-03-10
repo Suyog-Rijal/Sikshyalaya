@@ -1,9 +1,41 @@
 from rest_framework import serializers
+from academic.models import Enrollment, AcademicYear, SchoolClass, Section, House, Subject, Department
 
-from academic.models import Enrollment, AcademicYear
+
+class EnrollmentGetHouseSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = House
+		fields = [
+			'id',
+			'color',
+		]
 
 
-class EnrollmentSerializer(serializers.ModelSerializer):
+class EnrollmentGetSectionSerializer(serializers.ModelSerializer):
+	house = EnrollmentGetHouseSerializer(many=True)
+
+	class Meta:
+		model = Section
+		fields = [
+			'id',
+			'name',
+			'house',
+		]
+
+
+class EnrollmentGetSchoolClassSerializer(serializers.ModelSerializer):
+	section = EnrollmentGetSectionSerializer(many=True)
+
+	class Meta:
+		model = SchoolClass
+		fields = [
+			'id',
+			'name',
+			'section',
+		]
+
+
+class EnrollmentPostSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = Enrollment
@@ -19,3 +51,32 @@ class EnrollmentSerializer(serializers.ModelSerializer):
 
 		read_only_fields = ['academic_year']
 
+
+class SimpleSubjectSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Subject
+		fields = [
+			'id',
+			'name',
+		]
+
+
+class SimpleDepartmentSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Department
+		fields = [
+			'id',
+			'name'
+		]
+
+
+class AddTeacherGetSerializer(serializers.ModelSerializer):
+	subjects = SimpleSubjectSerializer(many=True)
+
+	class Meta:
+		model = SchoolClass
+		fields = [
+			'id',
+			'name',
+			'subjects',
+		]

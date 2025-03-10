@@ -7,7 +7,7 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import {Input} from "@/components/ui/input";
-import {useForm, useFormContext, FormProvider} from "react-hook-form";
+import {useForm, useFormContext, FormProvider, FieldValues, ControllerRenderProps} from "react-hook-form";
 import {Button} from "@/components/ui/button";
 import {addStudentSchema, tAddStudentSchema} from "@/schema/AddStudent.ts";
 import {FormContainer} from "@/components/Forms/FormContainer.tsx";
@@ -20,12 +20,98 @@ import {Dropzone} from "@/components/ui/dropzone.tsx";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {dateFormater, removeEmptyFields} from "@/utils/cleanData.ts";
 import {DatePicker} from "@/components/ui/date-picker.tsx";
-import { toast } from "sonner"
-
+import {toast} from "sonner"
+import {useEffect, useState} from "react";
 
 
 const PersonalInfo = () => {
     const form = useFormContext();
+
+    const [apiData, setApiData] = useState<{
+        id: string;
+        name: string;
+        section: {
+            id: string;
+            name: string;
+            house: {
+                id: string;
+                color: string;
+            }[];
+        }[];
+    }[]>([]);
+
+    const [data, setData] = useState(personalInfo);
+
+    useEffect(() => {
+        AxiosInstance.get('/api/academic/enrollment/')
+            .then((res) => {
+                setApiData(res.data);
+                setData((prev) => prev.map((item) => {
+                    if (item.name === 'enrollment_info.school_class') {
+                        return {
+                            ...item,
+                            options: res.data.map((each: { id: string, name: string }) => ({
+                                id: each.id,
+                                value: each.name
+                            }))
+                        };
+                    }
+                    return item;
+                }));
+            })
+            .catch((err) => {
+                console.log(err);
+                toast.error(err.message);
+            });
+    }, []);
+
+    const handleSelectChange = <T extends FieldValues>(field: ControllerRenderProps<T>, value: string) => {
+        if (field.name === 'enrollment_info.school_class') {
+            const selectedClass = apiData.find((cls) => cls.id === value);
+            const sections = selectedClass ? selectedClass.section : [];
+            form.setValue('enrollment_info.section', '');
+            form.setValue('enrollment_info.house', '');
+
+            setData((prev) =>
+                prev.map((each) => {
+                    if (each.name === 'enrollment_info.section') {
+                        return {
+                            ...each,
+                            options: sections.map((section) => ({
+                                id: section.id,
+                                value: section.name
+                            })),
+                            placeholder: each.placeholder || 'Select section',
+                        };
+                    }
+                    return each;
+                })
+            );
+        } else if (field.name === 'enrollment_info.section') {
+            const selectedClass = apiData.find((cls) => cls.id === form.getValues('enrollment_info.school_class'));
+            const selectedSection = selectedClass?.section.find((section) => section.id === value);
+            const houses = selectedSection ? selectedSection.house : [];
+            form.setValue('enrollment_info.house', '');
+
+            setData((prev) =>
+                prev.map((each) => {
+                    if (each.name === 'enrollment_info.house') {
+                        return {
+                            ...each,
+                            options: houses.map((house) => ({
+                                id: house.id,
+                                value: house.color
+                            })),
+                            placeholder: each.placeholder || 'Select house',
+                        };
+                    }
+                    return each;
+                })
+            );
+        }
+    };
+
+
 
     return (
         <FormContainer>
@@ -34,7 +120,7 @@ const PersonalInfo = () => {
                 <Dropzone name={'student_info.profile_picture'}/>
             </div>
             <FormContent>
-                {personalInfo.map((each, index) => (
+                {data.map((each, index) => (
                     each.type === 'select' ? (
                             <FormField
                                 key={index}
@@ -45,8 +131,12 @@ const PersonalInfo = () => {
                                         <FormLabel>
                                             {each.label}{each.required && <span className="-ml-2 text-red-500">*</span>}
                                         </FormLabel>
-                                        <Select onValueChange={field.onChange}
-                                                value={field.value}>
+                                        <Select
+                                            onValueChange={(value) => {
+                                                field.onChange(value);
+                                                handleSelectChange(field, value);
+                                            }}
+                                            defaultValue={field.value}>
                                             <FormControl className={'w-full'}>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder={each?.placeholder || 'Select an option'}/>
@@ -72,7 +162,7 @@ const PersonalInfo = () => {
                                     key={index}
                                     control={form.control}
                                     name={each.name}
-                                    render={({ field, fieldState: { error } }) => (
+                                    render={({field, fieldState: {error}}) => (
                                         <FormItem>
                                             <FormLabel>
                                                 {each.label}
@@ -419,6 +509,7 @@ export function AddStudent() {
                 toast.error(err.message);
             });
     };
+
 
     return (
         <FormProvider {...form}>

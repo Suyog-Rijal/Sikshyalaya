@@ -5,7 +5,7 @@ interface CustomInputProps {
 
 export const Heading = ({title, icon}: CustomInputProps) => {
     return (
-        <div className={'p-4 bg-gray-100 rounded-tl-md rounded-tr-md'}>
+        <div className={'p-4 bg-[#EBEDF0] rounded-tl-md rounded-tr-md'}>
             {
                 // @ts-expect-error: ion-icon is not recognized by TypeScript
                 icon && <ion-icon name={icon}></ion-icon>
