@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from academic.models import Enrollment, AcademicYear, SchoolClass, Section, House, Subject, Department
+from user.models import Staff, Teacher, ManagementStaff
 
 
 class EnrollmentGetHouseSerializer(serializers.ModelSerializer):
@@ -36,7 +37,6 @@ class EnrollmentGetSchoolClassSerializer(serializers.ModelSerializer):
 
 
 class EnrollmentPostSerializer(serializers.ModelSerializer):
-
 	class Meta:
 		model = Enrollment
 		fields = [
@@ -70,7 +70,7 @@ class SimpleDepartmentSerializer(serializers.ModelSerializer):
 		]
 
 
-class AddTeacherGetSerializer(serializers.ModelSerializer):
+class AddStaffGetSerializer(serializers.ModelSerializer):
 	subjects = SimpleSubjectSerializer(many=True)
 
 	class Meta:
@@ -82,3 +82,38 @@ class AddTeacherGetSerializer(serializers.ModelSerializer):
 		]
 
 
+class AddStaffSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Staff
+		fields = [
+			'id', 'first_name', 'last_name', 'phone_number', 'staff_type', 'date_of_birth', 'permanent_address', 'current_address',
+			'marital_status', 'blood_group', 'account_status', 'personal_email', 'gender',
+			'date_of_joining', 'note', 'employment_type', 'salary',
+			'bank_name', 'account_holder', 'account_number', 'transportation',
+			'pickup_address', 'social_facebook', 'social_instagram',
+			'social_linkedin', 'social_github', 'qualification', 'experience',
+			'previous_workplace', 'previous_workplace_address',
+			'previous_workplace_phone_number'
+		]
+
+
+class SimpleTeacherSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Teacher
+		fields = [
+			'id',
+			'staff',
+			'school_class',
+			'subject',
+		]
+
+
+class SimpleManagementStaffSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = ManagementStaff
+		fields = [
+			'id',
+			'staff',
+			'department',
+			'pan_number'
+		]

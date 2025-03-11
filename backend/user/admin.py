@@ -9,7 +9,6 @@ class StudentAdmin(admin.ModelAdmin):
 		'first_name',
 		'last_name',
 		'get_enrollment',
-		'get_house',
 	]
 
 	search_fields = ['first_name', 'last_name', 'personal_email']
@@ -46,6 +45,7 @@ class StaffAdmin(admin.ModelAdmin):
 	list_display = [
 		'id',
 		'get_fullname',
+		'staff_type',
 	]
 	search_fields = ['first_name', 'last_name', 'personal_email']
 	inlines = [TeacherInline, ManagementStaffInline]

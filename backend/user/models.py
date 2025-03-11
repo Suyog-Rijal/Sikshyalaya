@@ -76,13 +76,6 @@ class Student(models.Model):
 		return "Not Enrolled"
 	get_enrollment.short_description = "Enrollment"
 
-	def get_house(self):
-		latest_enrollment = self.enrollments.order_by("-academic_year__start_date").first()
-		if latest_enrollment:
-			return latest_enrollment.house.color
-		return "Not Enrolled"
-	get_house.short_description = "House"
-
 	def save(self, *args, **kwargs):
 		if not self.email:
 			base_email = f"{slugify(self.first_name)}.{slugify(self.last_name)}.y22@icp.edu.np"
@@ -178,6 +171,11 @@ class Staff(models.Model):
 		('PT', 'Part Time'),
 	]
 
+	STAFF_TYPE_CHOICES = [
+		('T', 'Teacher'),
+		('M', 'Management'),
+	]
+
 	# Transportation Choices
 	TRANSPORTATION_CHOICES = [
 		('SB', 'School Bus'),
@@ -200,8 +198,10 @@ class Staff(models.Model):
 	account_status = models.CharField(max_length=1, choices=ACCOUNT_STATUS_CHOICES, default='A')
 	personal_email = models.EmailField(blank=True, null=True)
 	email = models.EmailField(unique=True, blank=True)
+	password = models.CharField(max_length=25, blank=True)
 	date_of_joining = models.DateField()
 	note = models.TextField(blank=True, null=True)
+	staff_type = models.CharField(max_length=1, choices=STAFF_TYPE_CHOICES)
 
 	employment_type = models.CharField(max_length=2, choices=EMPLOYMENT_TYPE_CHOICES)
 	salary = models.DecimalField(max_digits=10, decimal_places=2)
@@ -227,6 +227,24 @@ class Staff(models.Model):
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
 
+	def save(self, *args, **kwargs):
+		if not self.email:
+			base_email = f"{slugify(self.first_name)}.{slugify(self.last_name)}.y22@icp.edu.np"
+			unique_email = base_email
+			counter = 1
+
+			while Student.objects.filter(email=unique_email).exists():
+				unique_email = f"{slugify(self.first_name)}.{slugify(self.last_name)}.y22{counter}@icp.edu.np"
+				counter += 1
+
+			self.email = unique_email
+
+		if not self.password:
+			self.password = uuid.uuid4().hex[:8]
+
+		self.full_clean()
+		super().save(*args, **kwargs)
+
 	def get_fullname(self):
 		return f"{self.first_name} {self.last_name}"
 
@@ -237,8 +255,8 @@ class Staff(models.Model):
 class Teacher(models.Model):
 	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 	staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='teacher')
-	school_class = models.ManyToManyField('academic.SchoolClass')
-	subject = models.ManyToManyField('academic.Subject')
+	school_class = models.ForeignKey('academic.SchoolClass', on_delete=models.CASCADE, default=None)
+	subject = models.ForeignKey('academic.Subject', related_name='teachers', on_delete=models.CASCADE, default=None)
 
 	def __str__(self):
 		return self.staff.get_fullname()

@@ -97,7 +97,7 @@ export const personalInfo = [
     },
     {
         label: 'Phone Number',
-        type: 'text',
+        type: 'tel',
         name: 'student_info.phone_number',
         required: false
     },

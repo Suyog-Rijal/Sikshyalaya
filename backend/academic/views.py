@@ -5,8 +5,8 @@ from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
 from academic.models import SchoolClass, Department
-from academic.serializer import EnrollmentPostSerializer, EnrollmentGetSchoolClassSerializer, AddTeacherGetSerializer, \
-	SimpleDepartmentSerializer
+from academic.serializer import EnrollmentPostSerializer, EnrollmentGetSchoolClassSerializer, AddStaffGetSerializer, \
+	SimpleDepartmentSerializer, AddStaffSerializer, SimpleTeacherSerializer, SimpleManagementStaffSerializer
 from user.serializer import StudentSerializer, ParentSerializer
 from user.models import Parent
 
@@ -64,7 +64,6 @@ class EnrollmentApiView(APIView):
 				enrollment_info['student'] = student.id
 				enrollment_serializer = EnrollmentPostSerializer(data=enrollment_info)
 				enrollment_serializer.is_valid(raise_exception=True)
-				print(enrollment_info)
 				enrollment_serializer.save()
 
 			return Response({'message': 'Student enrolled successfully'}, status=status.HTTP_201_CREATED)
@@ -79,7 +78,7 @@ class AddStaffApiView(APIView):
 	def get(self, request):
 		try:
 			staff = SchoolClass.objects.all()
-			serializer = AddTeacherGetSerializer(staff, many=True)
+			serializer = AddStaffGetSerializer(staff, many=True)
 			departments = SimpleDepartmentSerializer(Department.objects.all(), many=True)
 			return Response({'staff': serializer.data, 'departments': departments.data}, status=status.HTTP_200_OK)
 		except Exception as e:
@@ -88,6 +87,26 @@ class AddStaffApiView(APIView):
 	def post(self, request):
 		try:
 			with transaction.atomic():
-				pass
+				print(request.data)
+				staff_info = request.data.get('staff_info')
+				staff_info['staff_type'] = request.data.get('staff_type')
+				staff_serializer = AddStaffSerializer(data=staff_info)
+				staff_serializer.is_valid(raise_exception=True)
+				staff_instance = staff_serializer.save()
+
+				staff_type = request.data.get('staff_type')
+				if staff_type == 'T':
+					other_info = request.data.get('teacher_info')
+					other_info['staff'] = staff_instance.id
+					other_serializer = SimpleTeacherSerializer(data=other_info)
+				elif staff_type == 'M':
+					other_info = request.data.get('managementStaff_info')
+					other_info['staff'] = staff_instance.id
+					other_serializer = SimpleManagementStaffSerializer(data=other_info)
+				other_serializer.is_valid(raise_exception=True)
+				other_instance = other_serializer.save()
+
+				return Response({'message': 'Staff added successfully'}, status=status.HTTP_201_CREATED)
+
 		except Exception as e:
 			return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

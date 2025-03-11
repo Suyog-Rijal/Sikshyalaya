@@ -18,6 +18,7 @@ import {zodResolver} from "@hookform/resolvers/zod";
 import {useEffect, useState} from "react";
 import AxiosInstance from "@/auth/AxiosInstance.ts";
 import {toast} from "sonner";
+import {dateFormater} from "@/utils/cleanData.ts";
 
 
 const PersonalInfo = () => {
@@ -99,7 +100,7 @@ const PersonalInfo = () => {
                                                 <span className="-ml-2 text-red-500">*</span>}
                                             </FormLabel>
                                             <FormControl>
-                                                <Input {...field} />
+                                                <Input type={each.type} {...field} />
                                             </FormControl>
                                             <FormMessage/>
                                         </FormItem>
@@ -266,7 +267,7 @@ const TeacherOtherInfo = () => {
                                                 <span className="-ml-2 text-red-500">*</span>}
                                             </FormLabel>
                                             <FormControl>
-                                                <Input {...field} />
+                                                <Input type={each.type} {...field} />
                                             </FormControl>
                                             <FormMessage/>
                                         </FormItem>
@@ -661,7 +662,7 @@ export function AddStaff() {
                 personal_email: undefined,
                 date_of_joining: new Date(),
                 qualification: '',
-                experience: '',
+                experience: undefined,
                 previous_workplace: '',
                 previous_workplace_address: '',
                 previous_workplace_phone_number: '',
@@ -691,7 +692,18 @@ export function AddStaff() {
     })
 
     const onSubmit = (data: tAddStaffSchema) => {
-        console.log(data)
+        const cleaned_data = {
+            ...data,
+            staff_info: dateFormater(data.staff_info),
+        };
+        AxiosInstance.post('/api/academic/add-staff/', cleaned_data)
+            .then(() => {
+                toast.success('Staff added successfully');
+            })
+            .catch((err) => {
+                console.log(err);
+                toast.error(err.message);
+            });
     }
 
     return (

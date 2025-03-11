@@ -32,7 +32,7 @@ export const personalInfo = [
     },
     {
         label: 'Phone Number',
-        type: 'text',
+        type: 'tel',
         name: 'staff_info.phone_number',
         required: true
     },
@@ -165,7 +165,7 @@ export const otherInfoTeaching = [
     },
     {
         label: 'Work Experience',
-        type: 'text',
+        type: 'number',
         name: 'staff_info.experience',
         required: true,
     },
@@ -183,7 +183,7 @@ export const otherInfoTeaching = [
     },
     {
         label: 'Previous School Phone Number',
-        type: 'text',
+        type: 'tel',
         name: 'staff_info.previous_workplace_phone_number',
         required: false,
     },
@@ -212,7 +212,7 @@ export const otherInfoManagement = [
     },
     {
         label: 'Work Experience',
-        type: 'text',
+        type: 'number',
         name: 'staff_info.experience',
         required: true,
     },
@@ -230,7 +230,7 @@ export const otherInfoManagement = [
     },
     {
         label: 'Previous Work Place Phone Number',
-        type: 'text',
+        type: 'tel',
         name: 'staff_info.previous_workplace_phone_number',
         required: false,
     },
