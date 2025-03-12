@@ -1,114 +1,153 @@
-// import {NavbarAddCardProps} from "@component/Dashboard/NavbarAddCard.tsx";
+"use client"
 
+import * as React from "react"
+import { Bell, Clock, LineChart, Maximize2, Menu, MessageSquare, Moon, Search, X } from "lucide-react"
 
-// const NavbarAddCardData: NavbarAddCardProps[] = [
-//     {
-//         title: 'Add Student',
-//         image: '/student.png',
-//         color: 'bg-[#f2f5ff]'  // Light Blue
-//     },
-//     {
-//         title: 'Add Teacher',
-//         image: 'https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/svg/person-add-outline.svg',
-//         color: 'bg-green-50'  // Light Green
-//     },
-//     {
-//         title: 'Add Staff',
-//         image: 'https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/svg/book-outline.svg',
-//         color: 'bg-yellow-50'  // Light Yellow
-//     },
-//     {
-//         title: 'Add Event',
-//         image: 'https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/svg/people-outline.svg',
-//         color: 'bg-red-50'  // Light Red
-//     }
-// ];
+import { Button } from "@/components/ui/button"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
+export function Navbar() {
+    const [isSearchOpen, setIsSearchOpen] = React.useState(false)
+    const [isFullscreen, setIsFullscreen] = React.useState(false)
 
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().then(r => console.log(r))
+            setIsFullscreen(true)
+            console.log(isFullscreen)
+        } else {
+            document.exitFullscreen().then(r => console.log(r))
+            setIsFullscreen(false)
+        }
+    }
 
-export const Navbar = () => {
     return (
-        <div className={'flex bg-white items-center justify-between p-2 z-10 sticky top-0'}>
+        <header className="sticky top-0 z-50 w-full shadow-sm bg-white">
+            <div className="flex h-14 items-center px-2 sm:px-4">
+                {/* Mobile Search Toggle */}
+                <Button variant="ghost" size="icon" className="md:hidden mr-2" onClick={() => setIsSearchOpen(!isSearchOpen)}>
+                    {isSearchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
+                    <span className="sr-only">Toggle search</span>
+                </Button>
 
-            {/* Left Section */}
-            <div className={'p-1 rounded-md items-center w-44 md:w-52 lg:w-64 justify-center flex gap-1 border-2 border-gray-100'}>
-                {/* @ts-expect-error: ion-icon is not recognized by TypeScript */}
-                <ion-icon name="search-outline"></ion-icon>
-                <input
-                    type={'search'}
-                    placeholder={'Search'}
-                    className={'bg-transparent outline-none text-sm p-0.5 w-full'}
-                />
+                {/* Search - Hidden on mobile unless toggled */}
+                <div
+                    className={`${isSearchOpen ? "flex" : "hidden"} md:flex items-center gap-2 flex-1 md:flex-initial absolute md:relative left-0 right-0 top-14 md:top-0 p-2 md:p-0 bg-white md:bg-transparent z-10 border-b md:border-0`}
+                >
+                    <div className="relative w-full md:w-64">
+                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                        <Input placeholder="Search..." className="pl-8 w-full" />
+                    </div>
+                </div>
+
+                {/* Academic Year */}
+                <div className="hidden md:flex flex-1 items-center justify-center">
+                    <span className="text-xs sm:text-sm font-medium whitespace-nowrap">Academic Year: 2024 / 2025</span>
+                </div>
+
+                {/* Mobile Menu */}
+                <Sheet>
+                    <SheetTrigger asChild>
+                        <Button variant="ghost" size="icon" className="md:hidden ml-auto mr-2">
+                            <Menu className="h-5 w-5" />
+                            <span className="sr-only">Open menu</span>
+                        </Button>
+                    </SheetTrigger>
+                    <SheetContent side="right" className="w-[240px] sm:w-[300px]">
+                        <div className="flex flex-col gap-4 py-4">
+                            <div className="px-2 text-center">
+                                <span className="text-sm font-medium">Academic Year: 2024 / 2025</span>
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <Button variant="ghost" className="justify-start">
+                                    <Clock className="mr-2 h-5 w-5" />
+                                    <span>Time</span>
+                                </Button>
+                                <Button variant="ghost" className="justify-start">
+                                    <Moon className="mr-2 h-5 w-5" />
+                                    <span>Dark Mode</span>
+                                </Button>
+                                <Button variant="ghost" className="justify-start">
+                                    <Bell className="mr-2 h-5 w-5" />
+                                    <span>Notifications</span>
+                                </Button>
+                                <Button variant="ghost" className="justify-start">
+                                    <MessageSquare className="mr-2 h-5 w-5" />
+                                    <span>Messages</span>
+                                </Button>
+                                <Button variant="ghost" className="justify-start">
+                                    <LineChart className="mr-2 h-5 w-5" />
+                                    <span>Analytics</span>
+                                </Button>
+                            </div>
+                        </div>
+                    </SheetContent>
+                </Sheet>
+
+                {/* Right side icons - Hidden on mobile */}
+                <div className="hidden md:flex items-center gap-1 lg:gap-3">
+                    <Button variant="ghost" size="icon" className="relative">
+                        <img src="https://flagcdn.com/w20/us.png" width="20" alt="US Flag" />
+                        <span className="sr-only">Language</span>
+                    </Button>
+
+                    <Button variant="outline" size="icon">
+                        <Clock className="h-4 w-4 lg:h-5 lg:w-5 text-gray-500" />
+                        <span className="sr-only">Time</span>
+                    </Button>
+
+                    <Button variant="outline" size="icon">
+                        <Moon className="h-4 w-4 lg:h-5 lg:w-5 text-gray-500" />
+                        <span className="sr-only">Toggle theme</span>
+                    </Button>
+
+                    <Button variant="outline" size="icon" className="relative">
+                        <Bell className="h-4 w-4 lg:h-5 lg:w-5 text-gray-500" />
+                        <span className="sr-only">Notifications</span>
+                        <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-red-500" />
+                    </Button>
+
+                    <Button variant="outline" size="icon" className="relative">
+                        <MessageSquare className="h-4 w-4 lg:h-5 lg:w-5 text-gray-500" />
+                        <span className="sr-only">Messages</span>
+                        <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-blue-500" />
+                    </Button>
+
+                    <Button variant="outline" size="icon">
+                        <LineChart className="h-4 w-4 lg:h-5 lg:w-5 text-gray-500" />
+                        <span className="sr-only">Analytics</span>
+                    </Button>
+
+                    <Button variant="outline" size="icon" onClick={toggleFullscreen}>
+                        <Maximize2 className="h-4 w-4 lg:h-5 lg:w-5 text-gray-500" />
+                        <span className="sr-only">Toggle fullscreen</span>
+                    </Button>
+                </div>
+
+                {/* User Profile - Always visible */}
+                <div className={'justify-center items-center ml-2 p-2 rounded-md border hidden lg:flex'}>
+                    <p className={'text-xs'}>Suyog Rijal</p>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="relative ml-2 h-8 w-8 rounded-full cursor-pointer p-0 overflow-hidden">
+                                <img
+                                    src="https://scontent.fpkr1-1.fna.fbcdn.net/v/t39.30808-6/474068142_1602199393997697_2323060703896075487_n.jpg?stp=dst-jpg_p526x296_tt6&_nc_cat=101&ccb=1-7&_nc_sid=127cfc&_nc_ohc=y_aLfAosMA8Q7kNvgEnTF-W&_nc_oc=Adh_kCnZr5dZOTQNwVUUYOgytKhHagHG8ZKgdtWO9iGN7ALaRL-Lf4bQlkABPeNDeKk&_nc_zt=23&_nc_ht=scontent.fpkr1-1.fna&_nc_gid=AWtQJF2aWFJKY6vuDQSoznf&oh=00_AYFss97wfDk9pMbSKRYi532sulFSEYzCdoLDnmLJZNz6Aw&oe=67D715A7"
+                                    alt="Avatar"
+                                    className="rounded-full object-cover"
+                                />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56 mt-2 -mr-2">
+                            <DropdownMenuItem>Profile</DropdownMenuItem>
+                            <DropdownMenuItem>Settings</DropdownMenuItem>
+                            <DropdownMenuItem>Logout</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             </div>
+        </header>
+    )
+}
 
-            {/* Right Section */}
-            <div className={'flex justify-center items-center gap-2'}>
-
-                <p className={'hidden px-2 py-1 bg-white rounded-md border-2 select-none border-gray-100 lg:block'}>
-                    Academic Year: 2024/2025
-                </p>
-
-                <div title={'Add New'}
-                     className={' relative hidden bg-white w-8 h-8 cursor-pointer border-2 border-gray-100 lg:flex items-center justify-center rounded-md hover:text-[var(--tw-text-hover)] duration-500 hover:-translate-y-1'}>
-                    <div className={'flex items-center'}>
-                        {/* @ts-expect-error: ion-icon is not recognized by TypeScript */}
-                        <ion-icon name="add-circle-outline"></ion-icon>
-                    </div>
-                    {/*<div className={'bg-white shadow-xl p-2 absolute rounded-md z-10 top-full mt-1 w-64 h-64 hover:bg-white duration-500 hover:text-text-primary'}>*/}
-                    {/*    <div className={'w-full h-full grid grid-cols-2 grid-rows-2 gap-2'}>*/}
-                    {/*        {*/}
-                    {/*            NavbarAddCardData.map((each) => (*/}
-                    {/*                <NavbarAddCard title={each.title} image={each.image} color={each.color}/>*/}
-                    {/*            ))*/}
-                    {/*        }*/}
-                    {/*    </div>*/}
-                    {/*</div>*/}
-                </div>
-
-                <div
-                    className={'hidden bg-white w-8 h-8 cursor-pointer border-2 border-gray-100 lg:flex items-center justify-center rounded-md hover:text-[var(--tw-text-hover)] duration-500 hover:-translate-y-1'}>
-                    <div className={'flex items-center'}>
-                        {/* @ts-expect-error: ion-icon is not recognized by TypeScript */}
-                        <ion-icon name="moon-outline"></ion-icon>
-                    </div>
-                </div>
-
-                <div
-                    className={'hidden bg-white w-8 h-8 cursor-pointer border-2 border-gray-100 lg:flex items-center justify-center rounded-md hover:text-[var(--tw-text-hover)] duration-500 hover:-translate-y-1'}>
-                    <div className={'flex items-center'}>
-                        {/* @ts-expect-error: ion-icon is not recognized by TypeScript */}
-                        <ion-icon name="chatbubbles-outline"></ion-icon>
-                    </div>
-                </div>
-
-                <div
-                    className={'hidden bg-white w-8 h-8 cursor-pointer border-2 border-gray-100 lg:flex items-center justify-center rounded-md hover:text-[var(--tw-text-hover)] duration-500 hover:-translate-y-1'}>
-                    <div className={'flex items-center'}>
-                        {/* @ts-expect-error: ion-icon is not recognized by TypeScript */}
-                        <ion-icon name="bar-chart-outline"></ion-icon>
-                    </div>
-                </div>
-
-                <div
-                    className={'hidden bg-white w-8 h-8 cursor-pointer border-2 border-gray-100 lg:flex items-center justify-center rounded-md hover:text-[var(--tw-text-hover)] duration-500 hover:-translate-y-1'}>
-                    <div className={'flex items-center'}>
-                        {/* @ts-expect-error: ion-icon is not recognized by TypeScript */}
-                        <ion-icon name="scan-outline"></ion-icon>
-                    </div>
-                </div>
-
-                <div className={'flex px-2 py-1 gap-4 rounded-md border-2 items-center border-gray-100 hover:bg-background-hover duration-500 hover:text-text-hover cursor-pointer'}>
-                    <div>
-                        <p className={'text-sm'}>Suyog Rijal</p>
-                        <p className={'text-xs text-text-muted'}>Admin</p>
-                    </div>
-                    <div className={'bg-purple-600 h-8 w-8 rounded-md cursor-pointer'}>
-                        <img src={'https://via.placeholder.com/150'} alt={'profile'}/>
-                    </div>
-                </div>
-
-            </div>
-
-        </div>
-    );
-};

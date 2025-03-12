@@ -307,6 +307,7 @@ const ManagementOtherInfo = () => {
         try {
             form.setValue('teacher_info.school_class', undefined)
             form.setValue('teacher_info.subject', undefined)
+
         } catch (e) {
             console.log(e)
         }
@@ -660,7 +661,7 @@ export function AddStaff() {
                 blood_group: undefined,
                 account_status: 'A',
                 personal_email: undefined,
-                date_of_joining: new Date(),
+                date_of_joining: undefined,
                 qualification: '',
                 experience: undefined,
                 previous_workplace: '',
@@ -696,6 +697,7 @@ export function AddStaff() {
             ...data,
             staff_info: dateFormater(data.staff_info),
         };
+        console.log(cleaned_data);
         AxiosInstance.post('/api/academic/add-staff/', cleaned_data)
             .then(() => {
                 toast.success('Staff added successfully');

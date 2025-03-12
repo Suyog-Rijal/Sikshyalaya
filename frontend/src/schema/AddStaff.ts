@@ -32,7 +32,11 @@ const baseStaffInfo = z.object({
     blood_group: z.enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'RN', '']),
     account_status: z.enum(['A', 'I', 'D']),
     personal_email: z.string().email().optional(),
-    date_of_joining: z.date(),
+    date_of_joining: z
+        .date({
+            required_error: "Please select Joining date.",
+        })
+        .refine((date) => date >= new Date("1900-01-01"), {message: "Date must be after January 1, 1900"}),
     qualification: z.string().trim().min(1, { message: "Qualification is required" }),
     experience: z.coerce.number().int({ message: "Experience is required" }),
     previous_workplace: z.string().optional(),
