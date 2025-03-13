@@ -6,6 +6,7 @@ import {ListPage} from "@/pages/ListPage.tsx";
 import {StaffListPage} from "@/pages/StaffListPage.tsx";
 import {AddStaff} from "@/pages/AddStaff.tsx";
 import {StaffDetailPage} from "@/pages/StaffDetailPage.tsx";
+import {StudentListPage} from "@/pages/StudentListPage.tsx";
 
 
 function App() {
@@ -14,7 +15,8 @@ function App() {
             <DashboardLayout>
                 <Routes>
                     <Route index element={<Dashboard />} />
-                    <Route path="/list/students" element={<AddStudent/>} />
+                    <Route path="/student/list/" element={<StudentListPage/>} />
+                    <Route path="/student/add" element={<AddStudent/>} />
 
                     <Route path="/staff/add" element={<AddStaff/>} />
                     <Route path="/staff/list/" element={<StaffListPage/>} />

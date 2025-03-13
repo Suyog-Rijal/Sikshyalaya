@@ -1,5 +1,5 @@
 import {PageHeader} from "@/components/ListPage/PageHeader.tsx";
-import {PlusCircle, Lock} from "lucide-react";
+import {Lock, EyeOffIcon, EyeIcon, Pencil} from "lucide-react";
 import {useNavigate, useParams} from "react-router-dom";
 import {CustomStatusBadge} from "@/components/ListPage/CustomStatusBadge.tsx";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs"
@@ -14,6 +14,9 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
+import {Button} from "@/components/ui/button.tsx";
+import {Input} from "@/components/ui/input.tsx";
+import {Label} from "@/components/ui/label.tsx";
 
 
 const TagCard = ({value}: { value: string }) => {
@@ -26,7 +29,7 @@ const TagCard = ({value}: { value: string }) => {
 
 const Container = ({children}: { children: ReactNode }) => {
     return (
-        <div className="p-4 rounded-md space-y-4 bg-white">
+        <div className="p-4 shadow rounded-md space-y-4 bg-white">
             {children}
         </div>
     )
@@ -136,6 +139,8 @@ export function StaffDetailPage() {
         updated_at: "",
         position_detail: {},
     });
+    const [showLoginDetails, setShowLoginDetails] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     useEffect(() => {
         AxiosInstance.get('/api/staff/' + params.id + '/')
@@ -151,7 +156,7 @@ export function StaffDetailPage() {
     const ProfileCard = () => {
         return (
             <div className={'col-span-full'}>
-                <div className="bg-white rounded-md">
+                <div className="bg-white rounded-md shadow">
                     <div className="p-4">
                         <div className="flex items-center gap-3">
                             <img
@@ -251,7 +256,7 @@ export function StaffDetailPage() {
             },
         ]
         return (
-            <div className={'p-4 bg-white rounded-md'}>
+            <div className={'p-4 bg-white rounded-md  shadow'}>
                 <h3 className="text-lg font-medium mb-3">Basic Information</h3>
 
                 <div className="space-y-4">
@@ -341,9 +346,8 @@ export function StaffDetailPage() {
         )
     }
 
-
     return (
-        <div className={'p-4 flex flex-col gap-2 bg-gray-50'}>
+        <div className={'p-4 flex flex-col gap-2'}>
             <div>
                 <PageHeader
                     title="Staffs"
@@ -353,16 +357,57 @@ export function StaffDetailPage() {
                         {label: "Staff Detail", href: "/staff/detail/" + params.id},
                     ]}
                     primaryAction={{
-                        label: "Add Staff",
+                        label: "Edit Detail",
                         onClick: () => navigate('/staff/add/'),
-                        icon: <PlusCircle className="h-4 w-4"/>,
+                        icon: <Pencil className="h-4 w-4"/>,
                     }}
                     secondaryActions={{
                         label: "Login Details",
-                        onClick: () => navigate('/staff/add/'),
+                        onClick: () => setShowLoginDetails(true),
                         icon: <Lock className="h-4 w-4"/>,
                     }}
                 />
+
+                <Dialog open={showLoginDetails} onOpenChange={setShowLoginDetails}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>
+                                Login Details of {staff.first_name} {staff.last_name}
+                            </DialogTitle>
+                            <DialogDescription>
+                                Below are the login credentials for this staff member. Please ensure this information is kept secure.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email</Label>
+                                <div className="flex items-center">
+                                    <Input id="email" value={staff.email} readOnly className="flex-1" />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="password">Password</Label>
+                                <div className="flex items-center space-x-2">
+                                    <Input
+                                        id="password"
+                                        type={showPassword ? "text" : "password"}
+                                        value={staff.password}
+                                        readOnly
+                                        className="flex-1"
+                                    />
+                                    <Button className={'cursor-pointer'} type="button" variant="outline" size="icon" onClick={() => setShowPassword(!showPassword)}>
+                                        {showPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex justify-end">
+                            <Button variant="outline" className={'cursor-pointer'} onClick={() => setShowLoginDetails(false)}>
+                                Close
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
 
             </div>
 
@@ -372,17 +417,38 @@ export function StaffDetailPage() {
                     <BasicInfo/>
 
                     <Dialog>
-                        <DialogTrigger className={'bg-white h-full rounded-md p-4 space-y-2 cursor-pointer'}>
-                            <h1 className={'text-lg text-left font-medium'}>Note</h1>
-                            <p className={'text-gray-600 text-sm text-justify line-clamp-2'}>{staff.note}</p>
+                        <DialogTrigger className="bg-white shadow hover:shadow-md transition-shadow rounded-md p-4 space-y-2 cursor-pointer border border-gray-100 w-full">
+                            <div className="flex items-start">
+                                <div className="w-full">
+                                    <h1 className="text-lg text-left font-medium">Note</h1>
+                                    <p className="text-gray-600 text-sm text-justify line-clamp-2">{staff.note}</p>
+                                </div>
+                            </div>
                         </DialogTrigger>
-                        <DialogContent>
+                        <DialogContent className="sm:max-w-md">
                             <DialogHeader>
-                                <DialogTitle>Note:</DialogTitle>
-                                <DialogDescription className={'text-justify leading-relaxed'}>
-                                    {staff.note}
+                                <DialogTitle className="text-xl">
+                                    Note for {staff.first_name} {staff.last_name}
+                                </DialogTitle>
+                                <DialogDescription className="pt-2 text-sm text-gray-500">
+                                    Staff member notes and additional information
                                 </DialogDescription>
                             </DialogHeader>
+                            <div className="mt-4 bg-gray-50 p-4 rounded-md border border-gray-100">
+                                <p className="text-gray-800 text-justify leading-relaxed whitespace-pre-wrap">
+                                    {staff.note || "No notes available for this staff member."}
+                                </p>
+                            </div>
+                            <div className="flex justify-end mt-4">
+                                <Button
+                                    variant="outline"
+                                    onClick={() =>
+                                        document.querySelector('[data-state="open"]')?.dispatchEvent(new Event("close", { bubbles: true }))
+                                    }
+                                >
+                                    Close
+                                </Button>
+                            </div>
                         </DialogContent>
                     </Dialog>
 

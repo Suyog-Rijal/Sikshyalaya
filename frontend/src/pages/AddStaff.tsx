@@ -708,6 +708,8 @@ export function AddStaff() {
             });
     }
 
+    console.log(form.formState.errors)
+
     return (
         <FormProvider {...form}>
             <Form {...form}>
