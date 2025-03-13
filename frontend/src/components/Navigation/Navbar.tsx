@@ -24,7 +24,7 @@ export function Navbar() {
     }
 
     return (
-        <header className="sticky top-0 z-50 w-full shadow-sm bg-white">
+        <header className="sticky top-0 z-50 w-full backdrop-blur-lg bg-white opacity-90">
             <div className="flex h-14 items-center px-2 sm:px-4">
                 {/* Mobile Search Toggle */}
                 <Button variant="ghost" size="icon" className="md:hidden mr-2" onClick={() => setIsSearchOpen(!isSearchOpen)}>

@@ -4,6 +4,7 @@ import type React from "react"
 
 import { ChevronDown, Printer, RotateCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {Link} from "react-router-dom";
 
 interface BreadcrumbItem {
     label: string
@@ -21,9 +22,14 @@ interface PageHeaderProps {
         onClick: () => void
         icon?: React.ReactNode
     }
+    secondaryActions?: {
+        label: string
+        onClick: () => void
+        icon?: React.ReactNode
+    }
 }
 
-export function PageHeader({ title, breadcrumbs, onRefresh, onPrint, onExport, primaryAction }: PageHeaderProps) {
+export function PageHeader({ title, breadcrumbs, onRefresh, onPrint, onExport, primaryAction, secondaryActions }: PageHeaderProps) {
     return (
         <div className="w-full pb-4">
             <div className="flex flex-col space-y-1.5">
@@ -36,9 +42,9 @@ export function PageHeader({ title, breadcrumbs, onRefresh, onPrint, onExport, p
                                 <li key={index} className="flex items-center">
                                     {index > 0 && <span className="mx-1 sm:mx-2 text-slate-400">/</span>}
                                     {item.href ? (
-                                        <a href={item.href} className="hover:text-slate-700">
+                                        <Link to={item.href} className="hover:text-slate-700">
                                             {item.label}
-                                        </a>
+                                        </Link>
                                     ) : (
                                         <span className={index === breadcrumbs.length - 1 ? "text-slate-700" : ""}>{item.label}</span>
                                     )}
@@ -79,10 +85,20 @@ export function PageHeader({ title, breadcrumbs, onRefresh, onPrint, onExport, p
                             </Button>
                         )}
 
+                        {secondaryActions && (
+                            <Button
+                                onClick={secondaryActions.onClick}
+                                className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm bg-white text-black shadow hover:bg-gray-100 cursor-pointer"
+                            >
+                                {secondaryActions.icon && <span className="mr-1">{secondaryActions.icon}</span>}
+                                <span>{secondaryActions.label}</span>
+                            </Button>
+                        )}
+
                         {primaryAction && (
                             <Button
                                 onClick={primaryAction.onClick}
-                                className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm bg-blue-600 hover:bg-blue-700"
+                                className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm bg-blue-600 hover:bg-blue-700 cursor-pointer"
                             >
                                 {primaryAction.icon && <span className="mr-1">{primaryAction.icon}</span>}
                                 <span>{primaryAction.label}</span>

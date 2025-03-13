@@ -179,8 +179,8 @@ class Staff(models.Model):
 	# Transportation Choices
 	TRANSPORTATION_CHOICES = [
 		('SB', 'School Bus'),
-		('PV', 'Private'),
-		('PB', 'Public'),
+		('PV', 'Private Vehicle'),
+		('PB', 'Public Vehicle'),
 		('OF', 'On Foot'),
 	]
 

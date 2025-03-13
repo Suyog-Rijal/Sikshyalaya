@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 
-type BadgeVariant = "active" | "inactive" | "disabled"
+type BadgeVariant = "A" | "I" | "D"
 
 type CustomStatusBadgeProps = {
     children: ReactNode
@@ -8,17 +8,17 @@ type CustomStatusBadgeProps = {
     className?: string
 }
 
-export function CustomStatusBadge({ children, variant = "active", className = "" }: CustomStatusBadgeProps) {
+export function CustomStatusBadge({ children, variant = "A", className = "" }: CustomStatusBadgeProps) {
     const variantStyles = {
-        active: {
+        A: {
             container: "bg-green-100 text-green-500",
             dot: "bg-green-500",
         },
-        inactive: {
+        I: {
             container: "bg-gray-100 text-gray-500",
             dot: "bg-gray-500",
         },
-        disabled: {
+        D: {
             container: "bg-red-100 text-red-500",
             dot: "bg-red-500",
         },

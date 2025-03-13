@@ -28,8 +28,8 @@ const menuItems: Menu[] = [
             },
             {
                 icon: "/teacher.png",
-                label: "Teachers",
-                href: "/list/teachers",
+                label: "Staff",
+                href: "/staff/list",
                 visible: ["admin", "teacher"],
             },
             {

@@ -1,6 +1,6 @@
 import {PageHeader} from "@/components/ListPage/PageHeader.tsx";
 import {PlusCircle} from "lucide-react";
-import {TeacherCard} from "@/components/ListPage/TeacherCard.tsx";
+import {StaffCard} from "@/components/ListPage/StaffCard.tsx";
 import {FilterBar} from "@/components/ListPage/FilterBar.tsx";
 import {StudentCard} from "@/components/ListPage/StudentCard.tsx";
 
@@ -39,7 +39,7 @@ export function ListPage() {
                 />
 
                 <FilterBar
-                    title="Students Grid"
+                    title="Staff Grid"
                     onViewChange={(view) => console.log("View changed to:", view)}
                     onDateRangeChange={(range) => console.log("Date range:", range)}
                     onSortChange={(sort) => console.log("Sort changed to:", sort)}
@@ -51,7 +51,7 @@ export function ListPage() {
 
             </div>
             <div className={'grid grid-cols-1 place-items-center md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'}>
-                <TeacherCard
+                <StaffCard
                     id={"#301"}
                     name={"Sarah Johnson"}
                     className={"Grade 10 - Science"}
@@ -61,7 +61,7 @@ export function ListPage() {
                     status={"active"}
                 />
 
-                <TeacherCard
+                <StaffCard
                     id={"#302"}
                     name={"Mark Williams"}
                     className={"Grade 9 - Mathematics"}
@@ -71,7 +71,7 @@ export function ListPage() {
                     status={"inactive"}
                 />
 
-                <TeacherCard
+                <StaffCard
                     id={"#303"}
                     name={"Emily Davis"}
                     className={"Grade 11 - English"}
@@ -81,7 +81,7 @@ export function ListPage() {
                     status={"active"}
                 />
 
-                <TeacherCard
+                <StaffCard
                     id={"#304"}
                     name={"James Miller"}
                     className={"Grade 8 - Social Studies"}
