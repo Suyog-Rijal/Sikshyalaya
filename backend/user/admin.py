@@ -6,12 +6,11 @@ from .models import Student, Parent, Staff, Teacher, ManagementStaff
 class StudentAdmin(admin.ModelAdmin):
 	list_display = [
 		'id',
-		'first_name',
-		'last_name',
 		'get_enrollment',
+		'account_status',
 	]
 
-	search_fields = ['first_name', 'last_name', 'personal_email']
+	search_fields = ['personal_email']
 	list_filter = ['gender', 'account_status', 'blood_group', 'transportation']
 
 

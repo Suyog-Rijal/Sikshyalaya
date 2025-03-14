@@ -351,7 +351,7 @@ export function StaffDetailPage() {
     }
 
     return (
-        <div className={'p-4 flex flex-col gap-2'}>
+        <div className={'p-4 flex flex-col gap-2 bg-slate-100'}>
             <div>
                 <PageHeader
                     title="Staffs"

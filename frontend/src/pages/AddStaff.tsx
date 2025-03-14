@@ -699,6 +699,8 @@ export function AddStaff() {
         AxiosInstance.post('/api/academic/add-staff/', cleaned_data)
             .then(() => {
                 toast.success('Staff added successfully');
+                form.reset();
+                
             })
             .catch((err) => {
                 console.log(err);
@@ -720,7 +722,11 @@ export function AddStaff() {
                     <BankInfo></BankInfo>
                     <TransportInfo></TransportInfo>
                     <SocialMediaInfo></SocialMediaInfo>
-                    <Button type="submit">Submit</Button>
+                    <div className={'w-full justify-end items-center flex gap-4'}>
+                        <Button className={'px-8'} variant={'outline'} type="reset">Cancel</Button>
+                        <Button className={'px-8'} variant={'default'} type={"button"}>Add & Continue</Button>
+                        <Button className={'px-8'} variant={'default'} type="submit">Add Staff</Button>
+                    </div>
                 </form>
             </Form>
         </FormProvider>

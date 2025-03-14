@@ -1,5 +1,4 @@
 import uuid
-
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.text import slugify
@@ -72,8 +71,8 @@ class Student(models.Model):
 	def get_enrollment(self):
 		latest_enrollment = self.enrollments.order_by("-academic_year__start_date").first()
 		if latest_enrollment:
-			return f"{latest_enrollment.school_class.name} ({latest_enrollment.section.name})"
-		return "Not Enrolled"
+			return latest_enrollment
+		return None
 	get_enrollment.short_description = "Enrollment"
 
 	def save(self, *args, **kwargs):

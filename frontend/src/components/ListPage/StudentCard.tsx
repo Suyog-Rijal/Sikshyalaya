@@ -1,3 +1,5 @@
+"use client"
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -7,19 +9,19 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { EllipsisVertical, MessageCircle, Mail } from 'lucide-react'
+import { EllipsisVertical } from "lucide-react"
 import { CustomStatusBadge } from "@/components/ListPage/CustomStatusBadge.tsx"
+import {useNavigate} from "react-router-dom";
 
 interface StudentCardProps {
     id: string
     name: string
     className: string
+    email: string
     rollNo: string
     gender: string
-    joinedOn: string
-    status: "active" | "inactive" | "disabled"
+    status: "A" | "I" | "D"
     avatarUrl?: string
-    onAddFees?: () => void
 }
 
 export function StudentCard({
@@ -28,19 +30,26 @@ export function StudentCard({
                                 className,
                                 rollNo,
                                 gender,
-                                joinedOn,
                                 status,
                                 avatarUrl,
-                                onAddFees
+                                email,
                             }: StudentCardProps) {
+
+    const navigate = useNavigate();
+
     return (
-        <div className="w-full max-w-sm rounded-lg bg-white p-4 flex flex-col gap-3 shadow">
+        <div className="w-full max-w-sm rounded-lg bg-white p-4 shadow">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-blue-600">{id}</span>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center w-full justify-between gap-2">
                     <CustomStatusBadge variant={status} className="capitalize">
-                        {status}
+                        {status === "A" ? (
+                            <span>Active</span>
+                        ) : status === "I" ? (
+                            <span>Inactive</span>
+                        ) : status === "D" ? (
+                            <span>Disabled</span>
+                        ) : null}
                     </CustomStatusBadge>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -50,7 +59,7 @@ export function StudentCard({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-36">
                             <DropdownMenuGroup>
-                                <DropdownMenuItem>View</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => navigate('/test/')}>View</DropdownMenuItem>
                                 <DropdownMenuItem>Edit</DropdownMenuItem>
                                 <DropdownMenuItem>Delete</DropdownMenuItem>
                             </DropdownMenuGroup>
@@ -60,9 +69,9 @@ export function StudentCard({
             </div>
 
             {/* Profile Section */}
-            <div className="mt-4 flex items-center gap-4">
+            <div className="mt-6 flex items-center gap-4">
                 <Avatar className="h-16 w-16">
-                    <AvatarImage src={avatarUrl} alt={name} className="w-full h-full object-cover object-center" />
+                    <AvatarImage src={avatarUrl} alt={name} className={"w-full h-full object-cover object-center"} />
                     <AvatarFallback>{name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
@@ -72,40 +81,33 @@ export function StudentCard({
             </div>
 
             {/* Student Information */}
-            <div className="mt-4 grid grid-cols-3 gap-4 border-t pt-4">
+            <div className="mt-6 space-y-4">
                 <div>
-                    <p className="text-sm text-muted-foreground">Roll No</p>
-                    <p className="text-sm font-medium">{rollNo}</p>
+                    <p className="text-sm text-muted-foreground">Email</p>
+                    <p className="text-sm font-medium">{email}</p>
                 </div>
-                <div>
-                    <p className="text-sm text-muted-foreground">Gender</p>
-                    <p className="text-sm font-medium">{gender}</p>
-                </div>
-                <div>
-                    <p className="text-sm text-muted-foreground">Joined On</p>
-                    <p className="text-sm font-medium">{joinedOn}</p>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <p className="text-sm text-muted-foreground">Roll no</p>
+                        <p className="text-sm font-medium">{rollNo}</p>
+                    </div>
+                    <div>
+                        <p className="text-sm text-muted-foreground">Gender</p>
+                        <p className="text-sm font-medium">{gender}</p>
+                    </div>
                 </div>
             </div>
 
             {/* Footer */}
-            <div className="mt-4 flex items-center justify-between border-t pt-4">
-                <div className="flex space-x-2">
-                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-slate-100">
-                        <MessageCircle className="h-5 w-5 text-slate-600" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-slate-100">
-                        <Mail className="h-5 w-5 text-slate-600" />
-                    </Button>
-                </div>
-                <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={onAddFees}
-                    className="bg-slate-200 hover:bg-slate-300 text-slate-800"
-                >
-                    Add Fees
+            <div className="mt-6 flex items-center justify-between">
+        <span className="inline-flex bg-gray-100 items-center text-gray-500 rounded-md px-2.5 py-1 text-xs font-medium">
+          Student
+        </span>
+                <Button onClick={() => navigate("/students/detail/" + id)} variant={"secondary"} size="sm">
+                    View Details
                 </Button>
             </div>
         </div>
     )
 }
+

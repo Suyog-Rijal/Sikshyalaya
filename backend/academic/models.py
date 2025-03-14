@@ -93,9 +93,13 @@ class Enrollment(models.Model):
 	section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="enrollments")
 	house = models.ForeignKey(House, on_delete=models.CASCADE, null=True, blank=True)
 	enrollment_date = models.DateField(default=timezone.now)
+	roll_number = models.PositiveSmallIntegerField(null=True, blank=True)
 
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
+
+	class Meta:
+		unique_together = ["academic_year", "school_class", "section", "roll_number"]
 
 	def save(self, *args, **kwargs):
 		if not self.academic_year_id:
@@ -105,10 +109,20 @@ class Enrollment(models.Model):
 				raise ValueError("No active academic year found. Please set one.")
 			except MultipleObjectsReturned:
 				raise ValueError("Multiple active academic years found. Please ensure only one is active.")
-		super().save(*args, **kwargs)
 
-	class Meta:
-		unique_together = ["student", "academic_year"]
+		if not self.roll_number:
+			latest_enrollment = Enrollment.objects.filter(
+				academic_year=self.academic_year,
+				school_class=self.school_class,
+				section=self.section
+			).order_by("-roll_number").first()
+
+			if latest_enrollment and latest_enrollment.roll_number:
+				self.roll_number = latest_enrollment.roll_number + 1
+			else:
+				self.roll_number = 1
+
+		super().save(*args, **kwargs)
 
 	def __str__(self):
 		return f"{self.student.get_fullname()} - {self.school_class.name} - {self.academic_year}"

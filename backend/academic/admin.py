@@ -47,7 +47,7 @@ class SubjectAdmin(admin.ModelAdmin):
 
 @admin.register(Enrollment)
 class EnrollmentAdmin(admin.ModelAdmin):
-	list_display = ('academic_year', 'student', 'school_class', 'section')
+	list_display = ('academic_year', 'student', 'school_class', 'section', 'roll_number')
 	ordering = ('student', 'academic_year')
 	list_filter = ('academic_year',)
 	search_fields = ('student__first_name', 'student__last_name', 'academic_year__start_date')
