@@ -153,6 +153,10 @@ export function StaffDetailPage() {
             })
     }, [params.id]);
 
+    useEffect(() => {
+        setShowPassword(false);
+    }, [showLoginDetails]);
+
     const ProfileCard = () => {
         return (
             <div className={'col-span-full'}>
@@ -396,7 +400,7 @@ export function StaffDetailPage() {
                                         className="flex-1"
                                     />
                                     <Button className={'cursor-pointer'} type="button" variant="outline" size="icon" onClick={() => setShowPassword(!showPassword)}>
-                                        {showPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                                        {showPassword ? <EyeIcon className="h-4 w-4" /> : <EyeOffIcon className="h-4 w-4" />}
                                     </Button>
                                 </div>
                             </div>

@@ -1,0 +1,1 @@
+export const staffListQueryKey = ['staffList'];
