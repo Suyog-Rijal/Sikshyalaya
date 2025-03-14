@@ -6,6 +6,9 @@ import {useNavigate} from "react-router-dom";
 import {useEffect, useState} from "react";
 import AxiosInstance from "@/auth/AxiosInstance.ts";
 import {toast} from "sonner";
+import {
+    StaffCardSkeletonShimmerV4,
+} from "@/components/ListPage/StaffCardSkeleton.tsx";
 
 export function StaffListPage() {
     const navigate = useNavigate();
@@ -34,6 +37,8 @@ export function StaffListPage() {
         staff_type: 'T' | 'M';
     }[]>([]);
 
+    const [loading, setLoading] = useState(true);
+
     useEffect(() => {
         AxiosInstance.get('/api/staff/')
             .then((response) => {
@@ -43,6 +48,9 @@ export function StaffListPage() {
             .catch((error) => {
                 console.error(error);
                 toast.error("Failed to fetch staffs");
+            })
+            .finally(() => {
+                setLoading(false);
             });
 
     }, [])
@@ -81,19 +89,27 @@ export function StaffListPage() {
             <div className={'grid grid-cols-1 place-items-center md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'}>
 
                 {
-                    apiData?.map((each, index) => (
-                        <StaffCard
-                            key={index}
-                            id={each.id}
-                            name={each.first_name + " " + each.last_name}
-                            email={each.email}
-                            phone={each.phone_number}
-                            positionDetail={each.position_detail}
-                            status={each.account_status}
-                            avatarUrl={each.profile_picture}
-                            staffType={each.staff_type}
-                        />
-                    ))
+                    loading ?
+                        (
+                            Array.from({ length: 8 }).map((_, index) => <StaffCardSkeletonShimmerV4 key={index} />) // Show 8 skeletons
+
+                        )
+                        :
+                        (
+                            apiData?.map((each, index) => (
+                                <StaffCard
+                                    key={index}
+                                    id={each.id}
+                                    name={each.first_name + " " + each.last_name}
+                                    email={each.email}
+                                    phone={each.phone_number}
+                                    positionDetail={each.position_detail}
+                                    status={each.account_status}
+                                    avatarUrl={each.profile_picture}
+                                    staffType={each.staff_type}
+                                />
+                            ))
+                        )
                 }
 
             </div>

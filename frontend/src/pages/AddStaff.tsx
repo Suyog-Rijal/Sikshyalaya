@@ -134,7 +134,6 @@ const TeacherOtherInfo = () => {
     });
 
     const [teachingData, setTeachingData] = useState(otherInfoTeaching);
-
     useEffect(() => {
         try {
             form.setValue('managementStaff_info.department', undefined)
@@ -307,7 +306,6 @@ const ManagementOtherInfo = () => {
         try {
             form.setValue('teacher_info.school_class', undefined)
             form.setValue('teacher_info.subject', undefined)
-
         } catch (e) {
             console.log(e)
         }
