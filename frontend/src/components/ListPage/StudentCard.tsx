@@ -16,23 +16,25 @@ import {useNavigate} from "react-router-dom";
 interface StudentCardProps {
     id: string
     name: string
-    className: string
     email: string
     rollNo: string
     gender: string
     status: "A" | "I" | "D"
     avatarUrl?: string
+    schoolClass?: string
+    section?: string
 }
 
 export function StudentCard({
                                 id,
                                 name,
-                                className,
                                 rollNo,
                                 gender,
                                 status,
                                 avatarUrl,
                                 email,
+                                schoolClass,
+                                section,
                             }: StudentCardProps) {
 
     const navigate = useNavigate();
@@ -76,7 +78,7 @@ export function StudentCard({
                 </Avatar>
                 <div>
                     <h3 className="text-lg font-semibold">{name}</h3>
-                    <p className="text-sm text-muted-foreground">{className}</p>
+                    <p className="text-sm text-muted-foreground">{schoolClass} ({section})</p>
                 </div>
             </div>
 

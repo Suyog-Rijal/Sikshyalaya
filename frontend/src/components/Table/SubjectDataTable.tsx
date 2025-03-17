@@ -27,8 +27,8 @@ interface DataTableProps {
     data: Array<{
         id: string;
         name: string;
-        full_marks: string;
-        pass_marks: string;
+        full_marks: number;
+        pass_marks: number;
         school_class: {
             id: string;
             name: string;
@@ -40,8 +40,8 @@ interface DataTableProps {
             {
                 id: string;
                 name: string;
-                full_marks: string;
-                pass_marks: string;
+                full_marks: number;
+                pass_marks: number;
                 school_class: {
                     id: string;
                     name: string;
@@ -85,12 +85,13 @@ class SubjectDataTable extends React.Component<DataTableProps, DataTableState> {
     }
 
     getFilteredData = () => {
+        const { searchQuery } = this.state;
+
         return this.props.data.filter((item) =>
-            Object.values(item).some((value) =>
-                value.toString().toLowerCase().includes(this.state.searchQuery.toLowerCase())
-            )
-        )
-    }
+            item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.school_class.name.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    };
 
     handleSelectAll = (checked: boolean) => {
         if (checked) {
@@ -248,9 +249,9 @@ class SubjectDataTable extends React.Component<DataTableProps, DataTableState> {
                                         </TableCell>
                                         <TableCell className="font-medium text-primary">{row.id}</TableCell>
                                         <TableCell className="font-medium">{row.name}</TableCell>
-                                        <TableCell className="font-medium">{row.school_class.name}</TableCell>
-                                        <TableCell className="font-medium">{row.full_marks}</TableCell>
-                                        <TableCell className="font-medium">{row.pass_marks}</TableCell>
+                                        <TableCell className="">{row.school_class.name}</TableCell>
+                                        <TableCell className="">{row.full_marks}</TableCell>
+                                        <TableCell className="">{row.pass_marks}</TableCell>
                                         <TableCell>
                                             <div className="flex justify-center">
                                                 <DropdownMenu>

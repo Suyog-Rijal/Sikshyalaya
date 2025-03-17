@@ -11,16 +11,16 @@ import {StudentCardSkeleton} from "@/components/ListPage/StudentCardSkeleton.tsx
 export function StudentListPage() {
     const navigate = useNavigate();
     const sortOptions = [
-        { label: "Name A to Z", value: "name_asc" },
-        { label: "Name Z to A", value: "name_desc" },
-        { label: "Newest First", value: "date_desc" },
-        { label: "Oldest First", value: "date_asc" },
+        {label: "Name A to Z", value: "name_asc"},
+        {label: "Name Z to A", value: "name_desc"},
+        {label: "Newest First", value: "date_desc"},
+        {label: "Oldest First", value: "date_asc"},
     ]
 
     const filterOptions = [
-        { label: "All", value: "all" },
-        { label: "Active", value: "active" },
-        { label: "Inactive", value: "inactive" },
+        {label: "All", value: "all"},
+        {label: "Active", value: "active"},
+        {label: "Inactive", value: "inactive"},
     ]
 
     const [apiData, setApiData] = useState<{
@@ -32,6 +32,8 @@ export function StudentListPage() {
         last_name: string;
         email: string;
         profile_picture: string;
+        school_class: string;
+        section: string;
     }[]>([]);
 
     const [loading, setLoading] = useState(true);
@@ -58,8 +60,8 @@ export function StudentListPage() {
                 <PageHeader
                     title="Students"
                     breadcrumbs={[
-                        { label: "Dashboard", href: "/" },
-                        { label: "Student", href: "/student/list/" },
+                        {label: "Dashboard", href: "/"},
+                        {label: "Student", href: "/student/list/"},
                     ]}
                     onRefresh={() => console.log("Refreshing...")}
                     onPrint={() => console.log("Printing...")}
@@ -67,7 +69,7 @@ export function StudentListPage() {
                     primaryAction={{
                         label: "Add Student",
                         onClick: () => navigate('/student/add/'),
-                        icon: <PlusCircle className="h-4 w-4" />,
+                        icon: <PlusCircle className="h-4 w-4"/>,
                     }}
                 />
 
@@ -87,7 +89,7 @@ export function StudentListPage() {
                 {
                     loading ?
                         (
-                            Array.from({ length: 8 }).map((_, index) => <StudentCardSkeleton key={index} />) // Show 8 skeletons
+                            Array.from({length: 8}).map((_, index) => <StudentCardSkeleton key={index}/>) // Show 8 skeletons
 
                         )
                         :
@@ -96,12 +98,13 @@ export function StudentListPage() {
                                 <StudentCard id={each.id}
                                              key={index}
                                              name={each.first_name + ' ' + each.last_name}
-                                             className={''}
                                              email={each.email}
                                              avatarUrl={each.profile_picture}
                                              rollNo={each.roll_number}
                                              gender={each.gender}
                                              status={each.account_status}
+                                             schoolClass={each.school_class}
+                                             section={each.section}
                                 ></StudentCard>
                             ))
                         )

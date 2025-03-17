@@ -16,68 +16,113 @@ import { Label } from "@/components/ui/label.tsx";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Button } from "@/components/ui/button.tsx";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
-const classes = [
-    { id: 1, name: "Class 1" },
-    { id: 2, name: "Class 2" },
-    { id: 3, name: "Class 3" },
-    { id: 4, name: "Class 4" },
-    { id: 5, name: "Class 5" },
-];
-
 const subjectSchema = z.object({
-    selectedClass: z.string().min(1, "Class is required"),
+    selectedClass: z.string().trim().min(1, "Class is required"),
     subjects: z.array(
         z.object({
-            id: z.number(),
+            id: z.string(),
             name: z.string().min(1, "Subject name is required"),
-            fullMark: z.string().min(1, "Full mark is required"),
-            passMark: z.string().min(1, "Pass mark is required"),
+            full_mark: z.string().min(1, "Full mark is required"),
+            pass_mark: z.string().min(1, "Pass mark is required"),
         })
     )
 });
 
+export type tApiData = {
+    id: string;
+    name: string;
+    full_marks: number;
+    pass_marks: number;
+    school_class: {
+        id: string;
+        name: string;
+    };
+}
+
+export type tClasses = {
+    id: string;
+    name: string;
+}
+
 export function SubjectListPage() {
     const [open, setOpen] = useState(false);
-    const [apiData, setApiData] = useState([]);
-    const { control, handleSubmit, reset, setValue, watch } = useForm({
-        resolver: zodResolver(subjectSchema),
-        defaultValues: {
-            selectedClass: "",
-            subjects: [{ id: 1, name: "", fullMark: "", passMark: "" }]
-        }
-    });
+    const [apiData, setApiData] = useState<tApiData[]>([]);
+    const [classes, setClasses] = useState<tClasses[]>([]);
 
-    const subjects = watch("subjects");
-
-    const addSubjectRow = () => {
-        setValue("subjects", [...subjects, { id: subjects.length + 1, name: "", fullMark: "", passMark: "" }]);
-    };
-
-    const removeSubjectRow = (id) => {
-        if (subjects.length > 1) {
-            setValue("subjects", subjects.filter((subject) => subject.id !== id));
-        }
-    };
-
-    const onSubmit = (data) => {
-        console.log(data);
-        setOpen(false);
-        reset();
-    };
-
-    useEffect(() => {
+    const fetchData = () => {
+        console.log("Fetching data...");
         AxiosInstance.get("/api/academic/subject/")
             .then((response) => {
-                setApiData(response.data);
+                const data = response.data;
+                console.log(data);
+                setApiData(data);
             })
             .catch(() => {
                 toast.error("Failed to fetch subjects");
             });
+
+        AxiosInstance.get("/api/academic/class/")
+            .then((response) => {
+                const data = response.data;
+                console.log(data);
+                setClasses(data);
+            })
+            .catch(() => {
+                toast.error("Failed to fetch classes");
+            });
+    }
+
+    useEffect(() => {
+        fetchData();
     }, []);
+
+    // React Hook Form setup
+    const {
+        control,
+        handleSubmit,
+        formState: { errors },
+    } = useForm({
+        resolver: zodResolver(subjectSchema),
+        defaultValues: {
+            selectedClass: "",
+            subjects: [{ id: "", name: "", full_mark: "", pass_mark: "" }],
+        },
+    });
+
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name: "subjects",
+    });
+
+    const onSubmit = (data: any) => {
+        AxiosInstance.post("/api/academic/subject/", {
+            school_class: data.selectedClass,
+            subjects: data.subjects,
+        })
+            .then(() => {
+                toast.success("Subjects added successfully!");
+                fetchData();
+            })
+            .catch((err) => {
+                console.log(err);
+                toast.error("Failed to add subjects");
+            })
+            .finally(() => {
+                setOpen(false);
+            });
+    };
+
+    const addSubjectRow = () => {
+        append({ id: "", name: "", full_mark: "", pass_mark: "" });
+    };
+
+    const removeSubjectRow = (index: number) => {
+        remove(index);
+    };
 
     return (
         <div className="p-4 flex flex-col gap-4">
@@ -112,7 +157,7 @@ export function SubjectListPage() {
                                         control={control}
                                         render={({ field }) => (
                                             <Select value={field.value} onValueChange={field.onChange}>
-                                                <SelectTrigger className="w-full">
+                                            <SelectTrigger className={`w-full ${errors.selectedClass ? 'border-red-500' : ''}`}>
                                                     <SelectValue placeholder="Select a class" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -125,6 +170,7 @@ export function SubjectListPage() {
                                             </Select>
                                         )}
                                     />
+                                    {errors.selectedClass && <span className="text-red-500 text-sm">{errors.selectedClass.message}</span>}
                                 </div>
                             </div>
 
@@ -136,35 +182,58 @@ export function SubjectListPage() {
                                     <div className="col-span-1"></div>
                                 </div>
 
-                                {subjects.map((subject, index) => (
+                                {fields.map((subject, index) => (
                                     <div key={subject.id} className="grid grid-cols-12 gap-2 items-center">
                                         <div className="col-span-5">
                                             <Controller
                                                 name={`subjects.${index}.name`}
                                                 control={control}
-                                                render={({ field }) => <Input {...field} placeholder="Subject name" className="w-full" />}
+                                                render={({ field }) => (
+                                                    <Input
+                                                        {...field}
+                                                        placeholder=""
+                                                        className={`w-full ${errors?.subjects?.[index]?.name ? 'border-red-500' : ''}`}
+                                                    />
+                                                )}
                                             />
+                                            {errors?.subjects?.[index]?.name && <span className="text-red-500 text-sm">{errors.subjects[index].name.message}</span>}
                                         </div>
                                         <div className="col-span-3">
                                             <Controller
-                                                name={`subjects.${index}.fullMark`}
+                                                name={`subjects.${index}.full_mark`}
                                                 control={control}
-                                                render={({ field }) => <Input {...field} type="number" placeholder="100" className="w-full" />}
+                                                render={({ field }) => (
+                                                    <Input
+                                                        {...field}
+                                                        type="number"
+                                                        placeholder=""
+                                                        className={`w-full ${errors?.subjects?.[index]?.full_mark ? 'border-red-500 focus:border-red-500' : ''}`}
+                                                    />
+                                                )}
                                             />
+                                            {errors?.subjects?.[index]?.full_mark && <span className="text-red-500 text-sm">{errors.subjects[index].full_mark.message}</span>}
                                         </div>
                                         <div className="col-span-3">
                                             <Controller
-                                                name={`subjects.${index}.passMark`}
+                                                name={`subjects.${index}.pass_mark`}
                                                 control={control}
-                                                render={({ field }) => <Input {...field} type="number" placeholder="40" className="w-full" />}
+                                                render={({ field }) => (
+                                                    <Input
+                                                        {...field}
+                                                        type="number"
+                                                        placeholder=""
+                                                        className={`w-full ${errors?.subjects?.[index]?.pass_mark ? 'border-red-500' : ''}`}
+                                                    />
+                                                )}
                                             />
+                                            {errors?.subjects?.[index]?.pass_mark && <span className="text-red-500 text-sm">{errors.subjects[index].pass_mark.message}</span>}
                                         </div>
                                         <div className="col-span-1 flex justify-center">
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                onClick={() => removeSubjectRow(subject.id)}
-                                                disabled={subjects.length === 1}
+                                                onClick={() => removeSubjectRow(index)}
+                                                disabled={fields.length === 1}
                                                 className="h-8 w-8 rounded-full hover:bg-red-50"
                                             >
                                                 <Trash2 className="h-4 w-4 text-red-500" />

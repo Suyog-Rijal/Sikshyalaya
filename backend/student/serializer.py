@@ -5,6 +5,8 @@ from rest_framework import serializers
 class ListStudentSerializer(serializers.ModelSerializer):
 	gender = serializers.CharField(source='get_gender_display')
 	roll_number = serializers.SerializerMethodField()
+	school_class = serializers.CharField(source='get_enrollment.school_class.name')
+	section = serializers.CharField(source='get_enrollment.section.name')
 
 	class Meta:
 		model = Student
@@ -17,6 +19,8 @@ class ListStudentSerializer(serializers.ModelSerializer):
 			'email',
 			'gender',
 			'profile_picture',
+			'school_class',
+			'section',
 		]
 
 	def get_roll_number(self, obj):

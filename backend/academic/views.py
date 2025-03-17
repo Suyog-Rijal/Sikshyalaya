@@ -126,10 +126,6 @@ class SchoolClassViewSet(ModelViewSet):
 		if self.action == 'update':
 			return SchoolClassPostSerializer
 
-	from django.db import transaction
-	from rest_framework.response import Response
-	from rest_framework import status
-
 	def update(self, request, *args, **kwargs):
 		school_id = kwargs.get('pk')
 		school = SchoolClass.objects.get(id=school_id)
@@ -159,6 +155,24 @@ class SchoolClassViewSet(ModelViewSet):
 
 class SubjectViewSet(ModelViewSet):
 	permission_classes = [AllowAny]
-	http_method_names = ['get', 'delete']
+	http_method_names = ['get', 'delete', 'post']
 	queryset = Subject.objects.all()
 	serializer_class = SubjectListSerializer
+
+	def create(self, request, *args, **kwargs):
+		try:
+			school_class = SchoolClass.objects.get(id=request.data.get('school_class'))
+			subjects = request.data.get('subjects')
+			with transaction.atomic():
+				for each in subjects:
+					Subject.objects.create(
+						school_class=school_class,
+						name=each.get('name'),
+						full_marks=each.get('full_mark'),
+						pass_marks=each.get('pass_mark')
+					)
+
+			return Response({'message': 'Subjects added successfully'}, status=status.HTTP_201_CREATED)
+
+		except Exception as e:
+			return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
