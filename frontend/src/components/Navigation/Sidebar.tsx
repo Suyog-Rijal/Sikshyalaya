@@ -45,16 +45,16 @@ const menuItems: Menu[] = [
                 visible: ["admin", "teacher"],
             },
             {
-                icon: "/subject.png",
-                label: "Subjects",
-                href: "/list/subjects",
-                visible: ["admin"],
-            },
-            {
                 icon: "/class.png",
                 label: "Classes",
-                href: "/list/classes",
+                href: "/classes/list/",
                 visible: ["admin", "teacher"],
+            },
+            {
+                icon: "/subject.png",
+                label: "Subjects",
+                href: "/subject/list/",
+                visible: ["admin"],
             },
             {
                 icon: "/lesson.png",

@@ -81,6 +81,9 @@ class Section(models.Model):
 		unique_together = ["school_class", "name"]
 		ordering = ["school_class", "name"]
 
+	def get_number_of_students(self):
+		return self.enrollments.count()
+
 	def __str__(self):
 		return f'{self.school_class.name} - {self.name}'
 

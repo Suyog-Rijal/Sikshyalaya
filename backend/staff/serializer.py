@@ -53,10 +53,11 @@ class ListStaffSerializer(serializers.ModelSerializer):
 	def get_position_detail(self, obj):
 		if obj.staff_type == 'T':
 			teacher = obj.teacher.first()
-			return {
-				'school_class': teacher.school_class.name,
-				'subject': teacher.subject.name,
-			}
+			if teacher:
+				return {
+					'school_class': teacher.school_class.name,
+					'subject': teacher.subject.name,
+				}
 		elif obj.staff_type == 'M':
 			management = obj.management_staff.first()
 			return {

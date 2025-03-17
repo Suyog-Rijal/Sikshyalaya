@@ -254,8 +254,8 @@ class Staff(models.Model):
 class Teacher(models.Model):
 	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 	staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='teacher')
-	school_class = models.ForeignKey('academic.SchoolClass', on_delete=models.CASCADE, default=None)
-	subject = models.ForeignKey('academic.Subject', related_name='teachers', on_delete=models.CASCADE, default=None)
+	school_class = models.ForeignKey('academic.SchoolClass', on_delete=models.CASCADE, default=None, blank=True, null=True)
+	subject = models.ForeignKey('academic.Subject', related_name='teachers', on_delete=models.CASCADE, default=None, blank=True, null=True)
 
 	def __str__(self):
 		return self.staff.get_fullname()
@@ -264,7 +264,7 @@ class Teacher(models.Model):
 class ManagementStaff(models.Model):
 	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 	staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='management_staff')
-	department = models.ForeignKey('academic.Department', on_delete=models.CASCADE)
+	department = models.ForeignKey('academic.Department', on_delete=models.CASCADE, default=None, blank=True, null=True)
 	pan_number = models.CharField(max_length=10, blank=True, null=True)
 
 	def __str__(self):

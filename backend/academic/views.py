@@ -4,9 +4,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
-from academic.models import SchoolClass, Department
+from academic.models import SchoolClass, Department, Section, Subject
 from academic.serializer import EnrollmentPostSerializer, EnrollmentGetSchoolClassSerializer, AddStaffGetSerializer, \
-	SimpleDepartmentSerializer, AddStaffSerializer, SimpleTeacherSerializer, SimpleManagementStaffSerializer
+	SimpleDepartmentSerializer, AddStaffSerializer, SimpleTeacherSerializer, SimpleManagementStaffSerializer, \
+	SchoolClassGetSerializer, SchoolClassPostSerializer, SubjectListSerializer
 from user.serializer import StudentSerializer, ParentSerializer
 from user.models import Parent
 
@@ -110,3 +111,54 @@ class AddStaffApiView(APIView):
 
 		except Exception as e:
 			return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SchoolClassViewSet(ModelViewSet):
+	permission_classes = [AllowAny]
+	http_method_names = ['get', 'post', 'delete', 'put']
+	queryset = SchoolClass.objects.all()
+
+	def get_serializer_class(self):
+		if self.action == 'list':
+			return SchoolClassGetSerializer
+		if self.action == 'create':
+			return SchoolClassPostSerializer
+		if self.action == 'update':
+			return SchoolClassPostSerializer
+
+	from django.db import transaction
+	from rest_framework.response import Response
+	from rest_framework import status
+
+	def update(self, request, *args, **kwargs):
+		school_id = kwargs.get('pk')
+		school = SchoolClass.objects.get(id=school_id)
+		sections = request.data.pop('section', [])
+		existing_sections = school.section.all()
+		new_sections = []
+		sections_to_remove = []
+
+		if sections:
+			for each in sections:
+				if not existing_sections.filter(name=each.get('name')).exists():
+					new_sections.append(each.get('name'))
+
+		if existing_sections:
+			for each in existing_sections:
+				if each.name not in [section.get('name') for section in sections]:
+					sections_to_remove.append(each)
+
+		with transaction.atomic():
+			for each in new_sections:
+				Section.objects.create(school_class=school, name=each)
+			for section in sections_to_remove:
+				section.delete()
+
+		return Response({'message': 'Classes updated successfully'}, status=status.HTTP_200_OK)
+
+
+class SubjectViewSet(ModelViewSet):
+	permission_classes = [AllowAny]
+	http_method_names = ['get', 'delete']
+	queryset = Subject.objects.all()
+	serializer_class = SubjectListSerializer

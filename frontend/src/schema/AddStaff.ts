@@ -28,7 +28,7 @@ const baseStaffInfo = z.object({
     permanent_address: z.string().trim().min(1, {message: "Permanent address is required"}),
     current_address: z.string().trim().min(1, {message: "Current address is required"}),
     marital_status: z.enum(['M', 'S', 'D', 'W']),
-    blood_group: z.enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'RN', '']),
+    blood_group: z.enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'RN', '']).optional(),
     account_status: z.enum(['A', 'I', 'D']),
     personal_email: z.string().email().optional(),
     date_of_joining: z
