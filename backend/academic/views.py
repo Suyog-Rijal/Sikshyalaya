@@ -153,26 +153,53 @@ class SchoolClassViewSet(ModelViewSet):
 		return Response({'message': 'Classes updated successfully'}, status=status.HTTP_200_OK)
 
 
-class SubjectViewSet(ModelViewSet):
+class SubjectApiView(APIView):
 	permission_classes = [AllowAny]
-	http_method_names = ['get', 'delete', 'post']
-	queryset = Subject.objects.all()
-	serializer_class = SubjectListSerializer
 
-	def create(self, request, *args, **kwargs):
+	def get(self, request, id=None):
 		try:
-			school_class = SchoolClass.objects.get(id=request.data.get('school_class'))
-			subjects = request.data.get('subjects')
+			if id:
+				subject = SchoolClass.objects.get(id=id)
+				serializer = SubjectListSerializer(subject)
+			else:
+				subject = SchoolClass.objects.all()
+				serializer = SubjectListSerializer(subject, many=True)
+			return Response(serializer.data, status=status.HTTP_200_OK)
+
+		except Exception as e:
+			return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+	def post(self, request):
+		try:
+			school_class = SchoolClass.objects.get(id=request.data.get('selectedClass'))
+			subjects_data = request.data.get('subjects')
+			existing_subjects = Subject.objects.filter(school_class=school_class)
+
+			request_names = [subject.get('name') for subject in subjects_data] if subjects_data else []
+
 			with transaction.atomic():
-				for each in subjects:
-					Subject.objects.create(
-						school_class=school_class,
-						name=each.get('name'),
-						full_marks=each.get('full_mark'),
-						pass_marks=each.get('pass_mark')
-					)
+				if subjects_data:
+					for subject_data in subjects_data:
+						name = subject_data.get('name')
+						if not existing_subjects.filter(name=name).exists():
+							print('New data:', subject_data)
+							Subject.objects.create(
+								school_class=school_class,
+								name=name,
+								full_marks=subject_data.get('full_marks'),
+								pass_marks=subject_data.get('pass_marks')
+							)
+				subjects_to_delete = existing_subjects.exclude(name__in=request_names)
+				subjects_to_delete.delete()
 
-			return Response({'message': 'Subjects added successfully'}, status=status.HTTP_201_CREATED)
+			return Response({'message': 'Subjects updated successfully'}, status=status.HTTP_200_OK)
+		except Exception as e:
+			return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+	def delete(self, request, id):
+		try:
+			subject = Subject.objects.get(id=id)
+			subject.delete()
+			return Response({'message': 'Subject deleted successfully'}, status=status.HTTP_200_OK)
 		except Exception as e:
 			return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

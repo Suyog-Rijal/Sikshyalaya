@@ -27,39 +27,34 @@ interface DataTableProps {
     data: Array<{
         id: string;
         name: string;
-        full_marks: number;
-        pass_marks: number;
-        school_class: {
+        subjects: {
             id: string;
             name: string;
-        };
-    }
-    >
-    setData: React.Dispatch<
-        React.SetStateAction<
-            {
-                id: string;
-                name: string;
-                full_marks: number;
-                pass_marks: number;
-                school_class: {
-                    id: string;
-                    name: string;
-                };
-            }[]
-        >
-    >
-    openEditDialog?: (id: string) => void
+            full_marks: number;
+            pass_marks: number;
+        }[];
+    }>;
+    setData: React.Dispatch<React.SetStateAction<{
+        id: string;
+        name: string;
+        subjects: {
+            id: string;
+            name: string;
+            full_marks: number;
+            pass_marks: number;
+        }[];
+    }[]>>;
+    openEditDialog?: (id: string) => void;
 }
 
 interface DataTableState {
-    searchQuery: string
-    rowsPerPage: string
-    currentPage: number
-    selectedItems: string[]
-    deleteDialogOpen: boolean
-    itemToDelete: string | null
-    bulkDeleteDialogOpen: boolean
+    searchQuery: string;
+    rowsPerPage: string;
+    currentPage: number;
+    selectedItems: string[];
+    deleteDialogOpen: boolean;
+    itemToDelete: string | null;
+    bulkDeleteDialogOpen: boolean;
 }
 
 class SubjectDataTable extends React.Component<DataTableProps, DataTableState> {
@@ -85,17 +80,16 @@ class SubjectDataTable extends React.Component<DataTableProps, DataTableState> {
     }
 
     getFilteredData = () => {
-        const { searchQuery } = this.state;
-
+        const { searchQuery } = this.state
         return this.props.data.filter((item) =>
             item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.school_class.name.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-    };
+            item.subjects.some((subject) => subject.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        )
+    }
 
     handleSelectAll = (checked: boolean) => {
         if (checked) {
-            const allIds = this.getFilteredData().map((item) => item.id)
+            const allIds = this.getFilteredData().flatMap((item) => item.subjects.map((subject) => subject.id))
             this.setState({ selectedItems: allIds })
         } else {
             this.setState({ selectedItems: [] })
@@ -124,13 +118,20 @@ class SubjectDataTable extends React.Component<DataTableProps, DataTableState> {
 
     handleDeleteSelected = () => {
         const { selectedItems } = this.state
-
-        const deletePromises = selectedItems.map((id) => AxiosInstance.delete(`api/academic/subject/${id}/`))
-
+        const deletePromises = selectedItems.map((id) =>
+            AxiosInstance.delete(`api/academic/subject/${id}/`)
+        )
         Promise.all(deletePromises)
             .then(() => {
                 toast.success(`${selectedItems.length} subjects deleted successfully`)
-                this.props.setData((prevState) => prevState.filter((item) => !selectedItems.includes(item.id)))
+                this.props.setData((prevState) =>
+                    prevState
+                        .map((item) => ({
+                            ...item,
+                            subjects: item.subjects.filter((subject) => !selectedItems.includes(subject.id))
+                        }))
+                        .filter((item) => item.subjects.length > 0)
+                )
                 this.setState({ selectedItems: [], bulkDeleteDialogOpen: false })
             })
             .catch((err) => {
@@ -155,13 +156,18 @@ class SubjectDataTable extends React.Component<DataTableProps, DataTableState> {
 
     confirmDelete = () => {
         const { itemToDelete } = this.state
-
         if (!itemToDelete) return
-
         AxiosInstance.delete(`api/academic/subject/${itemToDelete}/`)
             .then(() => {
                 toast.success("Subject deleted successfully")
-                this.props.setData((prevState) => prevState.filter((item) => item.id !== itemToDelete))
+                this.props.setData((prevState) =>
+                    prevState
+                        .map((item) => ({
+                            ...item,
+                            subjects: item.subjects.filter((subject) => subject.id !== itemToDelete)
+                        }))
+                        .filter((item) => item.subjects.length > 0)
+                )
                 this.closeDeleteDialog()
             })
             .catch((err) => {
@@ -173,10 +179,11 @@ class SubjectDataTable extends React.Component<DataTableProps, DataTableState> {
     render() {
         const filteredData = this.getFilteredData()
         const { selectedItems, deleteDialogOpen, bulkDeleteDialogOpen } = this.state
-
-        const allSelected = filteredData.length > 0 && filteredData.every((item) => selectedItems.includes(item.id))
+        const subjectIds = filteredData.flatMap((item) => item.subjects.map((subject) => subject.id))
+        const allSelected = subjectIds.length > 0 && subjectIds.every((id) => selectedItems.includes(id))
         const someSelected = selectedItems.length > 0
-        const itemToDeleteName = this.props.data.find((item) => item.id === this.state.itemToDelete)?.name
+        const totalSubjects = filteredData.reduce((sum, item) => sum + item.subjects.length, 0)
+        const itemToDeleteName = this.props.data.flatMap((item) => item.subjects).find((subject) => subject.id === this.state.itemToDelete)?.name
 
         return (
             <div className="space-y-4">
@@ -195,29 +202,16 @@ class SubjectDataTable extends React.Component<DataTableProps, DataTableState> {
                             </SelectContent>
                         </Select>
                     </div>
-
                     <div className="flex items-center gap-2 w-full sm:w-auto">
                         {someSelected && (
-                            <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={this.openBulkDeleteDialog}
-                                className="flex items-center gap-1"
-                            >
+                            <Button variant="destructive" size="sm" onClick={this.openBulkDeleteDialog} className="flex items-center gap-1">
                                 <Trash className="h-4 w-4 mr-1" />
                                 Delete ({selectedItems.length})
                             </Button>
                         )}
-                        <Input
-                            type="search"
-                            placeholder="Search..."
-                            className="w-full sm:w-[250px]"
-                            value={this.state.searchQuery}
-                            onChange={this.handleSearch}
-                        />
+                        <Input type="search" placeholder="Search..." className="w-full sm:w-[250px]" value={this.state.searchQuery} onChange={this.handleSearch} />
                     </div>
                 </div>
-
                 <div className="rounded shadow-md bg-white overflow-hidden">
                     <Table>
                         <TableHeader className="bg-gray-50">
@@ -234,64 +228,54 @@ class SubjectDataTable extends React.Component<DataTableProps, DataTableState> {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredData.length > 0 ? (
-                                filteredData.map((row) => (
-                                    <TableRow
-                                        key={row.id}
-                                        className={selectedItems.includes(row.id) ? "bg-muted/30" : "hover:bg-gray-50"}
-                                    >
-                                        <TableCell className="text-center">
-                                            <Checkbox
-                                                checked={selectedItems.includes(row.id)}
-                                                onCheckedChange={(checked) => this.handleSelectItem(row.id, checked as boolean)}
-                                                aria-label={`Select ${row.name}`}
-                                            />
-                                        </TableCell>
-                                        <TableCell className="font-medium text-primary">{row.id}</TableCell>
-                                        <TableCell className="font-medium">{row.name}</TableCell>
-                                        <TableCell className="">{row.school_class.name}</TableCell>
-                                        <TableCell className="">{row.full_marks}</TableCell>
-                                        <TableCell className="">{row.pass_marks}</TableCell>
-                                        <TableCell>
-                                            <div className="flex justify-center">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                            <MoreVertical className="h-4 w-4" />
-                                                            <span className="sr-only">Open menu</span>
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-[160px]">
-                                                        <DropdownMenuItem onClick={() => this.handleEdit(row.id)}>
-                                                            <Pencil className="mr-2 h-4 w-4" />
-                                                            Edit
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem
-                                                            className="text-destructive focus:text-destructive"
-                                                            onClick={() => this.openDeleteDialog(row.id)}
-                                                        >
-                                                            <Trash className="mr-2 h-4 w-4" />
-                                                            Delete
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
+                            {totalSubjects > 0 ? (
+                                filteredData.map((row) =>
+                                    row.subjects.map((subject) => (
+                                        <TableRow key={subject.id} className={selectedItems.includes(subject.id) ? "bg-muted/30" : "hover:bg-gray-50"}>
+                                            <TableCell className="text-center">
+                                                <Checkbox checked={selectedItems.includes(subject.id)} onCheckedChange={(checked) => this.handleSelectItem(subject.id, checked as boolean)} aria-label={`Select ${subject.name}`} />
+                                            </TableCell>
+                                            <TableCell className="font-medium text-primary">{row.id}</TableCell>
+                                            <TableCell className="font-medium">{subject.name}</TableCell>
+                                            <TableCell className="">{row.name}</TableCell>
+                                            <TableCell className="">{subject.full_marks}</TableCell>
+                                            <TableCell className="">{subject.pass_marks}</TableCell>
+                                            <TableCell>
+                                                <div className="flex justify-center">
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                                <MoreVertical className="h-4 w-4" />
+                                                                <span className="sr-only">Open menu</span>
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end" className="w-[160px]">
+                                                            <DropdownMenuItem onClick={() => this.handleEdit(subject.id)}>
+                                                                <Pencil className="mr-2 h-4 w-4" />
+                                                                Edit
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => this.openDeleteDialog(subject.id)}>
+                                                                <Trash className="mr-2 h-4 w-4" />
+                                                                Delete
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )
                             ) : (
                                 <TableRow>
                                     <TableCell colSpan={7} className="h-24 text-center">
-                                        No results found.
+                                        No subject data found.
                                     </TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
                     </Table>
                 </div>
-
-                {/* Single Delete Confirmation Dialog */}
                 <Dialog open={deleteDialogOpen} onOpenChange={this.closeDeleteDialog}>
                     <DialogContent className="sm:max-w-[425px]">
                         <DialogHeader>
@@ -300,8 +284,7 @@ class SubjectDataTable extends React.Component<DataTableProps, DataTableState> {
                                 Confirm Deletion
                             </DialogTitle>
                             <DialogDescription className="pt-2">
-                                Are you sure you want to delete <span className="font-medium">{itemToDeleteName}</span>? This action cannot
-                                be undone.
+                                Are you sure you want to delete <span className="font-medium">{itemToDeleteName}</span>? This action cannot be undone.
                             </DialogDescription>
                         </DialogHeader>
                         <DialogFooter>
@@ -314,8 +297,6 @@ class SubjectDataTable extends React.Component<DataTableProps, DataTableState> {
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
-
-                {/* Bulk Delete Confirmation Dialog */}
                 <Dialog open={bulkDeleteDialogOpen} onOpenChange={this.closeBulkDeleteDialog}>
                     <DialogContent className="sm:max-w-[425px]">
                         <DialogHeader>

@@ -41,7 +41,7 @@ const menuItems: Menu[] = [
             {
                 icon: "/parent.png",
                 label: "Parents",
-                href: "/list/parents",
+                href: "/parent/list",
                 visible: ["admin", "teacher"],
             },
             {

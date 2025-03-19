@@ -176,9 +176,7 @@ class SimpleSchoolClassSerializer(serializers.ModelSerializer):
 		]
 
 
-class SubjectListSerializer(serializers.ModelSerializer):
-	school_class = SimpleSchoolClassSerializer()
-
+class SimpleSubjectExtendedSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Subject
 		fields = [
@@ -186,5 +184,16 @@ class SubjectListSerializer(serializers.ModelSerializer):
 			'name',
 			'full_marks',
 			'pass_marks',
-			'school_class',
+		]
+
+
+class SubjectListSerializer(serializers.ModelSerializer):
+	subjects = SimpleSubjectExtendedSerializer(many=True)
+
+	class Meta:
+		model = SchoolClass
+		fields = [
+			'id',
+			'name',
+			'subjects',
 		]

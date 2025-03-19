@@ -16,7 +16,7 @@ interface StaffCardProps {
     name: string
     email: string
     phone: string
-    positionDetail: Record<string, string>
+    positionDetail?: Record<string, string>
     status: "A" | "I" | "D"
     avatarUrl?: string
     staffType?: "T" | "M"

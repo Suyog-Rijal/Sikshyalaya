@@ -8,6 +8,7 @@ import {StaffDetailPage} from "@/pages/StaffDetailPage.tsx";
 import {StudentListPage} from "@/pages/StudentListPage.tsx";
 import {ClassListPage} from "@/pages/ClassListPage.tsx";
 import {SubjectListPage} from "@/pages/SubjectListPage.tsx";
+import {ParentListPage} from "@/pages/ParentListPage.tsx";
 
 
 function App() {
@@ -22,6 +23,8 @@ function App() {
                     <Route path="/staff/add" element={<AddStaff/>} />
                     <Route path="/staff/list/" element={<StaffListPage/>} />
                     <Route path={"/staff/detail/:id"} element={<StaffDetailPage/>} />
+
+                    <Route path={"/parent/list/"} element={<ParentListPage/>} />
 
                     <Route path={"/classes/list/"} element={<ClassListPage/>} />
 

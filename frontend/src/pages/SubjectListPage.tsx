@@ -26,53 +26,38 @@ const subjectSchema = z.object({
         z.object({
             id: z.string(),
             name: z.string().min(1, "Subject name is required"),
-            full_mark: z.string().min(1, "Full mark is required"),
-            pass_mark: z.string().min(1, "Pass mark is required"),
+            full_marks: z.coerce.number().int().min(1, "Full mark is required"),
+            pass_marks: z.coerce.number().int().min(1, "Pass mark is required"),
         })
     )
 });
 
+type tSubjectSchema = z.infer<typeof subjectSchema>;
+
 export type tApiData = {
     id: string;
     name: string;
-    full_marks: number;
-    pass_marks: number;
-    school_class: {
+    subjects: {
         id: string;
         name: string;
-    };
-}
-
-export type tClasses = {
-    id: string;
-    name: string;
+        full_marks: number;
+        pass_marks: number;
+    }[];
 }
 
 export function SubjectListPage() {
     const [open, setOpen] = useState(false);
     const [apiData, setApiData] = useState<tApiData[]>([]);
-    const [classes, setClasses] = useState<tClasses[]>([]);
 
     const fetchData = () => {
         console.log("Fetching data...");
         AxiosInstance.get("/api/academic/subject/")
             .then((response) => {
                 const data = response.data;
-                console.log(data);
                 setApiData(data);
             })
             .catch(() => {
                 toast.error("Failed to fetch subjects");
-            });
-
-        AxiosInstance.get("/api/academic/class/")
-            .then((response) => {
-                const data = response.data;
-                console.log(data);
-                setClasses(data);
-            })
-            .catch(() => {
-                toast.error("Failed to fetch classes");
             });
     }
 
@@ -89,7 +74,7 @@ export function SubjectListPage() {
         resolver: zodResolver(subjectSchema),
         defaultValues: {
             selectedClass: "",
-            subjects: [{ id: "", name: "", full_mark: "", pass_mark: "" }],
+            subjects: [],
         },
     });
 
@@ -98,31 +83,50 @@ export function SubjectListPage() {
         name: "subjects",
     });
 
-    const onSubmit = (data: any) => {
-        AxiosInstance.post("/api/academic/subject/", {
-            school_class: data.selectedClass,
-            subjects: data.subjects,
-        })
+    const onSubmit = (data: tSubjectSchema) => {
+        console.log(data);
+        AxiosInstance.post('api/academic/subject/', data)
             .then(() => {
-                toast.success("Subjects added successfully!");
-                fetchData();
+                toast.success('Subject added successfully');
             })
             .catch((err) => {
-                console.log(err);
-                toast.error("Failed to add subjects");
+                console.log(err)
+                toast.error('Failed to add subject');
             })
             .finally(() => {
                 setOpen(false);
+                fetchData();
             });
     };
 
     const addSubjectRow = () => {
-        append({ id: "", name: "", full_mark: "", pass_mark: "" });
+        append({ id: "", name: "", full_marks: 0, pass_marks: 0 });
     };
 
     const removeSubjectRow = (index: number) => {
         remove(index);
     };
+
+    const handleAddClassDropdownChange = (value: string) => {
+        if (value) {
+            const selectedClass = apiData.find((cls) => cls.id === value);
+            if (selectedClass) {
+                const subjects = selectedClass.subjects.map((subject) => ({
+                    id: subject.id,
+                    name: subject.name,
+                    full_marks: subject.full_marks,
+                    pass_marks: subject.pass_marks,
+                }));
+                console.log(subjects);
+                for (let i = fields.length - 1; i >= 0; i--) {
+                    remove(i);
+                }
+                subjects.forEach((subject) => {
+                    append(subject);
+                });
+            }
+        }
+    }
 
     return (
         <div className="p-4 flex flex-col gap-4">
@@ -156,12 +160,17 @@ export function SubjectListPage() {
                                         name="selectedClass"
                                         control={control}
                                         render={({ field }) => (
-                                            <Select value={field.value} onValueChange={field.onChange}>
+                                            <Select
+                                                value={field.value || undefined}
+                                                onValueChange={(value) => {
+                                                    field.onChange(value);
+                                                    handleAddClassDropdownChange(value);
+                                                }}>
                                             <SelectTrigger className={`w-full ${errors.selectedClass ? 'border-red-500' : ''}`}>
                                                     <SelectValue placeholder="Select a class" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {classes.map((cls) => (
+                                                    {apiData.map((cls) => (
                                                         <SelectItem key={cls.id} value={cls.id.toString()}>
                                                             {cls.name}
                                                         </SelectItem>
@@ -174,7 +183,7 @@ export function SubjectListPage() {
                                 </div>
                             </div>
 
-                            <div className="space-y-4">
+                            <div className="space-y-4 max-h-[200px] overflow-y-scroll scrollbar">
                                 <div className="grid grid-cols-12 gap-2 mb-2 px-1">
                                     <Label className="col-span-5 text-sm text-muted-foreground">Subject Name</Label>
                                     <Label className="col-span-3 text-sm text-muted-foreground">Full Mark</Label>
@@ -200,33 +209,33 @@ export function SubjectListPage() {
                                         </div>
                                         <div className="col-span-3">
                                             <Controller
-                                                name={`subjects.${index}.full_mark`}
+                                                name={`subjects.${index}.full_marks`}
                                                 control={control}
                                                 render={({ field }) => (
                                                     <Input
                                                         {...field}
                                                         type="number"
                                                         placeholder=""
-                                                        className={`w-full ${errors?.subjects?.[index]?.full_mark ? 'border-red-500 focus:border-red-500' : ''}`}
+                                                        className={`w-full ${errors?.subjects?.[index]?.full_marks ? 'border-red-500 focus:border-red-500' : ''}`}
                                                     />
                                                 )}
                                             />
-                                            {errors?.subjects?.[index]?.full_mark && <span className="text-red-500 text-sm">{errors.subjects[index].full_mark.message}</span>}
+                                            {errors?.subjects?.[index]?.full_marks && <span className="text-red-500 text-sm">{errors.subjects[index].full_marks.message}</span>}
                                         </div>
                                         <div className="col-span-3">
                                             <Controller
-                                                name={`subjects.${index}.pass_mark`}
+                                                name={`subjects.${index}.pass_marks`}
                                                 control={control}
                                                 render={({ field }) => (
                                                     <Input
                                                         {...field}
                                                         type="number"
                                                         placeholder=""
-                                                        className={`w-full ${errors?.subjects?.[index]?.pass_mark ? 'border-red-500' : ''}`}
+                                                        className={`w-full ${errors?.subjects?.[index]?.pass_marks ? 'border-red-500' : ''}`}
                                                     />
                                                 )}
                                             />
-                                            {errors?.subjects?.[index]?.pass_mark && <span className="text-red-500 text-sm">{errors.subjects[index].pass_mark.message}</span>}
+                                            {errors?.subjects?.[index]?.pass_marks && <span className="text-red-500 text-sm">{errors.subjects[index].pass_marks.message}</span>}
                                         </div>
                                         <div className="col-span-1 flex justify-center">
                                             <Button

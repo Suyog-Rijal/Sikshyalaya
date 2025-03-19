@@ -21,6 +21,7 @@ class ListStudentSerializer(serializers.ModelSerializer):
 			'profile_picture',
 			'school_class',
 			'section',
+			'created_at',
 		]
 
 	def get_roll_number(self, obj):

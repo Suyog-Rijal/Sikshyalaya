@@ -40,7 +40,7 @@ class HouseAdmin(admin.ModelAdmin):
 
 @admin.register(Subject)
 class SubjectAdmin(admin.ModelAdmin):
-	list_display = ('name', 'school_class', 'full_marks', 'pass_marks', 'created_at', 'updated_at')
+	list_display = ('id', 'name', 'school_class', 'full_marks', 'pass_marks', 'created_at', 'updated_at')
 	ordering = ('school_class', 'name')
 	list_filter = ('school_class',)
 
