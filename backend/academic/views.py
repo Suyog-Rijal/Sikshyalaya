@@ -1,15 +1,18 @@
 from django.db import transaction
+from django.core.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
-from academic.models import SchoolClass, Department, Section, Subject
+from academic.models import SchoolClass, Department, Section, Subject, Routine
 from academic.serializer import EnrollmentPostSerializer, EnrollmentGetSchoolClassSerializer, AddStaffGetSerializer, \
 	SimpleDepartmentSerializer, AddStaffSerializer, SimpleTeacherSerializer, SimpleManagementStaffSerializer, \
-	SchoolClassGetSerializer, SchoolClassPostSerializer, SubjectListSerializer
+	SchoolClassGetSerializer, SchoolClassPostSerializer, SubjectListSerializer, RoutineSerializer, \
+	SimpleSchoolClassSerializer, SimpleSubjectSerializer, SimpleStaffSerializer, RoutineSchoolClassGetSerializer, \
+	RoutineTeacherGetSerializer, RoutinePostSerializer
 from user.serializer import StudentSerializer, ParentSerializer
-from user.models import Parent
+from user.models import Parent, Teacher, Staff
 
 
 class EnrollmentApiView(APIView):
@@ -201,5 +204,49 @@ class SubjectApiView(APIView):
 			subject = Subject.objects.get(id=id)
 			subject.delete()
 			return Response({'message': 'Subject deleted successfully'}, status=status.HTTP_200_OK)
+		except Exception as e:
+			return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RoutineViewSet(ModelViewSet):
+	http_method_names = ['get', 'post', 'delete', 'put']
+	permission_classes = [AllowAny]
+	queryset = Routine.objects.all()
+	serializer_class = RoutineSerializer
+
+	def get_serializer_class(self):
+		if self.action == 'create':
+			return RoutinePostSerializer
+		if self.action == 'update':
+			return RoutinePostSerializer
+		return RoutineSerializer
+
+	def update(self, request, *args, **kwargs):
+		try:
+			return super().update(request, *args, **kwargs)
+		except ValidationError as e:
+			return Response({"error": e.message_dict}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RoutineFormGetAPiView(APIView):
+	permission_classes = [AllowAny]
+
+	def get(self, request):
+		try:
+			school_class = RoutineSchoolClassGetSerializer(SchoolClass.objects.all(), many=True)
+			return Response({'school_class': school_class.data}, status=status.HTTP_200_OK)
+
+		except Exception as e:
+			return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SimpleClassListApiView(APIView):
+	permission_classes = [AllowAny]
+
+	def get(self, request):
+		try:
+			school_class = SimpleSchoolClassSerializer(SchoolClass.objects.all(), many=True)
+			return Response(school_class.data, status=status.HTTP_200_OK)
+
 		except Exception as e:
 			return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

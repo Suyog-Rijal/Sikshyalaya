@@ -9,6 +9,7 @@ import { StudentListPage } from "@/pages/StudentListPage.tsx";
 import { ClassListPage } from "@/pages/ClassListPage.tsx";
 import { SubjectListPage } from "@/pages/SubjectListPage.tsx";
 import { ParentListPage } from "@/pages/ParentListPage.tsx";
+import {RoutineListPage} from "@/pages/RoutineListPage.tsx";
 // import LoginPage from "./views/root/Login";
 // import { useAuthStore } from "@/store/AuthStore.ts";
 // import { useEffect } from "react";
@@ -32,14 +33,21 @@ function App() {
                 <DashboardLayout>
                     <Routes>
                         <Route index element={<Dashboard />} />
+
                         <Route path="/student/list/" element={<StudentListPage />} />
                         <Route path="/student/add" element={<AddStudent />} />
+
                         <Route path="/staff/add" element={<AddStaff />} />
                         <Route path="/staff/list/" element={<StaffListPage />} />
                         <Route path="/staff/detail/:id" element={<StaffDetailPage />} />
+
                         <Route path="/parent/list/" element={<ParentListPage />} />
+
                         <Route path="/classes/list/" element={<ClassListPage />} />
+
                         <Route path="/subject/list/" element={<SubjectListPage />} />
+
+                        <Route path={'/routine/list/'} element={<RoutineListPage />} />
                     </Routes>
                 </DashboardLayout>
             {/*)}*/}

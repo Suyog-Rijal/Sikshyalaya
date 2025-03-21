@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from academic.models import Enrollment, AcademicYear, SchoolClass, Section, House, Subject, Department
+from academic.models import Enrollment, AcademicYear, SchoolClass, Section, House, Subject, Department, Routine
 from user.models import Staff, Teacher, ManagementStaff
 
 
@@ -197,3 +197,116 @@ class SubjectListSerializer(serializers.ModelSerializer):
 			'name',
 			'subjects',
 		]
+
+
+class TeacherRoutineSerializer(serializers.ModelSerializer):
+	name = serializers.SerializerMethodField()
+
+	class Meta:
+		model = Teacher
+		fields = [
+			'id',
+			'name',
+		]
+
+	def get_name(self, obj):
+		return f'{obj.staff.first_name} {obj.staff.last_name}'
+
+
+class RoutineSerializer(serializers.ModelSerializer):
+	school_class = SimpleSchoolClassSerializer()
+	section = SimpleSectionSerializer()
+	subject = SimpleSubjectSerializer()
+	teacher = TeacherRoutineSerializer()
+
+	class Meta:
+		model = Routine
+		fields = [
+			'id',
+			'school_class',
+			'section',
+			'subject',
+			'teacher',
+			'day',
+			'start_time',
+			'end_time',
+		]
+
+
+class SimpleStaffSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Staff
+		fields = [
+			'id',
+			'first_name',
+			'last_name',
+		]
+
+
+class RoutineTeacherGetSerializer(serializers.ModelSerializer):
+	first_name = serializers.CharField(source='staff.first_name')
+	last_name = serializers.CharField(source='staff.last_name')
+
+	class Meta:
+		model = Teacher
+		fields = [
+			'id',
+			'first_name',
+			'last_name',
+		]
+
+
+class RoutineSubjectGetSerializer(serializers.ModelSerializer):
+	teacher = serializers.SerializerMethodField()
+
+	class Meta:
+		model = Subject
+		fields = [
+			'id',
+			'name',
+			'teacher'
+		]
+
+	def get_teacher(self, obj):
+		teachers = Teacher.objects.filter(subject=obj, school_class=obj.school_class)
+		if teachers.exists():
+			return RoutineTeacherGetSerializer(teachers, many=True).data
+		return []
+
+
+class RoutineSectionGetSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Section
+		fields = [
+			'id',
+			'name',
+		]
+
+
+class RoutineSchoolClassGetSerializer(serializers.ModelSerializer):
+	section = RoutineSectionGetSerializer(many=True)
+	subjects = RoutineSubjectGetSerializer(many=True)
+
+	class Meta:
+		model = SchoolClass
+		fields = [
+			'id',
+			'name',
+			'section',
+			'subjects',
+		]
+
+
+class RoutinePostSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Routine
+		fields = [
+			'school_class',
+			'section',
+			'subject',
+			'teacher',
+			'day',
+			'start_time',
+			'end_time',
+		]
+

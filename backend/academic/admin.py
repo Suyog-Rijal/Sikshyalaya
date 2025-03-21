@@ -1,10 +1,10 @@
 from django.contrib import admin
-from academic.models import AcademicYear, SchoolClass, Section, House, Enrollment, Subject, Department
+from academic.models import AcademicYear, SchoolClass, Section, House, Enrollment, Subject, Department, Routine
 
 
 @admin.register(AcademicYear)
 class AcademicYearAdmin(admin.ModelAdmin):
-	list_display = ('start_date', 'created_at', 'updated_at', 'is_active')
+	list_display = ('id', 'start_date', 'created_at', 'updated_at', 'is_active')
 	ordering = ('-is_active', 'start_date')
 
 
@@ -57,3 +57,6 @@ class EnrollmentAdmin(admin.ModelAdmin):
 class DepartmentAdmin(admin.ModelAdmin):
 	list_display = ('id', 'name', 'created_at', 'updated_at')
 	ordering = ('name',)
+
+
+admin.site.register(Routine)

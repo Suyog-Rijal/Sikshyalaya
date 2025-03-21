@@ -1,9 +1,9 @@
-from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned, ValidationError
 from django.db import models
 import uuid
 from django.utils import timezone
 
-from user.models import Student
+from user.models import Student, Teacher
 
 
 class AcademicYear(models.Model):
@@ -140,3 +140,62 @@ class Department(models.Model):
 
 	def __str__(self):
 		return self.name
+
+
+class Routine(models.Model):
+	DAY_CHOICES = [
+		('Sunday', 'Sunday'),
+		('Monday', 'Monday'),
+		('Tuesday', 'Tuesday'),
+		('Wednesday', 'Wednesday'),
+		('Thursday', 'Thursday'),
+		('Friday', 'Friday'),
+		('Saturday', 'Saturday'),
+	]
+
+	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+	academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='routines', null=True)
+	day = models.CharField(max_length=10, choices=DAY_CHOICES)
+	start_time = models.TimeField()
+	end_time = models.TimeField()
+	school_class = models.ForeignKey(SchoolClass, on_delete=models.CASCADE, related_name='routines')
+	section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name='routines')
+	subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='routines')
+	teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='routines')  # Fix
+
+	created_at = models.DateTimeField(auto_now_add=True)
+	updated_at = models.DateTimeField(auto_now=True)
+
+	class Meta:
+		unique_together = ["academic_year", "day", "start_time", "school_class", "section"]
+
+	def clean(self):
+		if self.end_time <= self.start_time:
+			raise ValidationError("End time must be after start time.")
+
+		overlapping = Routine.objects.filter(
+			academic_year=self.academic_year,
+			day=self.day,
+			school_class=self.school_class,
+			section=self.section
+		)
+		if self.pk:
+			overlapping = overlapping.exclude(pk=self.pk)
+
+		for routine in overlapping:
+			if (self.start_time < routine.end_time and self.end_time > routine.start_time):
+				raise ValidationError(
+					"This time slot overlaps with an existing routine for this class and section."
+				)
+
+	def save(self, *args, **kwargs):
+		if not self.academic_year:
+			self.academic_year = AcademicYear.objects.get(is_active=True)
+		self.full_clean()
+		super().save(*args, **kwargs)
+
+	def __str__(self):
+		return (
+			f"{self.school_class} - {self.section} | {self.subject} | {self.teacher} | "
+			f"{self.day} | {self.start_time.strftime('%I:%M %p')} - {self.end_time.strftime('%I:%M %p')}"
+		)
