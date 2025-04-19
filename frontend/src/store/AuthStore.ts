@@ -1,49 +1,59 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
-type AuthStore = {
-    user: { email: string | null; name: string | null } | null;
-    token: string | null;
+const API_BASE = "http://localhost:8000";
+
+interface AuthState {
+    accessToken: string | null;
+    refreshToken: string | null;
+    role: string | null;
+    isAuthenticated: boolean;
     isLoading: boolean;
-    login: (email: string, name: string, token: string) => void;
+    login: (email: string, password: string, role: string) => Promise<void>;
     logout: () => void;
-    setLoading: (loading: boolean) => void;
     checkAuth: () => void;
-};
+}
 
-export const useAuthStore = create<AuthStore>((set) => ({
-    user: null,
-    token: null,
+export const useAuthStore = create<AuthState>((set) => ({
+    accessToken: null,
+    refreshToken: null,
+    role: null,
+    isAuthenticated: false,
     isLoading: false,
-    login: (email, name, token) => {
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify({ email, name }));
-        set({
-            user: { email, name },
-            token,
-            isLoading: false,
-        });
+    login: async (email, password, role) => {
+        set({ isLoading: true });
+        try {
+            const res = await fetch(`${API_BASE}/api/auth/login/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password, role }),
+            });
+            if (!res.ok) throw new Error('Invalid username or password');
+            const data = await res.json();
+            localStorage.setItem('accessToken', data.access);
+            localStorage.setItem('refreshToken', data.refresh);
+            localStorage.setItem('role', data.role);
+            set({
+                accessToken: data.access,
+                refreshToken: data.refresh,
+                role: data.role,
+                isAuthenticated: true,
+            });
+        } finally {
+            set({ isLoading: false });
+        }
     },
     logout: () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        set({ user: null, token: null, isLoading: false });
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('role');
+        set({ accessToken: null, refreshToken: null, role: null, isAuthenticated: false });
     },
-    setLoading: (loading) => set({ isLoading: loading }),
     checkAuth: () => {
-        const token = localStorage.getItem('token');
-        const user = localStorage.getItem('user');
-        if (token && user) {
-            set({
-                user: JSON.parse(user),
-                token,
-                isLoading: false,
-            });
-        } else {
-            set({
-                user: null,
-                token: null,
-                isLoading: false,
-            });
+        const access = localStorage.getItem('accessToken');
+        const refresh = localStorage.getItem('refreshToken');
+        const role = localStorage.getItem('role');
+        if (access && refresh && role) {
+            set({ accessToken: access, refreshToken: refresh, role, isAuthenticated: true });
         }
     },
 }));

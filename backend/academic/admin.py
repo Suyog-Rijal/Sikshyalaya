@@ -1,6 +1,6 @@
 from django.contrib import admin
 from academic.models import AcademicYear, SchoolClass, Section, House, Enrollment, Subject, Department, Routine, \
-	Attendance
+	AttendanceRecord, AttendanceSession
 
 
 @admin.register(AcademicYear)
@@ -63,8 +63,33 @@ class DepartmentAdmin(admin.ModelAdmin):
 admin.site.register(Routine)
 
 
-@admin.register(Attendance)
-class AcademicAdmin(admin.ModelAdmin):
-	list_display = ('id', 'student', 'school_class', 'section', 'date', 'status')
-	ordering = ('student', 'date')
-	list_filter = ('school_class', 'section', 'date')
+class AttendanceRecordInline(admin.TabularInline):
+	model = AttendanceRecord
+	extra = 0
+	fields = ('student', 'status', 'remarks')
+	readonly_fields = ('student',)
+	ordering = ('student__last_name', 'student__first_name')
+	list_display = ('student', 'status')
+	list_editable = ('status',)
+
+
+@admin.register(AttendanceSession)
+class AttendanceSessionAdmin(admin.ModelAdmin):
+	list_display = ('date', 'academic_year', 'school_class', 'section', 'marked_by')
+	list_filter = ('date', 'academic_year', 'school_class', 'section', 'marked_by')
+	search_fields = (
+		'school_class__name',
+		'section__name',
+		'marked_by__staff__first_name',
+		'marked_by__staff__last_name',
+	)
+	inlines = [AttendanceRecordInline]
+	date_hierarchy = 'date'
+
+
+@admin.register(AttendanceRecord)
+class AttendanceRecordAdmin(admin.ModelAdmin):
+	list_display = ('session', 'student', 'status')
+	list_filter = ('session__date', 'status')
+	search_fields = ('student__first_name', 'student__last_name')
+	list_editable = ('status',)

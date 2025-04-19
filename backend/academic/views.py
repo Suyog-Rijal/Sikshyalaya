@@ -6,14 +6,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
-from academic.models import SchoolClass, Department, Section, Subject, Routine, Attendance
+from academic.models import SchoolClass, Department, Section, Subject, Routine, AttendanceSession
 from academic.serializer import EnrollmentPostSerializer, EnrollmentGetSchoolClassSerializer, AddStaffGetSerializer, \
 	SimpleDepartmentSerializer, AddStaffSerializer, SimpleTeacherSerializer, SimpleManagementStaffSerializer, \
 	SchoolClassGetSerializer, SchoolClassPostSerializer, SubjectListSerializer, RoutineSerializer, \
 	SimpleSchoolClassSerializer, SimpleSubjectSerializer, SimpleStaffSerializer, RoutineSchoolClassGetSerializer, \
-	RoutineTeacherGetSerializer, RoutinePostSerializer, SchoolClassAttendanceSerializer
+	RoutineTeacherGetSerializer, RoutinePostSerializer, AttendanceSessionSerializer
 from user.serializer import StudentSerializer, ParentSerializer
 from user.models import Parent, Teacher, Staff
+from drf_spectacular.utils import extend_schema
 
 
 class EnrollmentApiView(APIView):
@@ -162,6 +163,8 @@ class SubjectApiView(APIView):
 
 	def get(self, request, id=None):
 		try:
+			print("user")
+			print(request.user)
 			if id:
 				subject = SchoolClass.objects.get(id=id)
 				serializer = SubjectListSerializer(subject)
@@ -253,60 +256,6 @@ class SimpleClassListApiView(APIView):
 			return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class AttendanceApiView(APIView):
-	permission_classes = [IsAuthenticated]
-
-	def get(self, request):
-		user = request.user
-
-		# 1) Admin sees everything
-		if user.has_role('admin'):
-			att_qs = Attendance.objects.select_related('student')
-			sec_qs = Section.objects.prefetch_related(
-				Prefetch('attendances', queryset=att_qs)
-			)
-			cls_qs = SchoolClass.objects.prefetch_related(
-				Prefetch('section', queryset=sec_qs)
-			)
-
-		# 2) Teacher sees only their own section(s)
-		elif user.has_role('teacher'):
-			try:
-				staff = Staff.objects.get(email=user.email)
-				teacher = Teacher.objects.get(staff=staff)
-			except Staff.DoesNotExist:
-				return Response(
-					{'detail': 'No staff record for this user.'},
-					status=status.HTTP_400_BAD_REQUEST
-				)
-			except Teacher.DoesNotExist:
-				return Response(
-					{'detail': 'No teacher record for this staff.'},
-					status=status.HTTP_400_BAD_REQUEST
-				)
-
-			att_qs = Attendance.objects.select_related('student') \
-				.filter(section__class_teacher=teacher)
-			sec_qs = Section.objects.filter(class_teacher=teacher) \
-				.prefetch_related(
-				Prefetch('attendances', queryset=att_qs)
-			)
-			cls_qs = SchoolClass.objects.filter(section__in=sec_qs) \
-				.distinct() \
-				.prefetch_related(
-				Prefetch('section', queryset=sec_qs)
-			)
-
-		else:
-			return Response(
-				{'detail': 'You do not have permission to view attendance.'},
-				status=status.HTTP_403_FORBIDDEN
-			)
-
-		serializer = SchoolClassAttendanceSerializer(cls_qs, many=True)
-		return Response(serializer.data, status=status.HTTP_200_OK)
-
-
 class UpdateSubjectApiView(APIView):
 	permission_classes = [IsAuthenticated]
 
@@ -339,3 +288,10 @@ class UpdateSubjectApiView(APIView):
 				{'detail': 'An error occurred while updating subjects.'},
 				status=status.HTTP_400_BAD_REQUEST
 			)
+
+
+@extend_schema(tags=["Attendance Session"])
+class AttendanceSessionViewset(ModelViewSet):
+	permission_classes = [IsAuthenticated]
+	queryset = AttendanceSession.objects.all()
+	serializer_class = AttendanceSessionSerializer

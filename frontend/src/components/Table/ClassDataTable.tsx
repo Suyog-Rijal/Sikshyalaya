@@ -20,11 +20,10 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {AlertTriangle, Pencil, Trash, MoreVertical} from "lucide-react"
+import { AlertTriangle, Pencil, Trash, MoreVertical } from "lucide-react"
 import { toast } from "sonner"
 import AxiosInstance from "@/auth/AxiosInstance.ts"
 import { Checkbox } from "@/components/ui/checkbox"
-
 
 interface DataTableProps {
     data: Array<{
@@ -92,6 +91,33 @@ class ClassDataTable extends React.Component<DataTableProps, DataTableState> {
                 value.toString().toLowerCase().includes(this.state.searchQuery.toLowerCase()),
             ),
         )
+    }
+
+    getPaginatedData = () => {
+        const filteredData = this.getFilteredData()
+        const { currentPage, rowsPerPage } = this.state
+        const startIndex = (currentPage - 1) * Number.parseInt(rowsPerPage)
+        const endIndex = startIndex + Number.parseInt(rowsPerPage)
+        return filteredData.slice(startIndex, endIndex)
+    }
+
+    handlePageChange = (page: number) => {
+        this.setState({ currentPage: page })
+    }
+
+    handlePreviousPage = () => {
+        this.setState((prevState) => ({
+            currentPage: Math.max(prevState.currentPage - 1, 1),
+        }))
+    }
+
+    handleNextPage = () => {
+        const filteredData = this.getFilteredData()
+        const totalPages = Math.ceil(filteredData.length / Number.parseInt(this.state.rowsPerPage))
+
+        this.setState((prevState) => ({
+            currentPage: Math.min(prevState.currentPage + 1, totalPages),
+        }))
     }
 
     handleSelectAll = (checked: boolean) => {
@@ -174,6 +200,8 @@ class ClassDataTable extends React.Component<DataTableProps, DataTableState> {
 
     render() {
         const filteredData = this.getFilteredData()
+        const paginatedData = this.getPaginatedData()
+        const totalPages = Math.ceil(filteredData.length / Number.parseInt(this.state.rowsPerPage))
         const { selectedItems, deleteDialogOpen, bulkDeleteDialogOpen } = this.state
 
         const allSelected = filteredData.length > 0 && filteredData.every((item) => selectedItems.includes(item.id))
@@ -236,8 +264,8 @@ class ClassDataTable extends React.Component<DataTableProps, DataTableState> {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredData.length > 0 ? (
-                                filteredData.map((row) => (
+                            {paginatedData.length > 0 ? (
+                                paginatedData.map((row) => (
                                     <TableRow
                                         key={row.id}
                                         className={selectedItems.includes(row.id) ? "bg-muted/30" : "hover:bg-gray-50"}
@@ -256,8 +284,8 @@ class ClassDataTable extends React.Component<DataTableProps, DataTableState> {
                                                 ? row.section.map((sec) => sec.name).join(", ")
                                                 : "No Sections"}
                                         </TableCell>
-                                        <TableCell>{row.no_of_students == '0' ? 'No students' : row.no_of_students}</TableCell>
-                                        <TableCell>{row.no_of_subjects == '0' ? 'No subjects' : row.no_of_subjects}</TableCell>
+                                        <TableCell>{row.no_of_students == "0" ? "No students" : row.no_of_students}</TableCell>
+                                        <TableCell>{row.no_of_subjects == "0" ? "No subjects" : row.no_of_subjects}</TableCell>
                                         <TableCell>
                                             <div className="flex justify-center">
                                                 <DropdownMenu>
@@ -296,6 +324,47 @@ class ClassDataTable extends React.Component<DataTableProps, DataTableState> {
                         </TableBody>
                     </Table>
                 </div>
+
+                {filteredData.length > 0 && (
+                    <div className="flex items-center justify-between px-4 py-3 border-t">
+                        <div className="text-sm text-muted-foreground">
+                            Showing {(this.state.currentPage - 1) * Number.parseInt(this.state.rowsPerPage) + 1} to{" "}
+                            {Math.min(this.state.currentPage * Number.parseInt(this.state.rowsPerPage), filteredData.length)} of{" "}
+                            {filteredData.length} entries
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={this.handlePreviousPage}
+                                disabled={this.state.currentPage === 1}
+                            >
+                                Previous
+                            </Button>
+                            <div className="flex items-center space-x-1">
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                    <Button
+                                        key={page}
+                                        variant={page === this.state.currentPage ? "default" : "outline"}
+                                        size="sm"
+                                        className="w-9"
+                                        onClick={() => this.handlePageChange(page)}
+                                    >
+                                        {page}
+                                    </Button>
+                                ))}
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={this.handleNextPage}
+                                disabled={this.state.currentPage === totalPages}
+                            >
+                                Next
+                            </Button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Single Delete Confirmation Dialog */}
                 <Dialog open={deleteDialogOpen} onOpenChange={this.closeDeleteDialog}>
@@ -354,11 +423,9 @@ class ClassDataTable extends React.Component<DataTableProps, DataTableState> {
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
-
             </div>
         )
     }
 }
 
 export default ClassDataTable
-

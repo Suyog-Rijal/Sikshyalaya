@@ -234,19 +234,57 @@ class Routine(models.Model):
 		)
 
 
-class Attendance(models.Model):
+class AttendanceSession(models.Model):
 	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-	student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='attendances')
-	school_class = models.ForeignKey(SchoolClass, on_delete=models.CASCADE, related_name='attendances')
-	section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name='attendances')
-	date = models.DateField()
+	academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='attendance_sessions')
+	school_class = models.ForeignKey(SchoolClass, on_delete=models.CASCADE, related_name='attendance_sessions')
+	section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name='attendance_sessions')
+	date = models.DateField(default=timezone.localdate)
+	marked_by = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='attendance_sessions')
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		unique_together = ['academic_year', 'school_class', 'section', 'date']
+		ordering = ['-date']
+
+	def clean(self):
+		if self.date > timezone.localdate():
+			raise ValidationError("Cannot create attendance session in the future")
+
+	def save(self, *args, **kwargs):
+		is_new = self._state.adding
+		if not self.academic_year:
+			self.academic_year = AcademicYear.objects.get(is_active=True)
+		self.full_clean()
+		super().save(*args, **kwargs)
+		if is_new:
+			students = Student.objects.filter(
+				enrollments__academic_year=self.academic_year,
+				enrollments__school_class=self.school_class,
+				enrollments__section=self.section
+			).distinct()
+			AttendanceRecord.objects.bulk_create([
+				AttendanceRecord(
+					session=self,
+					student=stu,
+					status=False
+				) for stu in students
+			])
+
+	def __str__(self):
+		return f"{self.school_class}-{self.section} on {self.date}"
+
+
+class AttendanceRecord(models.Model):
+	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+	session = models.ForeignKey(AttendanceSession, on_delete=models.CASCADE, related_name='records')
+	student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='attendance_records')
 	status = models.BooleanField(default=False)
-	marked_by = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='attendances', null=True, blank=True)
 	remarks = models.TextField(blank=True, null=True)
 
 	class Meta:
-		unique_together = ["student", "date"]
-		ordering = ["-date"]
+		unique_together = ['session', 'student']
+		ordering = ['student__last_name', 'student__first_name']
 
 	def __str__(self):
-		return f"{self.student.get_fullname()} - {self.date} - {'Present' if self.status else 'Absent'}"
+		return f"{self.student} – {'Present' if self.status else 'Absent'}"

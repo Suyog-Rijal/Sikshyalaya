@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from academic.models import Enrollment, AcademicYear, SchoolClass, Section, House, Subject, Department, Routine, \
-	Attendance
+	AttendanceSession
 from user.models import Staff, Teacher, ManagementStaff
 
 
@@ -312,47 +312,22 @@ class RoutinePostSerializer(serializers.ModelSerializer):
 		]
 
 
-class AttendanceDetailSerializer(serializers.ModelSerializer):
-	student_name = serializers.CharField(source='student.get_fullname', read_only=True)
-
+class AttendanceSessionSerializer(serializers.ModelSerializer):
 	class Meta:
-		model = Attendance
+		model = AttendanceSession
 		fields = [
-			'student',  # UUID of student
-			'student_name',  # human‑readable
+			'id',
+			'academic_year',
+			'school_class',
+			'section',
 			'date',
-			'status',
-			'remarks',
+			'marked_by'
 		]
+		read_only_fields = ['academic_year', 'marked_by']
 
+	def create(self, validated_data):
+		academic_year = AcademicYear.objects.get(is_active=True)
+		validated_data['academic_year'] = academic_year
+		validated_data['marked_by'] = self.context['request'].user
+		return super().create(validated_data)
 
-class SectionWithAttendanceSerializer(serializers.ModelSerializer):
-	attendance = AttendanceDetailSerializer(
-		many=True,
-		source='attendances',  # your related_name on Attendance.section
-		read_only=True
-	)
-
-	class Meta:
-		model = Section
-		fields = [
-			'id',
-			'name',
-			'attendance',
-		]
-
-
-class SchoolClassAttendanceSerializer(serializers.ModelSerializer):
-	sections = SectionWithAttendanceSerializer(
-		many=True,
-		source='section',  # your related_name on Section.school_class
-		read_only=True
-	)
-
-	class Meta:
-		model = SchoolClass
-		fields = [
-			'id',
-			'name',
-			'sections',
-		]
