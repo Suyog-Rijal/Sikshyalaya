@@ -1,5 +1,6 @@
 from django.contrib import admin
-from academic.models import AcademicYear, SchoolClass, Section, House, Enrollment, Subject, Department, Routine
+from academic.models import AcademicYear, SchoolClass, Section, House, Enrollment, Subject, Department, Routine, \
+	Attendance
 
 
 @admin.register(AcademicYear)
@@ -60,3 +61,10 @@ class DepartmentAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Routine)
+
+
+@admin.register(Attendance)
+class AcademicAdmin(admin.ModelAdmin):
+	list_display = ('id', 'student', 'school_class', 'section', 'date', 'status')
+	ordering = ('student', 'date')
+	list_filter = ('school_class', 'section', 'date')

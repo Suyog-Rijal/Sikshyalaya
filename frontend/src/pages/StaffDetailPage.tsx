@@ -2,7 +2,7 @@ import {PageHeader} from "@/components/ListPage/PageHeader.tsx";
 import {Lock, EyeOffIcon, EyeIcon, Pencil} from "lucide-react";
 import {useNavigate, useParams} from "react-router-dom";
 import {CustomStatusBadge} from "@/components/ListPage/CustomStatusBadge.tsx";
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs"
+import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs.tsx"
 import {ReactNode, useEffect, useState} from "react";
 import AxiosInstance from "@/auth/AxiosInstance.ts";
 import {toast} from "sonner";
@@ -13,7 +13,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog.tsx"
 import {Button} from "@/components/ui/button.tsx";
 import {Input} from "@/components/ui/input.tsx";
 import {Label} from "@/components/ui/label.tsx";

@@ -1,7 +1,60 @@
 import uuid
+
+from django.conf import settings
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+
+from django.contrib.auth.base_user import BaseUserManager, AbstractBaseUser
+from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth.models import PermissionsMixin, Group, Permission
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.text import slugify
+
+from user.Manager import CustomUserManager
+
+
+class CustomUser(AbstractBaseUser, PermissionsMixin):
+	ROLE_CHOICES = (
+		('student', 'Student'),
+		('parent', 'Parent'),
+		('staff', 'Staff'),
+		('teacher', 'Teacher'),
+		('admin', 'Admin'),
+	)
+
+	email = models.EmailField(unique=True)
+	roles = models.CharField(max_length=255, choices=ROLE_CHOICES, default='student')
+	is_active = models.BooleanField(default=True)
+	is_staff = models.BooleanField(default=False)
+	date_joined = models.DateTimeField(auto_now_add=True, null=True)
+
+	groups = models.ManyToManyField(Group, related_name="customuser_set", blank=True)
+	user_permissions = models.ManyToManyField(Permission, related_name="customuser_set", blank=True)
+
+	objects = CustomUserManager()
+
+	USERNAME_FIELD = 'email'
+	REQUIRED_FIELDS = []
+
+	def __str__(self):
+		return self.email
+
+	def get_roles(self):
+		return [role.strip() for role in self.roles.split(',') if role.strip()]
+
+	def has_role(self, role):
+		return role in self.get_roles()
+
+	def add_role(self, role):
+		roles = self.get_roles()
+		if role not in roles:
+			roles.append(role)
+			self.roles = ",".join(roles)
+			self.save()
+
+	class Meta:
+		verbose_name = "User"
+		verbose_name_plural = "Users"
 
 
 class Student(models.Model):
@@ -51,7 +104,7 @@ class Student(models.Model):
 	guardian = models.ForeignKey('Parent', on_delete=models.SET_NULL, related_name='guardian_of', blank=True, null=True)
 
 	email = models.EmailField(unique=True, blank=True)
-	password = models.CharField(max_length=25, blank=True)
+	password = models.CharField(max_length=128, blank=True)
 
 	current_address = models.TextField()
 	permanent_address = models.TextField()
@@ -73,25 +126,32 @@ class Student(models.Model):
 		if latest_enrollment:
 			return latest_enrollment
 		return None
+
 	get_enrollment.short_description = "Enrollment"
 
 	def save(self, *args, **kwargs):
+
 		if not self.email:
 			base_email = f"{slugify(self.first_name)}.{slugify(self.last_name)}.y22@icp.edu.np"
 			unique_email = base_email
 			counter = 1
-
 			while Student.objects.filter(email=unique_email).exists():
 				unique_email = f"{slugify(self.first_name)}.{slugify(self.last_name)}.y22{counter}@icp.edu.np"
 				counter += 1
-
 			self.email = unique_email
 
 		if not self.password:
 			self.password = uuid.uuid4().hex[:8]
+		else:
+			self.password = make_password(self.password)
 
 		self.full_clean()
 		super().save(*args, **kwargs)
+
+	def check_password(self, raw_password):
+		if self.password.startswith('pbkdf2_'):
+			return check_password(raw_password, self.password)
+		return self.password == raw_password
 
 	def __str__(self):
 		return f"{self.first_name} {self.last_name}"
@@ -197,7 +257,7 @@ class Staff(models.Model):
 	account_status = models.CharField(max_length=1, choices=ACCOUNT_STATUS_CHOICES, default='A')
 	personal_email = models.EmailField(blank=True, null=True)
 	email = models.EmailField(unique=True, blank=True)
-	password = models.CharField(max_length=25, blank=True)
+	password = models.CharField(max_length=128, blank=True)
 	date_of_joining = models.DateField()
 	note = models.TextField(blank=True, null=True)
 	staff_type = models.CharField(max_length=1, choices=STAFF_TYPE_CHOICES)
@@ -239,10 +299,17 @@ class Staff(models.Model):
 			self.email = unique_email
 
 		if not self.password:
-			self.password = uuid.uuid4().hex[:8]
+			raw_password = uuid.uuid4().hex[:8]
+			self.password = make_password(raw_password)
+		else:
+			if not self.password.startswith('pbkdf2_'):
+				self.password = make_password(self.password)
 
 		self.full_clean()
 		super().save(*args, **kwargs)
+
+	def check_password(self, raw_password):
+		return check_password(raw_password, self.password)
 
 	def get_fullname(self):
 		return f"{self.first_name} {self.last_name}"
@@ -254,8 +321,10 @@ class Staff(models.Model):
 class Teacher(models.Model):
 	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 	staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='teacher')
-	school_class = models.ForeignKey('academic.SchoolClass', on_delete=models.CASCADE, default=None, blank=True, null=True)
-	subject = models.ForeignKey('academic.Subject', related_name='teachers', on_delete=models.CASCADE, default=None, blank=True, null=True)
+	school_class = models.ForeignKey('academic.SchoolClass', on_delete=models.CASCADE, default=None, blank=True,
+	                                 null=True)
+	subject = models.ForeignKey('academic.Subject', related_name='teachers', on_delete=models.CASCADE, default=None,
+	                            blank=True, null=True)
 
 	def __str__(self):
 		return self.staff.get_fullname()

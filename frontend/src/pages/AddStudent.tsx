@@ -5,10 +5,10 @@ import {
     FormItem,
     FormLabel,
     FormMessage,
-} from "@/components/ui/form";
-import {Input} from "@/components/ui/input";
+} from "@/components/ui/form.tsx";
+import {Input} from "@/components/ui/input.tsx";
 import {useForm, useFormContext, FormProvider, FieldValues, ControllerRenderProps} from "react-hook-form";
-import {Button} from "@/components/ui/button";
+import {Button} from "@/components/ui/button.tsx";
 import {addStudentSchema, tAddStudentSchema} from "@/schema/AddStudent.ts";
 import {FormContainer} from "@/components/Forms/FormContainer.tsx";
 import {Heading} from "@/components/Forms/Heading.tsx";

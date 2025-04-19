@@ -1,5 +1,7 @@
 from django.contrib import admin
-from .models import Student, Parent, Staff, Teacher, ManagementStaff
+from django.contrib.auth.admin import UserAdmin
+
+from .models import Student, Parent, Staff, Teacher, ManagementStaff, CustomUser
 
 
 @admin.register(Student)
@@ -48,3 +50,26 @@ class StaffAdmin(admin.ModelAdmin):
 	]
 	search_fields = ['first_name', 'last_name', 'personal_email']
 	inlines = [TeacherInline, ManagementStaffInline]
+
+
+class CustomUserAdmin(UserAdmin):
+	model = CustomUser
+	list_display = ('email', 'is_staff', 'is_active')
+	list_filter = ('is_staff', 'is_active', 'roles')
+	fieldsets = (
+		(None, {'fields': ('email', 'password')}),
+		('Roles & Permissions', {'fields': ('roles', 'is_staff', 'is_active', 'groups', 'user_permissions')}),
+		('Important Dates', {'fields': ('last_login',)}),
+	)
+	add_fieldsets = (
+		(None, {
+			'classes': ('wide',),
+			'fields': ('email', 'password1', 'password2', 'roles', 'is_staff', 'is_active')}
+		 ),
+	)
+	search_fields = ('email',)
+	ordering = ('email',)
+	filter_horizontal = ('groups', 'user_permissions')
+
+
+admin.site.register(CustomUser, CustomUserAdmin)

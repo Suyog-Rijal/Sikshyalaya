@@ -1,16 +1,17 @@
 from django.db import transaction
 from django.core.exceptions import ValidationError
-from rest_framework.permissions import AllowAny
+from django.db.models import Prefetch
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
-from academic.models import SchoolClass, Department, Section, Subject, Routine
+from academic.models import SchoolClass, Department, Section, Subject, Routine, Attendance
 from academic.serializer import EnrollmentPostSerializer, EnrollmentGetSchoolClassSerializer, AddStaffGetSerializer, \
 	SimpleDepartmentSerializer, AddStaffSerializer, SimpleTeacherSerializer, SimpleManagementStaffSerializer, \
 	SchoolClassGetSerializer, SchoolClassPostSerializer, SubjectListSerializer, RoutineSerializer, \
 	SimpleSchoolClassSerializer, SimpleSubjectSerializer, SimpleStaffSerializer, RoutineSchoolClassGetSerializer, \
-	RoutineTeacherGetSerializer, RoutinePostSerializer
+	RoutineTeacherGetSerializer, RoutinePostSerializer, SchoolClassAttendanceSerializer
 from user.serializer import StudentSerializer, ParentSerializer
 from user.models import Parent, Teacher, Staff
 
@@ -250,3 +251,91 @@ class SimpleClassListApiView(APIView):
 
 		except Exception as e:
 			return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AttendanceApiView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def get(self, request):
+		user = request.user
+
+		# 1) Admin sees everything
+		if user.has_role('admin'):
+			att_qs = Attendance.objects.select_related('student')
+			sec_qs = Section.objects.prefetch_related(
+				Prefetch('attendances', queryset=att_qs)
+			)
+			cls_qs = SchoolClass.objects.prefetch_related(
+				Prefetch('section', queryset=sec_qs)
+			)
+
+		# 2) Teacher sees only their own section(s)
+		elif user.has_role('teacher'):
+			try:
+				staff = Staff.objects.get(email=user.email)
+				teacher = Teacher.objects.get(staff=staff)
+			except Staff.DoesNotExist:
+				return Response(
+					{'detail': 'No staff record for this user.'},
+					status=status.HTTP_400_BAD_REQUEST
+				)
+			except Teacher.DoesNotExist:
+				return Response(
+					{'detail': 'No teacher record for this staff.'},
+					status=status.HTTP_400_BAD_REQUEST
+				)
+
+			att_qs = Attendance.objects.select_related('student') \
+				.filter(section__class_teacher=teacher)
+			sec_qs = Section.objects.filter(class_teacher=teacher) \
+				.prefetch_related(
+				Prefetch('attendances', queryset=att_qs)
+			)
+			cls_qs = SchoolClass.objects.filter(section__in=sec_qs) \
+				.distinct() \
+				.prefetch_related(
+				Prefetch('section', queryset=sec_qs)
+			)
+
+		else:
+			return Response(
+				{'detail': 'You do not have permission to view attendance.'},
+				status=status.HTTP_403_FORBIDDEN
+			)
+
+		serializer = SchoolClassAttendanceSerializer(cls_qs, many=True)
+		return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class UpdateSubjectApiView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def put(self, request):
+		user = request.user
+		if not user.has_role('admin'):
+			return Response(
+				{'detail': 'You do not have permission to update subjects.'},
+				status=status.HTTP_403_FORBIDDEN
+			)
+
+		try:
+			subject = Subject.objects.get(id=request.data.get('id'))
+			if not subject:
+				return Response(
+					{'detail': 'Subject not found.'},
+					status=status.HTTP_404_NOT_FOUND
+				)
+			subject.name = request.data.get('name')
+			subject.full_marks = request.data.get('full_marks')
+			subject.pass_marks = request.data.get('pass_marks')
+			subject.save()
+			return Response(
+				{'detail': 'Subject updated successfully.'},
+				status=status.HTTP_200_OK
+			)
+		except Exception as e:
+			print(e)
+			return Response(
+				{'detail': 'An error occurred while updating subjects.'},
+				status=status.HTTP_400_BAD_REQUEST
+			)

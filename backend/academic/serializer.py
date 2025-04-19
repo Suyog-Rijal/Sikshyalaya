@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from academic.models import Enrollment, AcademicYear, SchoolClass, Section, House, Subject, Department, Routine
+from academic.models import Enrollment, AcademicYear, SchoolClass, Section, House, Subject, Department, Routine, \
+	Attendance
 from user.models import Staff, Teacher, ManagementStaff
 
 
@@ -310,3 +311,48 @@ class RoutinePostSerializer(serializers.ModelSerializer):
 			'end_time',
 		]
 
+
+class AttendanceDetailSerializer(serializers.ModelSerializer):
+	student_name = serializers.CharField(source='student.get_fullname', read_only=True)
+
+	class Meta:
+		model = Attendance
+		fields = [
+			'student',  # UUID of student
+			'student_name',  # human‑readable
+			'date',
+			'status',
+			'remarks',
+		]
+
+
+class SectionWithAttendanceSerializer(serializers.ModelSerializer):
+	attendance = AttendanceDetailSerializer(
+		many=True,
+		source='attendances',  # your related_name on Attendance.section
+		read_only=True
+	)
+
+	class Meta:
+		model = Section
+		fields = [
+			'id',
+			'name',
+			'attendance',
+		]
+
+
+class SchoolClassAttendanceSerializer(serializers.ModelSerializer):
+	sections = SectionWithAttendanceSerializer(
+		many=True,
+		source='section',  # your related_name on Section.school_class
+		read_only=True
+	)
+
+	class Meta:
+		model = SchoolClass
+		fields = [
+			'id',
+			'name',
+			'sections',
+		]

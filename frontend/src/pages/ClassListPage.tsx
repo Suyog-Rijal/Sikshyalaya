@@ -4,8 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { PageHeader } from "@/components/ListPage/PageHeader.tsx";
 import { PlusCircle, X } from "lucide-react";
-import ClassDataTable from "@/components/Table/ClassDataTable";
-import { Button } from "@/components/ui/button";
+import ClassDataTable from "@/components/Table/ClassDataTable.tsx";
+import { Button } from "@/components/ui/button.tsx";
 import {
     Dialog,
     DialogContent,
@@ -13,10 +13,10 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+} from "@/components/ui/dialog.tsx";
+import { Input } from "@/components/ui/input.tsx";
+import { Label } from "@/components/ui/label.tsx";
+import { Badge } from "@/components/ui/badge.tsx";
 import AxiosInstance from "@/auth/AxiosInstance.ts";
 import { toast } from "sonner";
 

@@ -2,7 +2,7 @@ from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned, 
 from django.db import models
 import uuid
 from django.utils import timezone
-
+from django.db.models import Q
 from user.models import Student, Teacher
 
 
@@ -70,6 +70,7 @@ class House(models.Model):
 class Section(models.Model):
 	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 	school_class = models.ForeignKey(SchoolClass, on_delete=models.CASCADE, related_name='section')
+	class_teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='sections', null=True, blank=True)
 	is_full = models.BooleanField(default=False)
 	name = models.CharField(max_length=5)
 	house = models.ManyToManyField(House, blank=True, related_name='sections')
@@ -154,39 +155,70 @@ class Routine(models.Model):
 	]
 
 	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-	academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='routines', null=True)
+	academic_year = models.ForeignKey(
+		AcademicYear, on_delete=models.CASCADE,
+		related_name='routines', null=True
+	)
 	day = models.CharField(max_length=10, choices=DAY_CHOICES)
 	start_time = models.TimeField()
 	end_time = models.TimeField()
-	school_class = models.ForeignKey(SchoolClass, on_delete=models.CASCADE, related_name='routines')
-	section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name='routines')
-	subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='routines')
-	teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='routines')  # Fix
+	school_class = models.ForeignKey(
+		SchoolClass, on_delete=models.CASCADE,
+		related_name='routines'
+	)
+	section = models.ForeignKey(
+		Section, on_delete=models.CASCADE,
+		related_name='routines'
+	)
+	subject = models.ForeignKey(
+		Subject, on_delete=models.CASCADE,
+		related_name='routines'
+	)
+	teacher = models.ForeignKey(
+		Teacher, on_delete=models.CASCADE,
+		related_name='routines'
+	)
 
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
 
 	class Meta:
-		unique_together = ["academic_year", "day", "start_time", "school_class", "section"]
+		unique_together = [
+			"academic_year", "day", "start_time",
+			"school_class", "section", "subject", "teacher"
+		]
 
 	def clean(self):
 		if self.end_time <= self.start_time:
 			raise ValidationError("End time must be after start time.")
 
-		overlapping = Routine.objects.filter(
+		qs = Routine.objects.filter(
 			academic_year=self.academic_year,
-			day=self.day,
-			school_class=self.school_class,
-			section=self.section
+			day=self.day
 		)
 		if self.pk:
-			overlapping = overlapping.exclude(pk=self.pk)
+			qs = qs.exclude(pk=self.pk)
 
-		for routine in overlapping:
-			if (self.start_time < routine.end_time and self.end_time > routine.start_time):
-				raise ValidationError(
-					"This time slot overlaps with an existing routine for this class and section."
-				)
+		overlap_q = Q(start_time__lt=self.end_time) & Q(end_time__gt=self.start_time)
+
+		if qs.filter(
+				overlap_q,
+				school_class=self.school_class,
+				section=self.section
+		).exists():
+			raise ValidationError(
+				"This time slot overlaps with an existing routine for "
+				f"class {self.school_class} section {self.section}."
+			)
+
+		if qs.filter(
+				overlap_q,
+				teacher=self.teacher
+		).exists():
+			raise ValidationError(
+				f"Teacher {self.teacher} is already scheduled for another class "
+				"during this time."
+			)
 
 	def save(self, *args, **kwargs):
 		if not self.academic_year:
@@ -197,5 +229,24 @@ class Routine(models.Model):
 	def __str__(self):
 		return (
 			f"{self.school_class} - {self.section} | {self.subject} | {self.teacher} | "
-			f"{self.day} | {self.start_time.strftime('%I:%M %p')} - {self.end_time.strftime('%I:%M %p')}"
+			f"{self.day} | {self.start_time.strftime('%I:%M %p')} - "
+			f"{self.end_time.strftime('%I:%M %p')}"
 		)
+
+
+class Attendance(models.Model):
+	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+	student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='attendances')
+	school_class = models.ForeignKey(SchoolClass, on_delete=models.CASCADE, related_name='attendances')
+	section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name='attendances')
+	date = models.DateField()
+	status = models.BooleanField(default=False)
+	marked_by = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='attendances', null=True, blank=True)
+	remarks = models.TextField(blank=True, null=True)
+
+	class Meta:
+		unique_together = ["student", "date"]
+		ordering = ["-date"]
+
+	def __str__(self):
+		return f"{self.student.get_fullname()} - {self.date} - {'Present' if self.status else 'Absent'}"

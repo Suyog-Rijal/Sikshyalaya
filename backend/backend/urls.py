@@ -28,10 +28,12 @@ urlpatterns = [
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redocs/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 
+
     path('api/academic/', include('academic.urls')),
     path('api/staff/', include('staff.urls')),
     path('api/student/', include('student.urls')),
     path('api/parent/', include('parent.urls')),
+    path('api/auth/', include('user.urls')),
 ]
 
 
