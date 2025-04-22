@@ -288,3 +288,4 @@ class AttendanceRecord(models.Model):
 
 	def __str__(self):
 		return f"{self.student} – {'Present' if self.status else 'Absent'}"
+

@@ -1,16 +1,19 @@
 from django.urls import path
 from .views import EnrollmentApiView, AddStaffApiView, SchoolClassViewSet, SubjectApiView, RoutineViewSet, \
-	RoutineFormGetAPiView, SimpleClassListApiView, UpdateSubjectApiView, AttendanceSessionViewset
+	RoutineFormGetAPiView, SimpleClassListApiView, UpdateSubjectApiView, AttendanceSessionViewset, \
+	AttendanceRecordViewSet, DeleteStaffApiView
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 router.register(r'class', SchoolClassViewSet, basename='school_class')
 router.register(r'routine', RoutineViewSet, basename='routine')
 router.register('attendance-session', AttendanceSessionViewset, basename='attendance-session')
+router.register('attendance-record', AttendanceRecordViewSet, basename='attendance-record')
 
 urlpatterns = [
 	path('enrollment/', EnrollmentApiView.as_view(), name='enrollment'),
 	path('add-staff/', AddStaffApiView.as_view(), name='add_staff'),
+	path('delete-staff/<uuid:id>/', DeleteStaffApiView.as_view(), name='delete_staff'),
 	path('subject/', SubjectApiView.as_view(), name='subject-list'),
 	path('subject/update/', UpdateSubjectApiView.as_view(), name='subject-update'),
 	path('subject/<uuid:id>/', SubjectApiView.as_view(), name='subject-detail'),

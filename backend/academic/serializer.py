@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from academic.models import Enrollment, AcademicYear, SchoolClass, Section, House, Subject, Department, Routine, \
-	AttendanceSession
-from user.models import Staff, Teacher, ManagementStaff
+	AttendanceSession, AttendanceRecord
+from user.models import Staff, Teacher, ManagementStaff, Student
 
 
 class EnrollmentGetHouseSerializer(serializers.ModelSerializer):
@@ -328,6 +328,47 @@ class AttendanceSessionSerializer(serializers.ModelSerializer):
 	def create(self, validated_data):
 		academic_year = AcademicYear.objects.get(is_active=True)
 		validated_data['academic_year'] = academic_year
-		validated_data['marked_by'] = self.context['request'].user
+		user = self.context['request'].user
+		staff = Staff.objects.get(email=user.email)
+		teacher = Teacher.objects.get(staff=staff)
+		validated_data['marked_by'] = teacher
 		return super().create(validated_data)
 
+
+class AttendanceRecordPostSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = AttendanceRecord
+		fields = [
+			'id',
+			'session',
+			'student',
+			'status',
+			'remarks'
+		]
+
+
+class AttendanceRecordGetSerializer(serializers.ModelSerializer):
+	class StudentInlineSerializer(serializers.ModelSerializer):
+		full_name = serializers.SerializerMethodField()
+
+		class Meta:
+			model = Student
+			fields = [
+				'id',
+				'full_name'
+			]
+
+		def get_full_name(self, obj):
+			return f"{obj.first_name} {obj.last_name}"
+
+	student = StudentInlineSerializer()
+
+	class Meta:
+		model = AttendanceRecord
+		fields = [
+			'id',
+			'session',
+			'student',
+			'status',
+			'remarks',
+		]

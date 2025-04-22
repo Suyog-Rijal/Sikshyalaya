@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.db.models import Prefetch
@@ -6,15 +8,17 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
-from academic.models import SchoolClass, Department, Section, Subject, Routine, AttendanceSession
+from academic.models import SchoolClass, Department, Section, Subject, Routine, AttendanceSession, AttendanceRecord
 from academic.serializer import EnrollmentPostSerializer, EnrollmentGetSchoolClassSerializer, AddStaffGetSerializer, \
 	SimpleDepartmentSerializer, AddStaffSerializer, SimpleTeacherSerializer, SimpleManagementStaffSerializer, \
 	SchoolClassGetSerializer, SchoolClassPostSerializer, SubjectListSerializer, RoutineSerializer, \
 	SimpleSchoolClassSerializer, SimpleSubjectSerializer, SimpleStaffSerializer, RoutineSchoolClassGetSerializer, \
-	RoutineTeacherGetSerializer, RoutinePostSerializer, AttendanceSessionSerializer
+	RoutineTeacherGetSerializer, RoutinePostSerializer, AttendanceSessionSerializer, AttendanceRecordPostSerializer, \
+	AttendanceRecordGetSerializer
 from user.serializer import StudentSerializer, ParentSerializer
-from user.models import Parent, Teacher, Staff
+from user.models import Parent, Teacher, Staff, CustomUser
 from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 
 
 class EnrollmentApiView(APIView):
@@ -79,7 +83,7 @@ class EnrollmentApiView(APIView):
 
 
 class AddStaffApiView(APIView):
-	permission_classes = [AllowAny]
+	permission_classes = [IsAuthenticated]
 
 	def get(self, request):
 		try:
@@ -92,8 +96,12 @@ class AddStaffApiView(APIView):
 
 	def post(self, request):
 		try:
+			if not request.user.has_role('admin'):
+				return Response(
+					{'detail': 'You do not have permission to add staff.'},
+					status=status.HTTP_403_FORBIDDEN
+				)
 			with transaction.atomic():
-				print(request.data)
 				staff_info = request.data.get('staff_info')
 				staff_info['staff_type'] = request.data.get('staff_type')
 				staff_serializer = AddStaffSerializer(data=staff_info)
@@ -118,8 +126,73 @@ class AddStaffApiView(APIView):
 			return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class DeleteStaffApiView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	@extend_schema(
+		description="Delete a staff member by ID. Only accessible by users with the 'admin' role.",
+		request=None,
+		parameters=[
+			OpenApiParameter(
+				name='id',
+				location=OpenApiParameter.QUERY,
+				required=True,
+				type=uuid.UUID,
+				description='ID of the staff to delete'
+			)
+		],
+		responses={
+			200: OpenApiExample(
+				'Success',
+				value={'detail': 'Staff deleted successfully.'}
+			),
+			403: OpenApiExample(
+				'Forbidden',
+				value={'detail': 'You do not have permission to delete staff.'}
+			),
+			404: OpenApiExample(
+				'Not Found',
+				value={'detail': 'Staff not found.'}
+			),
+			400: OpenApiExample(
+				'Bad Request',
+				value={'detail': 'An error occurred while deleting staff.'}
+			),
+		}
+	)
+	def delete(self, request, id):
+		try:
+			print(request.data)
+			if not request.user.has_role('admin'):
+				return Response(
+					{'detail': 'You do not have permission to delete staff.'},
+					status=status.HTTP_403_FORBIDDEN
+				)
+
+			staff = Staff.objects.get(id=id)
+			if not staff:
+				return Response(
+					{'detail': 'Staff not found.'},
+					status=status.HTTP_404_NOT_FOUND
+				)
+			staff.delete()
+			user = CustomUser.objects.get(email=staff.email)
+			if user:
+				user.delete()
+			return Response(
+				{'detail': 'Staff deleted successfully.'},
+				status=status.HTTP_200_OK
+			)
+		except Exception as e:
+			print(e)
+			return Response(
+				{'detail': 'An error occurred while deleting staff.'},
+				status=status.HTTP_400_BAD_REQUEST
+			)
+
+
 class SchoolClassViewSet(ModelViewSet):
-	permission_classes = [AllowAny]
+	permission_classes = [IsAuthenticated]
 	http_method_names = ['get', 'post', 'delete', 'put']
 	queryset = SchoolClass.objects.all()
 
@@ -159,7 +232,7 @@ class SchoolClassViewSet(ModelViewSet):
 
 
 class SubjectApiView(APIView):
-	permission_classes = [AllowAny]
+	permission_classes = [IsAuthenticated]
 
 	def get(self, request, id=None):
 		try:
@@ -210,6 +283,7 @@ class SubjectApiView(APIView):
 			return Response({'message': 'Subject deleted successfully'}, status=status.HTTP_200_OK)
 		except Exception as e:
 			return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class RoutineViewSet(ModelViewSet):
@@ -295,3 +369,22 @@ class AttendanceSessionViewset(ModelViewSet):
 	permission_classes = [IsAuthenticated]
 	queryset = AttendanceSession.objects.all()
 	serializer_class = AttendanceSessionSerializer
+
+
+@extend_schema(tags=["Attendance Session"])
+class AttendanceRecordViewSet(ModelViewSet):
+	http_method_names = ['post', 'get']
+	permission_classes = [IsAuthenticated]
+	queryset = AttendanceRecord.objects.all()
+	serializer_class = AttendanceRecordGetSerializer
+	lookup_field = 'id'
+
+	def get_serializer_class(self):
+		if self.action == 'create':
+			return AttendanceRecordPostSerializer
+		return AttendanceRecordGetSerializer
+
+	def get_queryset(self):
+		queryset = super().get_queryset()
+
+

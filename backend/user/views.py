@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.contrib.auth import authenticate
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
@@ -7,13 +8,26 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import CustomUser
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers
 
 
 class LoginView(APIView):
-	permission_classes = [IsAuthenticated]
+	permission_classes = [AllowAny]
 
+	@extend_schema(
+		tags=["Authentication"],
+		request=inline_serializer(
+			name="LoginRequest",
+			fields={
+				"role": serializers.CharField(),
+				"email": serializers.EmailField(),
+				"password": serializers.CharField(),
+			}
+		),
+		responses={200: OpenApiResponse(description="Login successful")},
+	)
 	def post(self, request):
-		print(request.data)
 		try:
 			role = request.data["role"]
 			email = request.data["email"]
@@ -41,6 +55,6 @@ class LoginView(APIView):
 			{
 				"refresh": str(refresh),
 				"access": str(refresh.access_token),
-				"role": role,
+				"role": user.roles,
 			}
 		)

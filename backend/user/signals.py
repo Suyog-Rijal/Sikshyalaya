@@ -15,9 +15,14 @@ def create_parent_profile(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Staff)
 def create_staff_profile(sender, instance, created, **kwargs):
 	if created:
+		staff_type = instance.staff_type
+		if staff_type == 'T':
+			role = 'teacher'
+		else:
+			role = 'staff'
 		CustomUser.objects.create(
 			email=instance.email,
-			roles='staff',
+			roles=role,
 		)
 
 

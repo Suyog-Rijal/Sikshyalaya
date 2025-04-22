@@ -300,7 +300,7 @@ class Staff(models.Model):
 
 		if not self.password:
 			raw_password = uuid.uuid4().hex[:8]
-			self.password = make_password(raw_password)
+			self.password = raw_password
 		else:
 			if not self.password.startswith('pbkdf2_'):
 				self.password = make_password(self.password)
@@ -321,10 +321,8 @@ class Staff(models.Model):
 class Teacher(models.Model):
 	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 	staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='teacher')
-	school_class = models.ForeignKey('academic.SchoolClass', on_delete=models.CASCADE, default=None, blank=True,
-	                                 null=True)
-	subject = models.ForeignKey('academic.Subject', related_name='teachers', on_delete=models.CASCADE, default=None,
-	                            blank=True, null=True)
+	school_class = models.ForeignKey('academic.SchoolClass', on_delete=models.CASCADE, default=None, blank=True, null=True)
+	subject = models.ForeignKey('academic.Subject', related_name='teachers', on_delete=models.CASCADE, default=None, blank=True, null=True)
 
 	def __str__(self):
 		return self.staff.get_fullname()
