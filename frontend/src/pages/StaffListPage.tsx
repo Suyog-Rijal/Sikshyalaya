@@ -1,3 +1,5 @@
+"use client"
+
 import { PageHeader } from "@/components/ListPage/PageHeader.tsx"
 import { PlusCircle } from "lucide-react"
 import { StaffCard } from "@/components/ListPage/StaffCard.tsx"
@@ -25,18 +27,20 @@ export function StaffListPage() {
         { label: "Disabled", value: "disabled" },
     ]
 
-    const [apiData, setApiData] = useState<{
-        id: string
-        account_status: "A" | "I" | "D"
-        first_name: string
-        last_name: string
-        position_detail: Record<string, string>
-        email: string
-        phone_number: string
-        profile_picture: string
-        staff_type: "T" | "M"
-        created_at: string
-    }[]>([])
+    const [apiData, setApiData] = useState<
+        {
+            id: string
+            account_status: "A" | "I" | "D"
+            first_name: string
+            last_name: string
+            position_detail: Record<string, string>
+            email: string
+            phone_number: string
+            profile_picture: string
+            staff_type: "T" | "M"
+            created_at: string
+        }[]
+    >([])
 
     const [loading, setLoading] = useState(true)
     const [searchText, setSearchText] = useState("")
@@ -44,6 +48,11 @@ export function StaffListPage() {
     const [sortOrder, setSortOrder] = useState("name_asc")
 
     useEffect(() => {
+        fetchStaffMembers()
+    }, [])
+
+    const fetchStaffMembers = () => {
+        setLoading(true)
         AxiosInstance.get("/api/staff/")
             .then((response) => {
                 setApiData(response.data)
@@ -55,7 +64,12 @@ export function StaffListPage() {
             .finally(() => {
                 setLoading(false)
             })
-    }, [])
+    }
+
+    const handleDeleteStaff = (deletedId: string) => {
+        // Update the local state to remove the deleted staff member
+        setApiData((prevData) => prevData.filter((staff) => staff.id !== deletedId))
+    }
 
     // Filtering logic
     const filteredStaff = apiData.filter((staff) => {
@@ -92,7 +106,7 @@ export function StaffListPage() {
                         { label: "Dashboard", href: "/" },
                         { label: "Staff", href: "/staff/list/" },
                     ]}
-                    onRefresh={() => console.log("Refreshing...")}
+                    onRefresh={fetchStaffMembers}
                     onPrint={() => console.log("Printing...")}
                     onExport={() => console.log("Exporting...")}
                     primaryAction={{
@@ -104,13 +118,11 @@ export function StaffListPage() {
 
                 <FilterBar
                     title="Staff Grid"
-                    onViewChange={(view) => console.log("View changed to:", view)}
                     onSortChange={(sort) => setSortOrder(sort)}
                     onFilterChange={(filter) => setFilterStatus(filter)}
                     onSearchChange={(text) => setSearchText(text)}
                     sortOptions={sortOptions}
                     filterOptions={filterOptions}
-                    defaultView="grid"
                 />
             </div>
 
@@ -128,6 +140,7 @@ export function StaffListPage() {
                             status={staff.account_status}
                             avatarUrl={staff.profile_picture}
                             staffType={staff.staff_type}
+                            onDelete={handleDeleteStaff}
                         />
                     ))}
             </div>

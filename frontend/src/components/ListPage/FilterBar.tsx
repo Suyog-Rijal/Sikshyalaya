@@ -1,40 +1,41 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Grid, LayoutList, SortAsc } from "lucide-react"
+import type React from "react"
+import { SortAsc } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
-import {useState} from "react";
+import { useState } from "react"
 
 interface FilterBarProps {
     title: string
-    onViewChange?: (view: "grid" | "list") => void
     onSortChange?: (sort: string) => void
     onFilterChange?: (filters: any) => void
     onSearchChange?: (search: string) => void
+    onClassChange?: (classId: string) => void
+    onSectionChange?: (sectionId: string) => void
     sortOptions?: { label: string; value: string }[]
     filterOptions?: { label: string; value: string }[]
-    defaultView?: "grid" | "list"
+    classOptions?: { label: string; value: string }[]
+    sectionOptions?: { label: string; value: string }[]
+    selectedClass?: string
+    selectedSection?: string
 }
 
 export function FilterBar({
                               title,
-                              onViewChange,
                               onSortChange,
                               onFilterChange,
                               onSearchChange,
+                              onClassChange,
+                              onSectionChange,
                               sortOptions = [],
                               filterOptions = [],
-                              defaultView = "grid",
+                              classOptions = [],
+                              sectionOptions = [],
+                              selectedClass = "",
+                              selectedSection = "",
                           }: FilterBarProps) {
-    const [view, setView] = useState<"grid" | "list">(defaultView)
     const [searchText, setSearchText] = useState("")
-
-    const handleViewChange = (newView: "grid" | "list") => {
-        setView(newView)
-        onViewChange?.(newView)
-    }
 
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setSearchText(event.target.value)
@@ -52,6 +53,41 @@ export function FilterBar({
                         onChange={handleSearchChange}
                         className="h-8 sm:h-9 text-xs sm:text-sm w-[150px] sm:w-[200px]"
                     />
+
+                    {/* Class Dropdown */}
+                    {classOptions.length > 0 && (
+                        <Select value={selectedClass} onValueChange={onClassChange}>
+                            <SelectTrigger className="h-8 sm:h-9 w-[120px] sm:w-[140px] text-xs sm:text-sm">
+                                <SelectValue placeholder="All Classes" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Classes</SelectItem>
+                                {classOptions.map((option) => (
+                                    <SelectItem key={option.value} value={option.value}>
+                                        {option.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )}
+
+                    {/* Section Dropdown */}
+                    {sectionOptions.length > 0 && (
+                        <Select value={selectedSection} onValueChange={onSectionChange}>
+                            <SelectTrigger className="h-8 sm:h-9 w-[120px] sm:w-[140px] text-xs sm:text-sm">
+                                <SelectValue placeholder="All Sections" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Sections</SelectItem>
+                                {sectionOptions.map((option) => (
+                                    <SelectItem key={option.value} value={option.value}>
+                                        {option.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )}
+
                     {filterOptions.length > 0 && (
                         <Select onValueChange={onFilterChange}>
                             <SelectTrigger className="h-8 sm:h-9 w-[100px] sm:w-[120px] text-xs sm:text-sm">
@@ -66,26 +102,7 @@ export function FilterBar({
                             </SelectContent>
                         </Select>
                     )}
-                    <div className="flex items-center rounded-md border">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className={cn("h-8 sm:h-9 w-8 sm:w-9 rounded-none rounded-l-md", view === "list" && "bg-muted")}
-                            onClick={() => handleViewChange("list")}
-                        >
-                            <LayoutList className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            <span className="sr-only">List view</span>
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className={cn("h-8 sm:h-9 w-8 sm:w-9 rounded-none rounded-r-md", view === "grid" && "bg-muted")}
-                            onClick={() => handleViewChange("grid")}
-                        >
-                            <Grid className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            <span className="sr-only">Grid view</span>
-                        </Button>
-                    </div>
+
                     {sortOptions.length > 0 && (
                         <Select onValueChange={onSortChange}>
                             <SelectTrigger className="h-8 sm:h-9 w-[120px] sm:w-[140px] text-xs sm:text-sm">

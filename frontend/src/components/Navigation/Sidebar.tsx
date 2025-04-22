@@ -1,8 +1,6 @@
-import {role} from "@/utils/data.ts";
 import {Link} from "react-router-dom";
-// import { Link } from "react-router-dom";
 
-type Role = "admin" | "teacher" | "student" | "parent";
+type Role = "admin" | "teacher" | "student" | "parent" | "staff";
 
 interface MenuItem {
     icon: string;
@@ -24,13 +22,13 @@ const menuItems: Menu[] = [
                 icon: "/home.png",
                 label: "Home",
                 href: "/",
-                visible: ["admin", "teacher", "student", "parent"],
+                visible: ["admin", "teacher", "staff", "student", "parent"],
             },
             {
                 icon: "/teacher.png",
                 label: "Staff",
                 href: "/staff/list",
-                visible: ["admin", "teacher"],
+                visible: ["admin"],
             },
             {
                 icon: "/student.png",
@@ -87,12 +85,6 @@ const menuItems: Menu[] = [
                 visible: ["admin", "teacher", "student", "parent"],
             },
             {
-                icon: "/calendar.png",
-                label: "Events",
-                href: "/list/events",
-                visible: ["admin", "teacher", "student", "parent"],
-            },
-            {
                 icon: "/message.png",
                 label: "Messages",
                 href: "/list/messages",
@@ -132,6 +124,7 @@ const menuItems: Menu[] = [
 ];
 
 export const Sidebar = () => {
+    const role = localStorage.getItem('role') as Role;
     return (
         <div className={'py-2 px-4 flex flex-col gap-4'}>
                 <div className={'px-2 flex items-center justify-center md:justify-start gap-2 sticky p-2 top-0 bg-white'}>

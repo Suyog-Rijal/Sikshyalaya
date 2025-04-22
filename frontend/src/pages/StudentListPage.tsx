@@ -1,8 +1,10 @@
+"use client"
+
 import { PageHeader } from "@/components/ListPage/PageHeader.tsx"
 import { PlusCircle } from "lucide-react"
 import { FilterBar } from "@/components/ListPage/FilterBar.tsx"
 import { useNavigate } from "react-router-dom"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import AxiosInstance from "@/auth/AxiosInstance.ts"
 import { toast } from "sonner"
 import { StudentCard } from "@/components/ListPage/StudentCard.tsx"
@@ -23,26 +25,31 @@ export function StudentListPage() {
         { label: "Disabled", value: "disabled" },
     ]
 
-    const [apiData, setApiData] = useState<{
-        id: string
-        account_status: "A" | "I" | "D"
-        first_name: string
-        gender: string
-        roll_number: string
-        last_name: string
-        email: string
-        profile_picture: string
-        school_class: string
-        section: string
-        created_at: string
-    }[]>([])
+    const [apiData, setApiData] = useState<
+        {
+            id: string
+            account_status: "A" | "I" | "D"
+            first_name: string
+            gender: string
+            roll_number: string
+            last_name: string
+            email: string
+            profile_picture: string
+            school_class: string
+            section: string
+            created_at: string
+        }[]
+    >([])
 
     const [loading, setLoading] = useState(true)
     const [searchText, setSearchText] = useState("")
     const [filterStatus, setFilterStatus] = useState("all")
     const [sortOrder, setSortOrder] = useState("name_asc")
+    const [selectedClass, setSelectedClass] = useState("all")
+    const [selectedSection, setSelectedSection] = useState("all")
 
-    useEffect(() => {
+    const fetchStudents = () => {
+        setLoading(true)
         AxiosInstance.get("/api/student/")
             .then((response) => {
                 setApiData(response.data)
@@ -54,9 +61,45 @@ export function StudentListPage() {
             .finally(() => {
                 setLoading(false)
             })
+    }
+
+    useEffect(() => {
+        fetchStudents()
     }, [])
 
-    // Filtering logic
+    const classOptions = useMemo(() => {
+        const uniqueClasses = [...new Set(apiData.map((student) => student.school_class))]
+            .filter(Boolean)
+            .sort()
+            .map((className) => ({
+                label: className,
+                value: className,
+            }))
+        return uniqueClasses
+    }, [apiData])
+
+    const sectionOptions = useMemo(() => {
+        let sectionsToShow = apiData
+
+        if (selectedClass && selectedClass !== "all") {
+            sectionsToShow = apiData.filter((student) => student.school_class === selectedClass)
+        }
+
+        const uniqueSections = [...new Set(sectionsToShow.map((student) => student.section))]
+            .filter(Boolean)
+            .sort()
+            .map((sectionName) => ({
+                label: sectionName,
+                value: sectionName,
+            }))
+
+        return uniqueSections
+    }, [apiData, selectedClass])
+
+    useEffect(() => {
+        setSelectedSection("all")
+    }, [selectedClass])
+
     const filteredStudents = apiData.filter((student) => {
         const fullName = `${student.first_name} ${student.last_name}`.toLowerCase()
         const searchMatch = fullName.includes(searchText.toLowerCase())
@@ -70,7 +113,11 @@ export function StudentListPage() {
             statusMatch = student.account_status === "D"
         }
 
-        return searchMatch && statusMatch
+        // Class and section filtering
+        const classMatch = selectedClass === "all" || student.school_class === selectedClass
+        const sectionMatch = selectedSection === "all" || student.section === selectedSection
+
+        return searchMatch && statusMatch && classMatch && sectionMatch
     })
 
     // Sorting logic
@@ -82,6 +129,12 @@ export function StudentListPage() {
         return 0
     })
 
+    const handleClassChange = (classId: string) => {
+        setSelectedClass(classId)
+        // Reset section to "all" when class changes
+        setSelectedSection("all")
+    }
+
     return (
         <div className="p-4 flex flex-col gap-4 bg-gray-50">
             <div>
@@ -91,7 +144,7 @@ export function StudentListPage() {
                         { label: "Dashboard", href: "/" },
                         { label: "Student", href: "/student/list/" },
                     ]}
-                    onRefresh={() => console.log("Refreshing...")}
+                    onRefresh={fetchStudents}
                     onPrint={() => console.log("Printing...")}
                     onExport={() => console.log("Exporting...")}
                     primaryAction={{
@@ -102,20 +155,25 @@ export function StudentListPage() {
                 />
                 <FilterBar
                     title="Student Grid"
-                    onViewChange={(view) => console.log("View changed to:", view)}
                     onSortChange={(sort) => setSortOrder(sort)}
                     onFilterChange={(filter) => setFilterStatus(filter)}
                     onSearchChange={(text) => setSearchText(text)}
+                    onClassChange={handleClassChange}
+                    onSectionChange={(sectionId) => setSelectedSection(sectionId)}
                     sortOptions={sortOptions}
                     filterOptions={filterOptions}
-                    defaultView="grid"
+                    classOptions={classOptions}
+                    sectionOptions={sectionOptions}
+                    selectedClass={selectedClass}
+                    selectedSection={selectedSection}
                 />
             </div>
 
             <div className="grid grid-cols-1 place-items-center md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {loading
-                    ? Array.from({ length: 8 }).map((_, index) => <StudentCardSkeleton key={index} />)
-                    : sortedStudents.map((each, index) => (
+                {loading ? (
+                    Array.from({ length: 8 }).map((_, index) => <StudentCardSkeleton key={index} />)
+                ) : sortedStudents.length > 0 ? (
+                    sortedStudents.map((each, index) => (
                         <StudentCard
                             id={each.id}
                             key={index}
@@ -128,7 +186,12 @@ export function StudentListPage() {
                             schoolClass={each.school_class}
                             section={each.section}
                         />
-                    ))}
+                    ))
+                ) : (
+                    <div className="col-span-full py-8 text-center text-muted-foreground">
+                        No students found matching the selected filters.
+                    </div>
+                )}
             </div>
         </div>
     )

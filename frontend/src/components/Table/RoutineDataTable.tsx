@@ -3,7 +3,6 @@
 import React from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
     Dialog,
@@ -79,7 +78,6 @@ interface RoutineDataTableProps {
 }
 
 interface RoutineDataTableState {
-    searchQuery: string
     rowsPerPage: string
     currentPage: number
     selectedItems: string[]
@@ -87,14 +85,16 @@ interface RoutineDataTableState {
     itemToDelete: string | null
     bulkDeleteDialogOpen: boolean
     classes: Array<{ id: string; name: string }>
+    sections: Array<{ id: string; name: string }>
     selectedClass: string
+    selectedSection: string
+    selectedDay: string
 }
 
 class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDataTableState> {
     constructor(props: RoutineDataTableProps) {
         super(props)
         this.state = {
-            searchQuery: "",
             rowsPerPage: "10",
             currentPage: 1,
             selectedItems: [],
@@ -102,12 +102,23 @@ class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDat
             itemToDelete: null,
             bulkDeleteDialogOpen: false,
             classes: [],
+            sections: [],
             selectedClass: "",
+            selectedSection: "",
+            selectedDay: "all",
         }
     }
 
     componentDidMount() {
         this.fetchClasses()
+        this.extractSections()
+    }
+
+    componentDidUpdate(prevProps: RoutineDataTableProps, prevState: RoutineDataTableState) {
+        // Extract sections when data changes or when selected class changes
+        if (prevProps.data !== this.props.data || prevState.selectedClass !== this.state.selectedClass) {
+            this.extractSections()
+        }
     }
 
     fetchClasses = async () => {
@@ -120,22 +131,67 @@ class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDat
         }
     }
 
-    handleClassChange = (value: string) => {
-        if (value === 'all') value = ''
-        this.setState({ selectedClass: value, currentPage: 1 })
-    }
+    extractSections = () => {
+        const { data } = this.props
+        const { selectedClass } = this.state
 
-    handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-        this.setState({ searchQuery: event.target.value, currentPage: 1 })
+        // Get unique sections from the data
+        const uniqueSections = new Set<string>()
+        const sectionsArray: Array<{ id: string; name: string }> = []
+
+        // Filter by selected class if any
+        const filteredData = selectedClass ? data.filter((item) => item.school_class.id === selectedClass) : data
+
+        // Extract unique sections
+        filteredData.forEach((item) => {
+            if (!uniqueSections.has(item.section.id)) {
+                uniqueSections.add(item.section.id)
+                sectionsArray.push({
+                    id: item.section.id,
+                    name: item.section.name,
+                })
+            }
+        })
+
+        // Sort sections by name
+        sectionsArray.sort((a, b) => a.name.localeCompare(b.name))
+
+        this.setState({ sections: sectionsArray })
+
+        // Reset section selection if the selected section is no longer available
+        if (selectedClass && this.state.selectedSection) {
+            const sectionExists = sectionsArray.some((section) => section.id === this.state.selectedSection)
+            if (!sectionExists) {
+                this.setState({ selectedSection: "" })
+            }
+        }
     }
 
     handleRowsPerPageChange = (value: string) => {
         this.setState({ rowsPerPage: value, currentPage: 1 })
     }
 
+    handleClassChange = (value: string) => {
+        if (value === "all") value = ""
+        this.setState({
+            selectedClass: value,
+            selectedSection: "", // Reset section when class changes
+            currentPage: 1,
+        })
+    }
+
+    handleSectionChange = (value: string) => {
+        if (value === "all") value = ""
+        this.setState({ selectedSection: value, currentPage: 1 })
+    }
+
+    handleDayChange = (value: string) => {
+        this.setState({ selectedDay: value, currentPage: 1 })
+    }
+
     getFilteredData = () => {
         const { data } = this.props
-        const { searchQuery, selectedClass } = this.state
+        const { selectedClass, selectedSection, selectedDay } = this.state
 
         let filteredData = data
 
@@ -144,21 +200,14 @@ class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDat
             filteredData = filteredData.filter((item) => item.school_class.id === selectedClass)
         }
 
-        // Then filter by search query if any
-        if (searchQuery.trim()) {
-            filteredData = filteredData.filter((item) => {
-                const searchFields = [
-                    item.school_class.name,
-                    item.section.name,
-                    item.subject.name,
-                    item.teacher.name,
-                    item.day,
-                    item.start_time,
-                    item.end_time,
-                ]
+        // Filter by selected section if any
+        if (selectedSection) {
+            filteredData = filteredData.filter((item) => item.section.id === selectedSection)
+        }
 
-                return searchFields.some((field) => field.toLowerCase().includes(searchQuery.toLowerCase()))
-            })
+        // Filter by selected day if any
+        if (selectedDay && selectedDay !== "all") {
+            filteredData = filteredData.filter((item) => item.day.toLowerCase() === selectedDay.toLowerCase())
         }
 
         return filteredData
@@ -276,7 +325,15 @@ class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDat
 
     render() {
         const { loading } = this.props
-        const { selectedItems, deleteDialogOpen, bulkDeleteDialogOpen, currentPage, rowsPerPage } = this.state
+        const {
+            selectedItems,
+            deleteDialogOpen,
+            bulkDeleteDialogOpen,
+            currentPage,
+            rowsPerPage,
+            sections,
+            selectedSection,
+        } = this.state
 
         const paginatedData = this.getPaginatedData()
         const totalPages = this.getTotalPages()
@@ -316,13 +373,6 @@ class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDat
                                 Delete ({selectedItems.length})
                             </Button>
                         )}
-                        <Input
-                            type="search"
-                            placeholder="Search..."
-                            className="w-full sm:w-[250px]"
-                            value={this.state.searchQuery}
-                            onChange={this.handleSearch}
-                        />
 
                         <Select value={this.state.selectedClass} onValueChange={this.handleClassChange}>
                             <SelectTrigger className="w-[150px]">
@@ -335,6 +385,36 @@ class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDat
                                         {classItem.name}
                                     </SelectItem>
                                 ))}
+                            </SelectContent>
+                        </Select>
+
+                        <Select value={selectedSection} onValueChange={this.handleSectionChange}>
+                            <SelectTrigger className="w-[150px]">
+                                <SelectValue placeholder="All Sections" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Sections</SelectItem>
+                                {sections.map((section) => (
+                                    <SelectItem key={section.id} value={section.id}>
+                                        {section.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+                        <Select value={this.state.selectedDay} onValueChange={this.handleDayChange}>
+                            <SelectTrigger className="w-[150px]">
+                                <SelectValue placeholder="All Days" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Days</SelectItem>
+                                <SelectItem value="Monday">Monday</SelectItem>
+                                <SelectItem value="Tuesday">Tuesday</SelectItem>
+                                <SelectItem value="Wednesday">Wednesday</SelectItem>
+                                <SelectItem value="Thursday">Thursday</SelectItem>
+                                <SelectItem value="Friday">Friday</SelectItem>
+                                <SelectItem value="Saturday">Saturday</SelectItem>
+                                <SelectItem value="Sunday">Sunday</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -534,4 +614,3 @@ class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDat
 }
 
 export default RoutineDataTable
-
