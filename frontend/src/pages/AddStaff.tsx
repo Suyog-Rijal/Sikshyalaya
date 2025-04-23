@@ -19,6 +19,7 @@ import {useEffect, useState} from "react";
 import AxiosInstance from "@/auth/AxiosInstance.ts";
 import {toast} from "sonner";
 import {dateFormater} from "@/utils/cleanData.ts";
+import axiosInstance from "@/auth/AxiosInstance.ts";
 
 
 const PersonalInfo = () => {
@@ -693,11 +694,20 @@ export function AddStaff() {
     const onSubmit = (data: tAddStaffSchema) => {
         const cleaned_data = {
             ...data,
+
             staff_info: dateFormater(data.staff_info),
         };
         console.log(cleaned_data);
         AxiosInstance.post('/api/academic/add-staff/', cleaned_data)
-            .then(() => {
+            .then((res) => {
+                axiosInstance.post('/api/academic/add-staff-image/', {
+                    image: form.getValues('staff_info.profile_picture'),
+                    id: res.data
+                }, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                })
                 toast.success('Staff added successfully');
                 form.reset();
                 

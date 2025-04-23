@@ -329,14 +329,11 @@ class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDat
             selectedItems,
             deleteDialogOpen,
             bulkDeleteDialogOpen,
-            currentPage,
-            rowsPerPage,
             sections,
             selectedSection,
         } = this.state
 
         const paginatedData = this.getPaginatedData()
-        const totalPages = this.getTotalPages()
 
         const allSelected = paginatedData.length > 0 && paginatedData.every((item) => selectedItems.includes(item.id))
         const someSelected = selectedItems.length > 0
@@ -346,21 +343,8 @@ class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDat
         return (
             <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">Rows Per Page</span>
-                        <Select value={rowsPerPage} onValueChange={this.handleRowsPerPageChange}>
-                            <SelectTrigger className="w-[80px] h-9">
-                                <SelectValue placeholder="10" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="5">5</SelectItem>
-                                <SelectItem value="10">10</SelectItem>
-                                <SelectItem value="20">20</SelectItem>
-                                <SelectItem value="50">50</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
 
+                    <div></div>
                     <div className="flex items-center gap-2 w-full sm:w-auto">
                         {someSelected && (
                             <Button
@@ -512,40 +496,6 @@ class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDat
                     </Table>
                 </div>
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                    <div className="flex items-center justify-end space-x-2 py-4">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => this.handlePageChange(currentPage - 1)}
-                            disabled={currentPage === 1}
-                        >
-                            Previous
-                        </Button>
-                        <div className="flex items-center gap-1">
-                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                                <Button
-                                    key={page}
-                                    variant={currentPage === page ? "default" : "outline"}
-                                    size="sm"
-                                    className="w-9"
-                                    onClick={() => this.handlePageChange(page)}
-                                >
-                                    {page}
-                                </Button>
-                            ))}
-                        </div>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => this.handlePageChange(currentPage + 1)}
-                            disabled={currentPage === totalPages}
-                        >
-                            Next
-                        </Button>
-                    </div>
-                )}
 
                 {/* Single Delete Confirmation Dialog */}
                 <Dialog open={deleteDialogOpen} onOpenChange={this.closeDeleteDialog}>

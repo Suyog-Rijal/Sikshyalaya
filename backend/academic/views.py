@@ -16,7 +16,7 @@ from academic.serializer import EnrollmentPostSerializer, EnrollmentGetSchoolCla
 	RoutineTeacherGetSerializer, RoutinePostSerializer, AttendanceSessionSerializer, AttendanceRecordPostSerializer, \
 	AttendanceRecordGetSerializer
 from user.serializer import StudentSerializer, ParentSerializer
-from user.models import Parent, Teacher, Staff, CustomUser
+from user.models import Parent, Teacher, Staff, CustomUser, Student
 from drf_spectacular.utils import extend_schema
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 
@@ -76,10 +76,57 @@ class EnrollmentApiView(APIView):
 				enrollment_serializer.is_valid(raise_exception=True)
 				enrollment_serializer.save()
 
-			return Response({'message': 'Student enrolled successfully'}, status=status.HTTP_201_CREATED)
-
+			return Response(enrollment_serializer.data, status=status.HTTP_201_CREATED)
 		except Exception as e:
 			return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class EnrollmentImageView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def post(self, request):
+		if not request.user.has_role('admin'):
+			return Response(
+				{'detail': 'You do not have permission to update student image.'},
+				status=status.HTTP_403_FORBIDDEN
+			)
+
+		try:
+			student_id = request.data.get('id')
+			student_image = request.FILES.get('student_image')
+			father_image = request.FILES.get('father_image')
+			mother_image = request.FILES.get('mother_image')
+			guardian_image = request.FILES.get('guardian_image')
+			student = Student.objects.get(id=student_id)
+
+			if not student:
+				return Response(
+					{'detail': 'Student not found.'},
+					status=status.HTTP_404_NOT_FOUND
+				)
+
+			if student_image:
+				student.profile_picture = student_image
+				student.save()
+			if father_image:
+				student.father.profile_picture = father_image
+				student.father.save()
+			if mother_image:
+				student.mother.profile_picture = mother_image
+				student.mother.save()
+			if guardian_image:
+				student.guardian.profile_picture = guardian_image
+				student.guardian.save()
+			return Response(
+				{'detail': 'Student image updated successfully.'},
+				status=status.HTTP_200_OK
+			)
+		except Exception as e:
+			print(e)
+			return Response(
+				{'detail': 'An error occurred while updating student image.'},
+				status=status.HTTP_400_BAD_REQUEST
+			)
 
 
 class AddStaffApiView(APIView):
@@ -95,6 +142,7 @@ class AddStaffApiView(APIView):
 			return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 	def post(self, request):
+		print(request.data)
 		try:
 			if not request.user.has_role('admin'):
 				return Response(
@@ -120,10 +168,42 @@ class AddStaffApiView(APIView):
 				other_serializer.is_valid(raise_exception=True)
 				other_instance = other_serializer.save()
 
-				return Response({'message': 'Staff added successfully'}, status=status.HTTP_201_CREATED)
+				return Response(staff_instance.id, status=status.HTTP_201_CREATED)
 
 		except Exception as e:
 			return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AddStaffImageView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def post(self, request):
+		if not request.user.has_role('admin'):
+			return Response(
+				{'detail': 'You do not have permission to update staff image.'},
+				status=status.HTTP_403_FORBIDDEN
+			)
+
+		try:
+			staff_id = request.data.get('id')
+			staff = Staff.objects.get(id=staff_id)
+			if not staff:
+				return Response(
+					{'detail': 'Staff not found.'},
+					status=status.HTTP_404_NOT_FOUND
+				)
+			staff.profile_picture = request.FILES.get('image')
+			staff.save()
+			return Response(
+				{'detail': 'Staff image updated successfully.'},
+				status=status.HTTP_200_OK
+			)
+		except Exception as e:
+			print(e)
+			return Response(
+				{'detail': 'An error occurred while updating staff image.'},
+				status=status.HTTP_400_BAD_REQUEST
+			)
 
 
 class DeleteStaffApiView(APIView):
@@ -162,7 +242,6 @@ class DeleteStaffApiView(APIView):
 	)
 	def delete(self, request, id):
 		try:
-			print(request.data)
 			if not request.user.has_role('admin'):
 				return Response(
 					{'detail': 'You do not have permission to delete staff.'},
@@ -285,7 +364,6 @@ class SubjectApiView(APIView):
 			return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 class RoutineViewSet(ModelViewSet):
 	http_method_names = ['get', 'post', 'delete', 'put']
 	permission_classes = [AllowAny]
@@ -386,5 +464,3 @@ class AttendanceRecordViewSet(ModelViewSet):
 
 	def get_queryset(self):
 		queryset = super().get_queryset()
-
-

@@ -67,7 +67,13 @@ export function StaffListPage() {
     }
 
     const handleDeleteStaff = (deletedId: string) => {
-        // Update the local state to remove the deleted staff member
+        AxiosInstance.delete(`/api/academic/delete-staff/${deletedId}/`)
+            .then(() => {
+            })
+            .catch((error) => {
+                console.error("Delete error:", error)
+                toast.error("Failed to delete staff member. Please try again.")
+            })
         setApiData((prevData) => prevData.filter((staff) => staff.id !== deletedId))
     }
 

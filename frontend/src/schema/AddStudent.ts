@@ -38,7 +38,7 @@ export const addStudentSchema = z.object({
         pickup_address: z.string().optional(),
         previous_school: z.string().optional(),
         previous_school_address: z.string().optional(),
-        // profile_picture: z.union([z.string().url(), z.instanceof(File)]).nullable(),
+        profile_picture: z.any().optional().nullable().or(z.instanceof(File)).or(z.literal("")).or(z.undefined()),
     }),
 
     enrollment_info: z.object({
@@ -55,6 +55,8 @@ export const addStudentSchema = z.object({
 
     father_info: z.object({
         full_name: z.string().optional(),
+        profile_picture: z.any().optional().nullable().or(z.instanceof(File)).or(z.literal("")).or(z.undefined()),
+
         phone_number: z
             .string()
             .optional()
@@ -74,6 +76,8 @@ export const addStudentSchema = z.object({
     }),
 
     mother_info: z.object({
+        profile_picture: z.any().optional().nullable().or(z.instanceof(File)).or(z.literal("")).or(z.undefined()),
+
         full_name: z.string().optional(),
         phone_number: z
             .string()
@@ -96,6 +100,8 @@ export const addStudentSchema = z.object({
     guardian_info: z.object({
         full_name: z.string().trim().min(1, 'Guardian name is required'),
         guardian_relation: z.string().trim().min(1, 'Relationship is required'),
+        profile_picture: z.any().optional().nullable().or(z.instanceof(File)).or(z.literal("")).or(z.undefined()),
+
         phone_number: z
             .string()
             .min(10, 'Phone number must be exactly 10 digits')

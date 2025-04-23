@@ -1,8 +1,11 @@
+from django.conf import settings
 from django.urls import path
 from .views import EnrollmentApiView, AddStaffApiView, SchoolClassViewSet, SubjectApiView, RoutineViewSet, \
 	RoutineFormGetAPiView, SimpleClassListApiView, UpdateSubjectApiView, AttendanceSessionViewset, \
-	AttendanceRecordViewSet, DeleteStaffApiView
+	AttendanceRecordViewSet, DeleteStaffApiView, AddStaffImageView, EnrollmentImageView
 from rest_framework.routers import DefaultRouter
+from django.conf.urls.static import static
+
 
 router = DefaultRouter()
 router.register(r'class', SchoolClassViewSet, basename='school_class')
@@ -12,7 +15,9 @@ router.register('attendance-record', AttendanceRecordViewSet, basename='attendan
 
 urlpatterns = [
 	path('enrollment/', EnrollmentApiView.as_view(), name='enrollment'),
+	path('enrollment-image/', EnrollmentImageView.as_view(), name='enrollment_image'),
 	path('add-staff/', AddStaffApiView.as_view(), name='add_staff'),
+	path('add-staff-image/', AddStaffImageView.as_view(), name='add_staff_image'),
 	path('delete-staff/<uuid:id>/', DeleteStaffApiView.as_view(), name='delete_staff'),
 	path('subject/', SubjectApiView.as_view(), name='subject-list'),
 	path('subject/update/', UpdateSubjectApiView.as_view(), name='subject-update'),
@@ -22,4 +27,7 @@ urlpatterns = [
 ]
 
 urlpatterns += router.urls
+
+if settings.DEBUG:
+	urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

@@ -95,7 +95,7 @@ class AddStaffSerializer(serializers.ModelSerializer):
 			'pickup_address', 'social_facebook', 'social_instagram',
 			'social_linkedin', 'social_github', 'qualification', 'experience',
 			'previous_workplace', 'previous_workplace_address',
-			'previous_workplace_phone_number'
+			'previous_workplace_phone_number',
 		]
 
 

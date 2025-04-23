@@ -501,8 +501,23 @@ export function AddStudent() {
         console.log(cleanedData);
         AxiosInstance.post('api/academic/enrollment/', cleanedData)
             .then((res) => {
+                AxiosInstance.post('api/academic/enrollment-image/', {
+                    id: res.data.student,
+                    student_image: data.student_info.profile_picture,
+                    father_image: data.father_info.profile_picture,
+                    mother_image: data.mother_info.profile_picture,
+                    guardian_image: data.guardian_info.profile_picture,
+                }, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                })
+                    .catch((err => {
+                        console.log(err);
+                    }));
+                form.reset();
                 toast.success('Student enrolled successfully');
-                console.log(res);
+
             })
             .catch((err) => {
                 console.log(err);

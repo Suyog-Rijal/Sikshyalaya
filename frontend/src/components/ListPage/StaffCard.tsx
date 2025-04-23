@@ -22,7 +22,6 @@ import { EllipsisVertical, Loader2 } from "lucide-react"
 import { CustomStatusBadge } from "@/components/ListPage/CustomStatusBadge.tsx"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
-import AxiosInstance from "@/auth/AxiosInstance.ts"
 
 interface StaffCardProps {
     id: string
@@ -54,21 +53,22 @@ export function StaffCard({
     const handleDelete = async () => {
         try {
             setIsDeleting(true)
-            await AxiosInstance.delete(`/api/academic/delete-staff/${id}/`)
-
+            // await AxiosInstance.delete(`/api/academic/delete-staff/${id}/`);
             toast.success(`${name} has been successfully deleted.`)
 
-            // Call the onDelete callback if provided to update the parent component
             if (onDelete) {
                 onDelete(id)
             }
-
-            setDeleteDialogOpen(false)
         } catch (error) {
             console.error("Delete error:", error)
             toast.error("Failed to delete staff member. Please try again.")
         } finally {
-            setIsDeleting(false)
+            // First close the dialog, then reset the deleting state
+            setDeleteDialogOpen(false)
+            // Add a small delay before resetting the deleting state
+            setTimeout(() => {
+                setIsDeleting(false)
+            }, 100)
         }
     }
 
@@ -154,13 +154,24 @@ export function StaffCard({
             </div>
 
             {/* Delete Confirmation Dialog */}
-            <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <Dialog
+                open={deleteDialogOpen}
+                onOpenChange={(open) => {
+                    setDeleteDialogOpen(open)
+                    // Ensure we reset the deleting state when dialog closes
+                    if (!open) {
+                        setIsDeleting(false)
+                    }
+                }}
+            >
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>Delete Staff Member</DialogTitle>
                         <DialogDescription>
                             Are you absolutely sure you want to delete <strong>{name}</strong>? <br />
-                            <span className="text-red-600 font-medium">This action is irreversible and will permanently remove all related data.</span>
+                            <span className="text-red-600 font-medium">
+                This action is irreversible and will permanently remove all related data.
+              </span>
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="flex flex-row justify-end gap-2 sm:justify-end">
@@ -180,7 +191,6 @@ export function StaffCard({
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-
         </div>
     )
 }

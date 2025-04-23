@@ -67,6 +67,21 @@ export function StudentListPage() {
         fetchStudents()
     }, [])
 
+    const handleDelete = (id: string) => {
+        const data = {
+            id: id,
+        }
+        AxiosInstance.post(`/api/student/student-delete/`, data)
+            .then(() => {
+                toast.success("Student deleted successfully")
+                fetchStudents()
+            })
+            .catch((error) => {
+                console.error(error)
+                toast.error("Failed to delete student")
+            })
+    }
+
     const classOptions = useMemo(() => {
         const uniqueClasses = [...new Set(apiData.map((student) => student.school_class))]
             .filter(Boolean)
@@ -131,7 +146,6 @@ export function StudentListPage() {
 
     const handleClassChange = (classId: string) => {
         setSelectedClass(classId)
-        // Reset section to "all" when class changes
         setSelectedSection("all")
     }
 
@@ -185,6 +199,7 @@ export function StudentListPage() {
                             status={each.account_status}
                             schoolClass={each.school_class}
                             section={each.section}
+                            onDelete={handleDelete}
                         />
                     ))
                 ) : (
