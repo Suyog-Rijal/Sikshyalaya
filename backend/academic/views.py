@@ -178,6 +178,7 @@ class AddStaffImageView(APIView):
 	permission_classes = [IsAuthenticated]
 
 	def post(self, request):
+		print('data: ', request.data)
 		if not request.user.has_role('admin'):
 			return Response(
 				{'detail': 'You do not have permission to update staff image.'},

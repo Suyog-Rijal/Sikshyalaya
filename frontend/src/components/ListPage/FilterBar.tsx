@@ -42,6 +42,7 @@ export function FilterBar({
         onSearchChange?.(event.target.value)
     }
 
+
     return (
         <div className="w-full py-4 rounded-md">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">

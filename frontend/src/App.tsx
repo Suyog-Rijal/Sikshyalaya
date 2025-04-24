@@ -15,6 +15,7 @@ import LoginForm from "@/pages/Login.tsx";
 import { Toaster } from "@/components/ui/sonner.tsx";
 import { Logout } from "@/pages/Logout.tsx";
 import { useEffect } from "react";
+import {TeacherStudentList} from "@/views/teacher/TeacherStudentList.tsx";
 
 function App() {
     const checkAuth = useAuthStore((s) => s.checkAuth);
@@ -49,7 +50,7 @@ function App() {
                     <DashboardLayout>
                         <Routes>
                             <Route index element={<Dashboard />} />
-                            <Route path="/student/list" element={<StudentListPage />} />
+                            <Route path="/student/list" element={<TeacherStudentList />} />
                             <Route path="/routine/list" element={<RoutineListPage />} />
                             <Route path="/subject/list" element={<SubjectListPage />} />
                             <Route path="/logout" element={<Logout />} />

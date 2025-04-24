@@ -321,7 +321,7 @@ class Staff(models.Model):
 class Teacher(models.Model):
 	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 	staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='teacher')
-	school_class = models.ForeignKey('academic.SchoolClass', on_delete=models.CASCADE, default=None, blank=True, null=True)
+	school_class = models.ManyToManyField('academic.SchoolClass', related_name='teachers', blank=True)
 	subject = models.ForeignKey('academic.Subject', related_name='teachers', on_delete=models.CASCADE, default=None, blank=True, null=True)
 
 	def __str__(self):

@@ -269,7 +269,8 @@ class RoutineSubjectGetSerializer(serializers.ModelSerializer):
 		]
 
 	def get_teacher(self, obj):
-		teachers = Teacher.objects.filter(subject=obj, school_class=obj.school_class)
+		subject_name = obj.name.strip().lower()
+		teachers = Teacher.objects.filter(subject__name__iexact=subject_name, school_class=obj.school_class)
 		if teachers.exists():
 			return RoutineTeacherGetSerializer(teachers, many=True).data
 		return []

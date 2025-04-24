@@ -4,6 +4,7 @@ import React from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 import {
     Dialog,
     DialogContent,
@@ -19,7 +20,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { AlertTriangle, Clock, Pencil, Trash, MoreVertical } from "lucide-react"
+import { AlertTriangle, Clock, Pencil, Trash, MoreVertical, Search } from "lucide-react"
 import { toast } from "sonner"
 import AxiosInstance from "@/auth/AxiosInstance.ts"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -89,6 +90,7 @@ interface RoutineDataTableState {
     selectedClass: string
     selectedSection: string
     selectedDay: string
+    teacherSearch: string
 }
 
 class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDataTableState> {
@@ -106,6 +108,7 @@ class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDat
             selectedClass: "",
             selectedSection: "",
             selectedDay: "all",
+            teacherSearch: "",
         }
     }
 
@@ -148,7 +151,7 @@ class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDat
                 uniqueSections.add(item.section.id)
                 sectionsArray.push({
                     id: item.section.id,
-                    name: item.section.name,
+                    name: `${item.school_class.name} (${item.section.name})`,
                 })
             }
         })
@@ -189,9 +192,13 @@ class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDat
         this.setState({ selectedDay: value, currentPage: 1 })
     }
 
+    handleTeacherSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        this.setState({ teacherSearch: e.target.value, currentPage: 1 })
+    }
+
     getFilteredData = () => {
         const { data } = this.props
-        const { selectedClass, selectedSection, selectedDay } = this.state
+        const { selectedClass, selectedSection, selectedDay, teacherSearch } = this.state
 
         let filteredData = data
 
@@ -208,6 +215,13 @@ class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDat
         // Filter by selected day if any
         if (selectedDay && selectedDay !== "all") {
             filteredData = filteredData.filter((item) => item.day.toLowerCase() === selectedDay.toLowerCase())
+        }
+
+        // Filter by teacher name if search text is provided
+        if (teacherSearch.trim()) {
+            filteredData = filteredData.filter((item) =>
+                item.teacher.name.toLowerCase().includes(teacherSearch.toLowerCase()),
+            )
         }
 
         return filteredData
@@ -331,9 +345,13 @@ class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDat
             bulkDeleteDialogOpen,
             sections,
             selectedSection,
+            rowsPerPage,
+            currentPage,
         } = this.state
 
+        const filteredData = this.getFilteredData()
         const paginatedData = this.getPaginatedData()
+        const totalPages = this.getTotalPages()
 
         const allSelected = paginatedData.length > 0 && paginatedData.every((item) => selectedItems.includes(item.id))
         const someSelected = selectedItems.length > 0
@@ -341,22 +359,45 @@ class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDat
         const itemToDelete = this.props.data.find((item) => item.id === this.state.itemToDelete)
 
         return (
-            <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+                <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                        <span>Rows Per Page</span>
+                        <Select value={rowsPerPage} onValueChange={this.handleRowsPerPageChange}>
+                            <SelectTrigger className="w-[70px]">
+                                <SelectValue placeholder="10" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="5">5</SelectItem>
+                                <SelectItem value="10">10</SelectItem>
+                                <SelectItem value="15">15</SelectItem>
+                                <SelectItem value="20">20</SelectItem>
+                                <SelectItem value="50">50</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
 
-                    <div></div>
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                        {someSelected && (
-                            <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={this.openBulkDeleteDialog}
-                                className="flex items-center gap-1"
-                            >
-                                <Trash className="h-4 w-4 mr-1" />
-                                Delete ({selectedItems.length})
-                            </Button>
-                        )}
+                    <div className="flex-1 max-w-sm mx-auto">
+                        <div className="relative">
+                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Search..."
+                                value={this.state.teacherSearch}
+                                onChange={this.handleTeacherSearchChange}
+                                className="pl-8"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 mb-4">
+                        <div className="flex items-center gap-2">
+                            {someSelected && (
+                                <Button variant="destructive" size="sm" onClick={this.openBulkDeleteDialog}>
+                                    <Trash className="h-4 w-4 mr-1" />
+                                    Delete ({selectedItems.length})
+                                </Button>
+                            )}
+                        </div>
 
                         <Select value={this.state.selectedClass} onValueChange={this.handleClassChange}>
                             <SelectTrigger className="w-[150px]">
@@ -404,20 +445,20 @@ class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDat
                     </div>
                 </div>
 
-                <div className="rounded shadow-md bg-white overflow-hidden">
+                <div className="rounded border overflow-hidden">
                     <Table>
-                        <TableHeader className="bg-gray-50">
+                        <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[50px] text-center">
+                                <TableHead>
                                     <Checkbox checked={allSelected} onCheckedChange={this.handleSelectAll} aria-label="Select all" />
                                 </TableHead>
-                                <TableHead className="font-semibold">Class</TableHead>
-                                <TableHead className="font-semibold">Section</TableHead>
-                                <TableHead className="font-semibold">Subject</TableHead>
-                                <TableHead className="font-semibold">Teacher</TableHead>
-                                <TableHead className="font-semibold">Day</TableHead>
-                                <TableHead className="font-semibold">Time</TableHead>
-                                <TableHead className="w-[70px] text-center font-semibold">Action</TableHead>
+                                <TableHead>Class</TableHead>
+                                <TableHead>Section</TableHead>
+                                <TableHead>Subject</TableHead>
+                                <TableHead>Teacher</TableHead>
+                                <TableHead>Day</TableHead>
+                                <TableHead>Time</TableHead>
+                                <TableHead>Action</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -433,18 +474,15 @@ class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDat
                                     ))
                             ) : paginatedData.length > 0 ? (
                                 paginatedData.map((row) => (
-                                    <TableRow
-                                        key={row.id}
-                                        className={selectedItems.includes(row.id) ? "bg-muted/30" : "hover:bg-gray-50"}
-                                    >
-                                        <TableCell className="text-center">
+                                    <TableRow key={row.id}>
+                                        <TableCell>
                                             <Checkbox
                                                 checked={selectedItems.includes(row.id)}
                                                 onCheckedChange={(checked) => this.handleSelectItem(row.id, checked as boolean)}
                                                 aria-label={`Select routine for ${row.subject.name}`}
                                             />
                                         </TableCell>
-                                        <TableCell className="font-medium">{row.school_class.name}</TableCell>
+                                        <TableCell>{row.school_class.name}</TableCell>
                                         <TableCell>{row.section.name}</TableCell>
                                         <TableCell>{row.subject.name}</TableCell>
                                         <TableCell>{row.teacher.name}</TableCell>
@@ -458,30 +496,28 @@ class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDat
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <div className="flex justify-center">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                            <MoreVertical className="h-4 w-4" />
-                                                            <span className="sr-only">Open menu</span>
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-[160px]">
-                                                        <DropdownMenuItem onClick={() => this.handleEdit(row.id)}>
-                                                            <Pencil className="mr-2 h-4 w-4" />
-                                                            Edit
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem
-                                                            className="text-destructive focus:text-destructive"
-                                                            onClick={() => this.openDeleteDialog(row.id)}
-                                                        >
-                                                            <Trash className="mr-2 h-4 w-4" />
-                                                            Delete
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </div>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon">
+                                                        <MoreVertical className="h-4 w-4" />
+                                                        <span className="sr-only">Open menu</span>
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => this.handleEdit(row.id)}>
+                                                        <Pencil className="mr-2 h-4 w-4" />
+                                                        Edit
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem
+                                                        className="text-destructive focus:text-destructive"
+                                                        onClick={() => this.openDeleteDialog(row.id)}
+                                                    >
+                                                        <Trash className="mr-2 h-4 w-4" />
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </TableCell>
                                     </TableRow>
                                 ))
@@ -496,10 +532,61 @@ class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDat
                     </Table>
                 </div>
 
+                <div className="flex items-center justify-between mt-4">
+                    <div className="text-sm text-muted-foreground">
+                        Showing {paginatedData.length > 0 ? (currentPage - 1) * Number.parseInt(rowsPerPage) + 1 : 0}-
+                        {Math.min(currentPage * Number.parseInt(rowsPerPage), filteredData.length)} of {filteredData.length} entries
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => this.handlePageChange(currentPage - 1)}
+                            disabled={currentPage === 1}
+                        >
+                            Previous
+                        </Button>
+                        {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                            // Show pages around current page
+                            let pageToShow = currentPage
+                            if (currentPage <= 3) {
+                                pageToShow = i + 1
+                            } else if (currentPage >= totalPages - 2) {
+                                pageToShow = totalPages - 4 + i
+                            } else {
+                                pageToShow = currentPage - 2 + i
+                            }
+
+                            // Ensure page is within valid range
+                            if (pageToShow > 0 && pageToShow <= totalPages) {
+                                return (
+                                    <Button
+                                        key={pageToShow}
+                                        variant={currentPage === pageToShow ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => this.handlePageChange(pageToShow)}
+                                    >
+                                        {pageToShow}
+                                    </Button>
+                                )
+                            }
+                            return null
+                        })}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => this.handlePageChange(currentPage + 1)}
+                            disabled={currentPage === totalPages || totalPages === 0}
+                        >
+                            Next
+                        </Button>
+                    </div>
+                </div>
 
                 {/* Single Delete Confirmation Dialog */}
                 <Dialog open={deleteDialogOpen} onOpenChange={this.closeDeleteDialog}>
-                    <DialogContent className="sm:max-w-[425px]">
+                    <DialogContent>
                         <DialogHeader>
                             <DialogTitle className="flex items-center gap-2 text-destructive">
                                 <AlertTriangle className="h-5 w-5" />
@@ -513,11 +600,11 @@ class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDat
                                 ?
                             </DialogDescription>
                         </DialogHeader>
-                        <div className="bg-destructive/10 rounded-md p-3 text-sm shadow-sm">
+                        <div className="bg-destructive/10 rounded-md p-3 text-sm">
                             <p className="font-medium text-destructive">Warning:</p>
                             <p>This action cannot be undone. This will permanently delete the routine and all associated data.</p>
                         </div>
-                        <DialogFooter className="gap-4 flex">
+                        <DialogFooter>
                             <Button variant="outline" onClick={this.closeDeleteDialog}>
                                 Cancel
                             </Button>
@@ -530,7 +617,7 @@ class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDat
 
                 {/* Bulk Delete Confirmation Dialog */}
                 <Dialog open={bulkDeleteDialogOpen} onOpenChange={this.closeBulkDeleteDialog}>
-                    <DialogContent className="sm:max-w-[425px]">
+                    <DialogContent>
                         <DialogHeader>
                             <DialogTitle className="flex items-center gap-2 text-destructive">
                                 <AlertTriangle className="h-5 w-5" />
@@ -541,14 +628,14 @@ class RoutineDataTable extends React.Component<RoutineDataTableProps, RoutineDat
                                 {selectedItems.length === 1 ? "routine" : "routines"}?
                             </DialogDescription>
                         </DialogHeader>
-                        <div className="bg-destructive/10 rounded-md p-3 text-sm shadow-sm">
+                        <div className="bg-destructive/10 rounded-md p-3 text-sm">
                             <p className="font-medium text-destructive">Warning:</p>
                             <p>
                                 This action cannot be undone. This will permanently delete all selected routines and their associated
                                 data.
                             </p>
                         </div>
-                        <DialogFooter className="gap-2 sm:gap-0">
+                        <DialogFooter>
                             <Button variant="outline" onClick={this.closeBulkDeleteDialog}>
                                 Cancel
                             </Button>

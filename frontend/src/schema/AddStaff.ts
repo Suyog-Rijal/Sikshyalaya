@@ -65,7 +65,7 @@ const baseStaffInfo = z.object({
 })
 
 const teacherInfo = z.object({
-    school_class: z.string().trim().min(1, { message: "School class is required" }),
+    school_class: z.array(z.string()).min(1, { message: "At least one school class is required" }),
     subject: z.string().trim().min(1, { message: "Subject is required" }),
 })
 
