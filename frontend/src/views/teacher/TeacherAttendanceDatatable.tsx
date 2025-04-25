@@ -1,13 +1,14 @@
 "use client"
 
 import type React from "react"
+
 import { useState } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { CalendarIcon, Check, MoreHorizontal, Search, X } from "lucide-react"
+import { CalendarIcon, MoreHorizontal, Search, Pencil } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
@@ -22,36 +23,27 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-
-interface AttendanceRecord {
-    id: string
-    session: string
-    student: {
-        id: string
-        full_name: string
-    }
-    status: boolean
-    remarks: string | null
-    present_days: number
-}
+import {AttendanceRecord} from "@/views/teacher/TeacherAttendanceList.tsx";
 
 interface TeacherAttendanceDataTableProps {
     data: AttendanceRecord[]
     onStatusChange: (id: string, status: boolean) => void
     onRemarksChange: (id: string, remarks: string) => void
+    onBulkUpdate: (selectedIds: string[], status: boolean) => void
     selectedDate: Date
-    handleDateChange: (date: Date | undefined) => void
+    onDateChange: (date: Date | undefined) => void
     loading: boolean
 }
 
-export default function TeacherAttendanceDataTable({
-                                                       data,
-                                                       onStatusChange,
-                                                       onRemarksChange,
-                                                       selectedDate,
-                                                       handleDateChange,
-                                                       loading,
-                                                   }: TeacherAttendanceDataTableProps) {
+export function TeacherAttendanceDataTable({
+                                               data,
+                                               onStatusChange,
+                                               onRemarksChange,
+                                               onBulkUpdate,
+                                               selectedDate,
+                                               onDateChange,
+                                               loading,
+                                           }: TeacherAttendanceDataTableProps) {
     const [searchQuery, setSearchQuery] = useState("")
     const [rowsPerPage, setRowsPerPage] = useState("10")
     const [currentPage, setCurrentPage] = useState(1)
@@ -103,10 +95,6 @@ export default function TeacherAttendanceDataTable({
         setEditingRemarks(null)
     }
 
-    const cancelEditingRemarks = () => {
-        setEditingRemarks(null)
-    }
-
     const handleRowSelection = (id: string, checked: boolean) => {
         if (checked) {
             setSelectedRows((prev) => [...prev, id])
@@ -128,10 +116,7 @@ export default function TeacherAttendanceDataTable({
             return
         }
 
-        // Update each selected row
-        selectedRows.forEach((id) => {
-            onStatusChange(id, selectedAction === "present")
-        })
+        onBulkUpdate(selectedRows, selectedAction === "present")
 
         // Clear selection after action
         setSelectedRows([])
@@ -140,35 +125,35 @@ export default function TeacherAttendanceDataTable({
 
     if (loading) {
         return (
-            <div className="rounded shadow-md bg-white overflow-hidden">
+            <div className="rounded-lg shadow-md bg-white overflow-hidden">
                 <Table>
                     <TableHeader className="bg-gray-50">
-                        <TableRow>
-                            <TableHead className="w-[40px]">
+                        <TableRow className="border-b border-gray-200">
+                            <TableHead className="w-[40px] py-3">
                                 <Checkbox disabled />
                             </TableHead>
-                            <TableHead className="font-semibold">Student</TableHead>
-                            <TableHead className="font-semibold w-[120px] text-center">Status</TableHead>
-                            <TableHead className="font-semibold">Remarks</TableHead>
-                            <TableHead className="font-semibold w-[80px] text-center">Actions</TableHead>
+                            <TableHead className="font-medium text-gray-700 py-3">Student</TableHead>
+                            <TableHead className="font-medium text-gray-700 w-[120px] text-center py-3">Status</TableHead>
+                            <TableHead className="font-medium text-gray-700 py-3">Remarks</TableHead>
+                            <TableHead className="font-medium text-gray-700 w-[80px] text-center py-3">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {Array.from({ length: 5 }).map((_, index) => (
-                            <TableRow key={index}>
-                                <TableCell>
+                            <TableRow key={index} className="border-b border-gray-100">
+                                <TableCell className="py-3">
                                     <Skeleton className="h-4 w-4" />
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="py-3">
                                     <Skeleton className="h-6 w-full" />
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="py-3">
                                     <Skeleton className="h-6 w-full" />
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="py-3">
                                     <Skeleton className="h-6 w-full" />
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="py-3">
                                     <Skeleton className="h-6 w-full" />
                                 </TableCell>
                             </TableRow>
@@ -211,12 +196,11 @@ export default function TeacherAttendanceDataTable({
                                     <SelectItem value="absent">Mark Absent</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <Button size="sm" onClick={handleBulkSelectedAction} disabled={selectedAction === "none"}>
-                                Apply
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => setSelectedRows([])}>
-                                Clear
-                            </Button>
+                            {selectedAction !== "none" && (
+                                <Button size="sm" onClick={handleBulkSelectedAction}>
+                                    Save
+                                </Button>
+                            )}
                         </div>
                     )}
 
@@ -239,80 +223,82 @@ export default function TeacherAttendanceDataTable({
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={selectedDate} onSelect={handleDateChange} initialFocus />
+                            <Calendar mode="single" selected={selectedDate} onSelect={onDateChange} initialFocus />
                         </PopoverContent>
                     </Popover>
                 </div>
             </div>
 
-            <div className="rounded shadow-md bg-white overflow-hidden">
+            <div className="rounded-lg shadow-md bg-white overflow-hidden border border-gray-200">
                 <Table>
                     <TableHeader className="bg-gray-50">
-                        <TableRow>
-                            <TableHead className="w-[40px]">
+                        <TableRow className="border-b border-gray-200">
+                            <TableHead className="w-[40px] py-3">
                                 <Checkbox
                                     checked={paginatedData.length > 0 && selectedRows.length === paginatedData.length}
                                     onCheckedChange={handleSelectAll}
                                     aria-label="Select all"
                                 />
                             </TableHead>
-                            <TableHead className="font-semibold">Student</TableHead>
-                            <TableHead className="font-semibold w-[120px] text-center">Status</TableHead>
-                            <TableHead className="font-semibold">Remarks</TableHead>
-                            <TableHead className="font-semibold w-[80px] text-center">Actions</TableHead>
+                            <TableHead className="font-medium text-gray-700 py-3">Student</TableHead>
+                            <TableHead className="font-medium text-gray-700 w-[120px] text-center py-3">Status</TableHead>
+                            <TableHead className="font-medium text-gray-700 py-3">Remarks</TableHead>
+                            <TableHead className="font-medium text-gray-700 w-[80px] text-center py-3">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {paginatedData.length > 0 ? (
                             paginatedData.map((record) => (
-                                <TableRow key={record.id} className="hover:bg-gray-50">
-                                    <TableCell>
+                                <TableRow key={record.id} className="hover:bg-gray-50 border-b border-gray-100">
+                                    <TableCell className="py-3">
                                         <Checkbox
                                             checked={selectedRows.includes(record.id)}
                                             onCheckedChange={(checked) => handleRowSelection(record.id, checked === true)}
                                             aria-label={`Select ${record.student.full_name}`}
                                         />
                                     </TableCell>
-                                    <TableCell className="font-medium">{record.student.full_name}</TableCell>
-                                    <TableCell className="text-center">
-                                        {record.status ? (
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        <Check className="mr-1 h-3 w-3" /> Present
+                                    <TableCell className="font-medium py-3">{record.student.full_name}</TableCell>
+                                    <TableCell className="py-3">
+                                        <div className="flex justify-center">
+                      <span
+                          className={cn(
+                              "px-3 py-1 rounded-full text-xs font-medium",
+                              record.status
+                                  ? "bg-green-50 text-green-700 border border-green-200"
+                                  : "bg-red-50 text-red-700 border border-red-200",
+                          )}
+                      >
+                        {record.status ? "Present" : "Absent"}
                       </span>
-                                        ) : (
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                        <X className="mr-1 h-3 w-3" /> Absent
-                      </span>
-                                        )}
+                                        </div>
                                     </TableCell>
-                                    <TableCell>
+                                    <TableCell className="py-3">
                                         {editingRemarks === record.id ? (
-                                            <div className="flex gap-2">
+                                            <div className="w-full">
                                                 <Textarea
                                                     value={remarksValue}
                                                     onChange={(e) => setRemarksValue(e.target.value)}
-                                                    className="min-h-[60px] text-sm"
+                                                    onBlur={() => saveRemarks(record.id)}
+                                                    autoFocus
+                                                    className="min-h-[60px] text-sm resize-none"
                                                     placeholder="Enter remarks..."
                                                 />
-                                                <div className="flex flex-col gap-1">
-                                                    <Button
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        onClick={() => saveRemarks(record.id)}
-                                                        className="h-8 w-8"
-                                                    >
-                                                        <Check className="h-4 w-4 text-green-600" />
-                                                    </Button>
-                                                    <Button size="icon" variant="ghost" onClick={cancelEditingRemarks} className="h-8 w-8">
-                                                        <X className="h-4 w-4 text-red-600" />
-                                                    </Button>
-                                                </div>
                                             </div>
                                         ) : (
-                                            <span className="text-sm text-muted-foreground">{record.remarks || "No remarks"}</span>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm text-gray-600">{record.remarks || "No remarks"}</span>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-8 w-8 p-0 ml-2"
+                                                    onClick={() => startEditingRemarks(record.id, record.remarks)}
+                                                >
+                                                    <Pencil className="h-3.5 w-3.5 text-gray-500" />
+                                                </Button>
+                                            </div>
                                         )}
                                     </TableCell>
-                                    <TableCell>
+                                    <TableCell className="py-3">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button variant="ghost" className="h-8 w-8 p-0">
@@ -322,14 +308,11 @@ export default function TeacherAttendanceDataTable({
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem onClick={() => onStatusChange(record.id, true)}>
-                                                    <Check className="mr-2 h-4 w-4 text-green-600" />
-                                                    Mark Present
+                                                <DropdownMenuItem onClick={() => onStatusChange(record.id, true)} className="text-green-700">
+                                                    Mark as Present
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => onStatusChange(record.id, false)}>
-                                                    <X className="mr-2 h-4 w-4 text-red-600" />
-                                                    Mark Absent
+                                                <DropdownMenuItem onClick={() => onStatusChange(record.id, false)} className="text-red-700">
+                                                    Mark as Absent
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem onClick={() => startEditingRemarks(record.id, record.remarks)}>
@@ -342,7 +325,7 @@ export default function TeacherAttendanceDataTable({
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center">
+                                <TableCell colSpan={5} className="h-24 text-center text-gray-500">
                                     {searchQuery ? "No matching students found." : "No attendance records for this date."}
                                 </TableCell>
                             </TableRow>

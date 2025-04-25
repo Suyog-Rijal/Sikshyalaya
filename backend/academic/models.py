@@ -236,8 +236,7 @@ class Routine(models.Model):
 
 class AttendanceSession(models.Model):
 	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-	academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='attendance_sessions',
-	                                  null=True)
+	academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='attendance_sessions', null=True)
 	school_class = models.ForeignKey(SchoolClass, on_delete=models.CASCADE, related_name='attendance_sessions')
 	section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name='attendance_sessions')
 	date = models.DateField(default=timezone.localdate)

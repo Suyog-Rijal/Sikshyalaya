@@ -390,3 +390,9 @@ class AttendanceSessionDetailViewUpdateSerializer(serializers.ModelSerializer):
 			'status',
 			'remarks'
 		]
+
+	def update(self, instance, validated_data):
+		instance.status = validated_data.get('status', instance.status)
+		instance.remarks = validated_data.get('remarks', instance.remarks)
+		instance.save()
+		return instance

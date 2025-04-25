@@ -276,8 +276,8 @@ export default function AttendancePage() {
                                         </TableCell>
                                         <TableCell>
                                             {editingRemarks === student.id ? (
-                                                <div className="flex gap-2">
-                                                    <div className="w-full h-[60px]">
+                                                <div className="flex bg-yellow-500 gap-2">
+                                                    <div className="w-96 bg-pink-500 h-[60px]">
                                                         <Textarea
                                                             value={remarksValue}
                                                             onChange={(e) => setRemarksValue(e.target.value)}

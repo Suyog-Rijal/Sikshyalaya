@@ -16,7 +16,7 @@ from academic.serializer import EnrollmentPostSerializer, EnrollmentGetSchoolCla
 	SchoolClassGetSerializer, SchoolClassPostSerializer, SubjectListSerializer, RoutineSerializer, \
 	SimpleSchoolClassSerializer, SimpleSubjectSerializer, SimpleStaffSerializer, RoutineSchoolClassGetSerializer, \
 	RoutineTeacherGetSerializer, RoutinePostSerializer, AttendanceRecordPostSerializer, \
-	AttendanceRecordGetSerializer, AttendanceSessionDetailViewUpdateSerializer
+	AttendanceRecordGetSerializer
 from student.serializer import ListStudentSerializer
 from user.serializer import StudentSerializer, ParentSerializer
 from user.models import Parent, Teacher, Staff, CustomUser, Student
@@ -320,8 +320,6 @@ class SubjectApiView(APIView):
 
 	def get(self, request, id=None):
 		try:
-			print("user")
-			print(request.user)
 			if id:
 				subject = SchoolClass.objects.get(id=id)
 				serializer = SubjectListSerializer(subject)
@@ -346,7 +344,6 @@ class SubjectApiView(APIView):
 					for subject_data in subjects_data:
 						name = subject_data.get('name')
 						if not existing_subjects.filter(name=name).exists():
-							print('New data:', subject_data)
 							Subject.objects.create(
 								school_class=school_class,
 								name=name,
@@ -487,7 +484,7 @@ class AttendanceSessionDetailView(APIView):
 	def get(self, request, session_id):
 		user = request.user
 		if not user.has_role('teacher'):
-			return Response({'message': 'You dont have enough permission to view attendance session'}, status=status.HTTP_403_FORBIDDEN)
+			return Response({'message': 'You dont have enough permission.'}, status=status.HTTP_403_FORBIDDEN)
 
 		try:
 			attendance_record = AttendanceRecord.objects.filter(session_id=session_id)
@@ -506,10 +503,9 @@ class AttendanceRecordUpdateView(APIView):
 
 	def put(self, request):
 		if not request.user.has_role('teacher'):
-			return Response({'detail': 'You do not have permission.'},
-			                status=status.HTTP_403_FORBIDDEN)
+			return Response({'detail': 'You do not have permission.'}, status=status.HTTP_403_FORBIDDEN)
 
-		data_list = request.data  # expecting a list of dicts with at least "id"
+		data_list = request.data
 
 		for item in data_list:
 			record_id = item.get('id')
@@ -527,14 +523,31 @@ class AttendanceRecordUpdateView(APIView):
 					status=status.HTTP_404_NOT_FOUND
 				)
 
-			# Optionally validate fields here, or use a single-instance serializer
-			record.status  = item.get('status', record.status)
+			record.status = item.get('status', record.status)
 			record.remarks = item.get('remarks', record.remarks)
 			record.save()
 
 		return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class AttendanceRecordIndividualUpdate(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def post(self, request):
+		if not request.user.has_role('teacher'):
+			return Response({'error': 'You do not have permission.'}, status=status.HTTP_403_FORBIDDEN)
+
+		try:
+			session = AttendanceSession.objects.get(id=request.data.get('session'))
+			student = Student.objects.get(id=request.data.get('student'))
+			attendance_record = AttendanceRecord.objects.get(session=session, student=student)
+			attendance_record.status = request.data.get('status')
+			attendance_record.remarks = request.data.get('remarks')
+			attendance_record.save()
+			return Response({'message': 'Attendance record updated successfully.'}, status=status.HTTP_200_OK)
+		except Exception as e:
+			print(e)
+			return Response({'error': 'An error occurred while updating attendance record.'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema(tags=["Attendance"])
@@ -554,7 +567,8 @@ class AttendanceRecordViewSet(ModelViewSet):
 			selected_date = self.request.query_params.get('selected_date')
 			selected_class = self.request.query_params.get('selected_class')
 			selected_section = self.request.query_params.get('selected_section')
-			attendanceSession = AttendanceSession.objects.get(date=selected_date, school_class_id=selected_class, section_id=selected_section)
+			attendanceSession = AttendanceSession.objects.get(date=selected_date, school_class_id=selected_class,
+			                                                  section_id=selected_section)
 			return AttendanceRecord.objects.filter(session=attendanceSession)
 		except Exception as e:
 			print(e)

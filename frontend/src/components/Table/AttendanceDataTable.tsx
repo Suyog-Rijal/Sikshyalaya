@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
 import { CalendarIcon, Check, Search, X } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover.tsx"
@@ -59,7 +58,6 @@ export default function AttendanceDataTable({
                                                 data,
                                                 classData,
                                                 availableSections,
-                                                onStatusChange,
                                                 onRemarksChange,
                                                 selectedDate,
                                                 selectedClass,
@@ -246,22 +244,16 @@ export default function AttendanceDataTable({
                                     <TableCell className="font-medium">{record.student.full_name}</TableCell>
                                     <TableCell className="text-center">
                                         <div className="flex justify-center">
-                                            {record.status ? (
-                                                <Badge
-                                                    className="bg-green-100 text-green-800 hover:bg-green-200 cursor-pointer"
-                                                    onClick={() => onStatusChange(record.id, false)}
-                                                >
-                                                    <Check className="mr-1 h-3 w-3" /> Present
-                                                </Badge>
-                                            ) : (
-                                                <Badge
-                                                    variant="outline"
-                                                    className="bg-red-100 text-red-800 hover:bg-red-200 cursor-pointer"
-                                                    onClick={() => onStatusChange(record.id, true)}
-                                                >
-                                                    <X className="mr-1 h-3 w-3" /> Absent
-                                                </Badge>
-                                            )}
+                                             <span
+                                                 className={cn(
+                                                     "px-3 py-1 rounded-full text-xs font-medium",
+                                                     record.status
+                                                         ? "bg-green-50 text-green-700 border border-green-200"
+                                                         : "bg-red-50 text-red-700 border border-red-200",
+                                                 )}
+                                             >
+                        {record.status ? "Present" : "Absent"}
+                      </span>
                                         </div>
                                     </TableCell>
                                     <TableCell className="hidden md:table-cell">{record.present_days}</TableCell>
