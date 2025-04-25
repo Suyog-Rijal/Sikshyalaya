@@ -75,7 +75,7 @@ class AttendanceRecordInline(admin.TabularInline):
 
 @admin.register(AttendanceSession)
 class AttendanceSessionAdmin(admin.ModelAdmin):
-	list_display = ('date', 'academic_year', 'school_class', 'section', 'marked_by')
+	list_display = ('id', 'date', 'academic_year', 'school_class', 'section', 'marked_by')
 	list_filter = ('date', 'academic_year', 'school_class', 'section', 'marked_by')
 	search_fields = (
 		'school_class__name',
@@ -89,7 +89,7 @@ class AttendanceSessionAdmin(admin.ModelAdmin):
 
 @admin.register(AttendanceRecord)
 class AttendanceRecordAdmin(admin.ModelAdmin):
-	list_display = ('session', 'student', 'status')
+	list_display = ('id', 'session', 'student', 'status')
 	list_filter = ('session__date', 'status')
 	search_fields = ('student__first_name', 'student__last_name')
 	list_editable = ('status',)

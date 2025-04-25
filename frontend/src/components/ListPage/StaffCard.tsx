@@ -53,7 +53,6 @@ export function StaffCard({
     const handleDelete = async () => {
         try {
             setIsDeleting(true)
-            // await AxiosInstance.delete(`/api/academic/delete-staff/${id}/`);
             toast.success(`${name} has been successfully deleted.`)
 
             if (onDelete) {
@@ -63,9 +62,7 @@ export function StaffCard({
             console.error("Delete error:", error)
             toast.error("Failed to delete staff member. Please try again.")
         } finally {
-            // First close the dialog, then reset the deleting state
             setDeleteDialogOpen(false)
-            // Add a small delay before resetting the deleting state
             setTimeout(() => {
                 setIsDeleting(false)
             }, 100)
@@ -158,7 +155,6 @@ export function StaffCard({
                 open={deleteDialogOpen}
                 onOpenChange={(open) => {
                     setDeleteDialogOpen(open)
-                    // Ensure we reset the deleting state when dialog closes
                     if (!open) {
                         setIsDeleting(false)
                     }

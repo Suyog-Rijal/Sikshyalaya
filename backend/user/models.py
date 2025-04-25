@@ -127,6 +127,9 @@ class Student(models.Model):
 			return latest_enrollment
 		return None
 
+	def get_total_present(self):
+		return self.attendance_records.filter(status=True).count()
+
 	get_enrollment.short_description = "Enrollment"
 
 	def save(self, *args, **kwargs):

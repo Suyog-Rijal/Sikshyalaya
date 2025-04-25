@@ -1,4 +1,3 @@
-"use client"
 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form.tsx"
 import { Button } from "@/components/ui/button.tsx"
@@ -380,6 +379,7 @@ const TeacherOtherInfo = () => {
                             <FormField
                                 key={index}
                                 control={form.control}
+                                // @ts-expect-error: Not sure why it's here
                                 name={each.name}
                                 render={({ field, fieldState: { error } }) => (
                                     <FormItem className="w-full">
@@ -398,6 +398,7 @@ const TeacherOtherInfo = () => {
                             <FormField
                                 key={index}
                                 control={form.control}
+                                // @ts-expect-error: Not sure why it's here
                                 name={each.name}
                                 render={({ field }) => (
                                     <FormItem className="w-full">

@@ -55,6 +55,7 @@ export function StaffListPage() {
         setLoading(true)
         AxiosInstance.get("/api/staff/")
             .then((response) => {
+                console.log("Staff members:", response.data)
                 setApiData(response.data)
             })
             .catch((error) => {

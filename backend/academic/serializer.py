@@ -377,4 +377,16 @@ class AttendanceRecordGetSerializer(serializers.ModelSerializer):
 		]
 
 	def get_present_days(self, obj):
-		return obj.session.get_total_present_days()
+		return obj.student.get_total_present()
+
+
+class AttendanceSessionDetailViewUpdateSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = AttendanceRecord
+		fields = [
+			'id',
+			'session',
+			'student',
+			'status',
+			'remarks'
+		]

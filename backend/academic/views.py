@@ -16,11 +16,11 @@ from academic.serializer import EnrollmentPostSerializer, EnrollmentGetSchoolCla
 	SchoolClassGetSerializer, SchoolClassPostSerializer, SubjectListSerializer, RoutineSerializer, \
 	SimpleSchoolClassSerializer, SimpleSubjectSerializer, SimpleStaffSerializer, RoutineSchoolClassGetSerializer, \
 	RoutineTeacherGetSerializer, RoutinePostSerializer, AttendanceRecordPostSerializer, \
-	AttendanceRecordGetSerializer
+	AttendanceRecordGetSerializer, AttendanceSessionDetailViewUpdateSerializer
 from student.serializer import ListStudentSerializer
 from user.serializer import StudentSerializer, ParentSerializer
 from user.models import Parent, Teacher, Staff, CustomUser, Student
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from rest_framework import filters
 
@@ -465,24 +465,76 @@ class AttendanceSessionView(APIView):
 			teacher = Teacher.objects.get(staff=staff)
 			class_teacher_of = SchoolClass.objects.get(section__class_teacher=teacher)
 			section = Section.objects.get(class_teacher=teacher)
-			print("Class: ", class_teacher_of)
-			print("Section: ", section)
-			AttendanceSession.objects.create(
+			session = AttendanceSession.objects.create(
 				school_class=class_teacher_of,
 				date=timezone.now(),
 				marked_by=teacher,
 				section=section
 			)
-			return Response(
-				{'detail': 'Attendance session created successfully.'},
-				status=status.HTTP_201_CREATED
-			)
+			return Response({'session_id': session.id}, status=status.HTTP_201_CREATED)
 		except Exception as e:
 			print(e)
 			return Response(
 				{'detail': 'An error occurred while creating attendance session.'},
 				status=status.HTTP_400_BAD_REQUEST
 			)
+
+
+@extend_schema(tags=["Attendance"])
+class AttendanceSessionDetailView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def get(self, request, session_id):
+		user = request.user
+		if not user.has_role('teacher'):
+			return Response({'message': 'You dont have enough permission to view attendance session'}, status=status.HTTP_403_FORBIDDEN)
+
+		try:
+			attendance_record = AttendanceRecord.objects.filter(session_id=session_id)
+			serializer = AttendanceRecordGetSerializer(attendance_record, many=True)
+			return Response(serializer.data, status=status.HTTP_200_OK)
+		except Exception as e:
+			print(e)
+			return Response(
+				{'detail': 'An error occurred while retrieving attendance session.'},
+				status=status.HTTP_400_BAD_REQUEST
+			)
+
+
+class AttendanceRecordUpdateView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def put(self, request):
+		if not request.user.has_role('teacher'):
+			return Response({'detail': 'You do not have permission.'},
+			                status=status.HTTP_403_FORBIDDEN)
+
+		data_list = request.data  # expecting a list of dicts with at least "id"
+
+		for item in data_list:
+			record_id = item.get('id')
+			if not record_id:
+				return Response(
+					{'detail': 'Each record must include its "id".'},
+					status=status.HTTP_400_BAD_REQUEST
+				)
+
+			try:
+				record = AttendanceRecord.objects.get(id=record_id)
+			except AttendanceRecord.DoesNotExist:
+				return Response(
+					{'detail': f'AttendanceRecord with id={record_id} not found.'},
+					status=status.HTTP_404_NOT_FOUND
+				)
+
+			# Optionally validate fields here, or use a single-instance serializer
+			record.status  = item.get('status', record.status)
+			record.remarks = item.get('remarks', record.remarks)
+			record.save()
+
+		return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 
 
 @extend_schema(tags=["Attendance"])
@@ -502,8 +554,7 @@ class AttendanceRecordViewSet(ModelViewSet):
 			selected_date = self.request.query_params.get('selected_date')
 			selected_class = self.request.query_params.get('selected_class')
 			selected_section = self.request.query_params.get('selected_section')
-			attendanceSession = AttendanceSession.objects.get(date=selected_date, school_class_id=selected_class,
-			                                                  section_id=selected_section)
+			attendanceSession = AttendanceSession.objects.get(date=selected_date, school_class_id=selected_class, section_id=selected_section)
 			return AttendanceRecord.objects.filter(session=attendanceSession)
 		except Exception as e:
 			print(e)

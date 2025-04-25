@@ -47,7 +47,15 @@ class StaffAdmin(admin.ModelAdmin):
 		'id',
 		'get_fullname',
 		'staff_type',
+		'get_school_class',
 	]
+
+	def get_school_class(self, obj):
+		if obj.staff_type == 'T':
+			classes = Teacher.objects.filter(staff=obj).values_list('school_class__name', flat=True)
+			return ", ".join(classes)
+		return "-"
+
 	search_fields = ['first_name', 'last_name', 'personal_email']
 	inlines = [TeacherInline, ManagementStaffInline]
 

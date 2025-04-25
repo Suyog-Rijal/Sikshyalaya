@@ -20,9 +20,10 @@ class StaffSerializer(serializers.ModelSerializer):
 	def get_position_detail(self, obj):
 		if obj.staff_type == 'T':
 			teacher = obj.teacher.first()
+			school_class_names = ", ".join(school_class.name for school_class in teacher.school_class.all())
 			if teacher:
 				return {
-					'school_class': teacher.school_class.name,
+					'school_class': school_class_names,
 					'subject': teacher.subject.name,
 				}
 		elif obj.staff_type == 'M':

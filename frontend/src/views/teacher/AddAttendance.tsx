@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { format } from "date-fns"
 import AxiosInstance from "@/auth/AxiosInstance"
@@ -10,25 +9,46 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
-import { Check, Search, X } from "lucide-react"
+import { Check, Pencil, Search, X } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
+import { z } from "zod"
+import {Link} from "react-router-dom";
 
 interface Student {
     id: string
-    full_name: string
-    attendance_status: boolean | null
+    session: string
+    student: {
+        id: string
+        full_name: string
+    }
+    status: boolean | null
     remarks: string | null
+    present_days: number
 }
 
-export default function AddAttendancePage() {
+const attendanceSchema = z.object({
+    students: z.array(
+        z.object({
+            id: z.string(),
+            status: z.boolean({
+                required_error: "Attendance status is required",
+                invalid_type_error: "Attendance status must be selected",
+            }),
+        }),
+    ),
+})
+
+export default function AttendancePage() {
     const [students, setStudents] = useState<Student[]>([])
-    const [loading, setLoading] = useState(false)
+    const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [selectedDate] = useState<Date>(new Date())
     const [searchQuery, setSearchQuery] = useState("")
     const [editingRemarks, setEditingRemarks] = useState<string | null>(null)
     const [remarksValue, setRemarksValue] = useState("")
+    const [sessionId, setSessionId] = useState<string | null>(null)
+    const [validationError, setValidationError] = useState<string | null>(null)
 
     useEffect(() => {
         fetchStudents()
@@ -37,28 +57,29 @@ export default function AddAttendancePage() {
     const fetchStudents = async () => {
         setLoading(true)
         try {
-            const response = await AxiosInstance.post("/api/academic/attendance-session/")
+            const sessionResponse = await AxiosInstance.post("/api/academic/attendance-session/")
+            const session = sessionResponse.data?.session_id
+            setSessionId(session)
 
-            // Initialize attendance status as null for all students
-            const studentsWithAttendance = response.data.map((student) => ({
+            const detailsResponse = await AxiosInstance.get(`/api/academic/attendance-session-detail/${session}/`)
+
+            const studentsWithNullStatus = (detailsResponse.data || []).map((student: any) => ({
                 ...student,
-                attendance_status: null,
-                remarks: null,
+                status: null,
             }))
 
-            setStudents(studentsWithAttendance)
-        } catch (error) {
-            console.error("Error fetching students:", error)
-            toast.error("Failed to load students. Please try again.")
+            setStudents(studentsWithNullStatus)
+        } catch (err) {
+            console.error(err)
         } finally {
             setLoading(false)
         }
     }
 
     const handleStatusChange = (id: string, status: boolean) => {
-        setStudents((prev) =>
-            prev.map((student) => (student.id === id ? { ...student, attendance_status: status } : student)),
-        )
+        setStudents((prev) => prev.map((student) => (student.id === id ? { ...student, status } : student)))
+        // Clear validation error when user makes a selection
+        setValidationError(null)
     }
 
     const handleRemarksChange = (id: string, remarks: string) => {
@@ -66,44 +87,45 @@ export default function AddAttendancePage() {
     }
 
     const handleSaveAttendance = async () => {
-        // Check if any student doesn't have attendance status set
-        const incompleteRecords = students.filter((student) => student.attendance_status === null)
+        try {
+            attendanceSchema.parse({
+                students: students.map((student) => ({
+                    id: student.id,
+                    status: student.status,
+                })),
+            })
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                const missingCount = students.filter((student) => student.status === null).length
+                setValidationError(
+                    `Please mark attendance for all students. ${missingCount} student(s) still need attendance marked.`,
+                )
+                toast.error(`Please mark attendance for all students. ${missingCount} student(s) still need attendance marked.`)
+                return
+            }
+        }
 
-        if (incompleteRecords.length > 0) {
-            toast.warning(
-                `${incompleteRecords.length} students don't have attendance status marked. Please complete all records.`,
-            )
+        if (!sessionId) {
+            toast.error("No active session found")
             return
         }
 
         setSaving(true)
         try {
-            const formattedDate = format(selectedDate, "yyyy-MM-dd")
-
-            // Prepare attendance records
-            const attendanceRecords = students.map((student) => ({
-                student_id: student.id,
-                status: student.attendance_status,
+            const attendanceData = students.map((student) => ({
+                id: student.id,
+                session: student.session,
+                student: student.student.id,
+                status: student.status,
                 remarks: student.remarks,
-                date: formattedDate,
             }))
 
-            await AxiosInstance.post("/api/academic/attendance-record/bulk-create/", {
-                records: attendanceRecords,
-            })
-
-            toast.success("Attendance records saved successfully")
-
-            // Reset the form after successful save
-            const resetStudents = students.map((student) => ({
-                ...student,
-                attendance_status: null,
-                remarks: null,
-            }))
-            setStudents(resetStudents)
+            console.log(attendanceData)
+            await AxiosInstance.put(`/api/academic/attendance-record-update/`, attendanceData)
+            toast.success("Attendance saved successfully")
+            setValidationError(null)
         } catch (error) {
-            console.error("Error saving attendance records:", error)
-            toast.error("Failed to save attendance records. Please try again.")
+            console.error("Error saving attendance:", error)
         } finally {
             setSaving(false)
         }
@@ -127,20 +149,37 @@ export default function AddAttendancePage() {
         setSearchQuery(event.target.value)
     }
 
-    // Filter data based on search query
     const filteredStudents = students.filter(
         (student) =>
-            student.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            student.id.toLowerCase().includes(searchQuery.toLowerCase()),
+            student.student.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            student.student.id.toLowerCase().includes(searchQuery.toLowerCase()),
     )
 
     return (
         <div className="p-4 flex flex-col gap-4">
-            <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold">Add Attendance</h1>
-                <Button onClick={handleSaveAttendance} disabled={saving}>
-                    {saving ? "Saving..." : "Save Attendance"}
-                </Button>
+            {/* Breadcrumb navigation */}
+
+
+            <h1 className="text-2xl font-bold">Take Attendance</h1>
+
+            <div className="flex items-center text-sm mb-6">
+                <Link to={'/'} className="text-slate-500 hover:text-slate-700">
+                    Dashboard
+                </Link>
+
+                <span className="mx-2 text-gray-400">/</span>
+
+
+                <Link to={'/list/attendance'} className="text-slate-500 hover:text-slate-700">
+                    Attendance
+                </Link>
+
+                <span className="mx-2 text-gray-400">/</span>
+
+                <span className="text-slate-700 cursor-pointer">
+                    Session
+                </span>
+
             </div>
 
             <div className="flex justify-between items-center mb-4">
@@ -148,7 +187,7 @@ export default function AddAttendancePage() {
                     Date: <span className="font-medium">{format(selectedDate, "PPP")}</span>
                 </div>
                 <div className="relative w-full max-w-sm">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"/>
                     <Input
                         type="search"
                         placeholder="Search by ID or name..."
@@ -159,31 +198,37 @@ export default function AddAttendancePage() {
                 </div>
             </div>
 
-            <div className="rounded shadow-md bg-white overflow-hidden">
+            {validationError && (
+                <div className="bg-red-50 border-l-4 border-red-400 text-red-700 px-4 py-3 rounded-r mb-4">
+                    {validationError}
+                </div>
+            )}
+
+            <div className="rounded-lg border border-gray-200 overflow-hidden">
                 {loading ? (
                     <Table>
                         <TableHeader className="bg-gray-50">
                             <TableRow>
                                 <TableHead className="font-semibold w-[100px]">Student ID</TableHead>
                                 <TableHead className="font-semibold">Name</TableHead>
-                                <TableHead className="font-semibold w-[150px] text-center">Attendance Status</TableHead>
+                                <TableHead className="font-semibold w-[120px] text-center">Attendance</TableHead>
                                 <TableHead className="font-semibold">Remarks</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {Array.from({ length: 5 }).map((_, index) => (
+                            {Array.from({length: 5}).map((_, index) => (
                                 <TableRow key={index}>
                                     <TableCell>
-                                        <Skeleton className="h-6 w-full" />
+                                        <Skeleton className="h-6 w-full"/>
                                     </TableCell>
                                     <TableCell>
-                                        <Skeleton className="h-6 w-full" />
+                                        <Skeleton className="h-6 w-full"/>
                                     </TableCell>
                                     <TableCell>
-                                        <Skeleton className="h-6 w-full" />
+                                        <Skeleton className="h-6 w-full"/>
                                     </TableCell>
                                     <TableCell>
-                                        <Skeleton className="h-6 w-full" />
+                                        <Skeleton className="h-6 w-full"/>
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -195,7 +240,7 @@ export default function AddAttendancePage() {
                             <TableRow>
                                 <TableHead className="font-semibold w-[100px]">Student ID</TableHead>
                                 <TableHead className="font-semibold">Name</TableHead>
-                                <TableHead className="font-semibold w-[150px] text-center">Attendance Status</TableHead>
+                                <TableHead className="font-semibold w-[120px] text-center">Attendance</TableHead>
                                 <TableHead className="font-semibold">Remarks</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -203,74 +248,68 @@ export default function AddAttendancePage() {
                             {filteredStudents.length > 0 ? (
                                 filteredStudents.map((student) => (
                                     <TableRow key={student.id} className="hover:bg-gray-50">
-                                        <TableCell className="font-medium">{student.id}</TableCell>
-                                        <TableCell>{student.full_name}</TableCell>
+                                        <TableCell className="font-medium text-sm">{student.student.id}</TableCell>
+                                        <TableCell className="text-sm">{student.student.full_name}</TableCell>
                                         <TableCell>
                                             <div className="flex justify-center gap-2">
-                                                <Button
-                                                    size="icon"
-                                                    variant={student.attendance_status === true ? "default" : "outline"}
-                                                    className={cn(
-                                                        "h-9 w-9 rounded-full",
-                                                        student.attendance_status === true
-                                                            ? "bg-green-500 hover:bg-green-600"
-                                                            : "border-green-200 text-green-700 hover:bg-green-50",
-                                                    )}
+                                                <button
                                                     onClick={() => handleStatusChange(student.id, true)}
+                                                    className={cn(
+                                                        "w-8 h-8 flex items-center justify-center rounded-full transition-all cursor-pointer",
+                                                        student.status === true ? "bg-green-200 text-green-800" : "text-gray-400 hover:bg-gray-100",
+                                                    )}
                                                     aria-label="Mark as present"
                                                 >
-                                                    <Check className="h-5 w-5" />
-                                                </Button>
-                                                <Button
-                                                    size="icon"
-                                                    variant={student.attendance_status === false ? "default" : "outline"}
-                                                    className={cn(
-                                                        "h-9 w-9 rounded-full",
-                                                        student.attendance_status === false
-                                                            ? "bg-red-500 hover:bg-red-600"
-                                                            : "border-red-200 text-red-700 hover:bg-red-50",
-                                                    )}
+                                                    <Check className="h-4 w-4"/>
+                                                </button>
+                                                <button
                                                     onClick={() => handleStatusChange(student.id, false)}
+                                                    className={cn(
+                                                        "w-8 h-8 flex items-center justify-center rounded-full transition-all cursor-pointer",
+                                                        student.status === false ? "bg-red-200 text-red-800" : "text-gray-400 hover:bg-gray-100",
+                                                    )}
                                                     aria-label="Mark as absent"
                                                 >
-                                                    <X className="h-5 w-5" />
-                                                </Button>
+                                                    <X className="h-4 w-4"/>
+                                                </button>
                                             </div>
                                         </TableCell>
                                         <TableCell>
                                             {editingRemarks === student.id ? (
                                                 <div className="flex gap-2">
-                                                    <Textarea
-                                                        value={remarksValue}
-                                                        onChange={(e) => setRemarksValue(e.target.value)}
-                                                        className="min-h-[60px] text-sm"
-                                                        placeholder="Enter remarks..."
-                                                    />
+                                                    <div className="w-full h-[60px]">
+                                                        <Textarea
+                                                            value={remarksValue}
+                                                            onChange={(e) => setRemarksValue(e.target.value)}
+                                                            className="h-full text-sm resize-none"
+                                                            placeholder="Enter remarks..."
+                                                        />
+                                                    </div>
                                                     <div className="flex flex-col gap-1">
-                                                        <Button
-                                                            size="icon"
-                                                            variant="ghost"
+                                                        <button
                                                             onClick={() => saveRemarks(student.id)}
-                                                            className="h-8 w-8"
+                                                            className="h-8 w-8 flex items-center justify-center text-green-600 hover:text-green-700 cursor-pointer"
                                                         >
-                                                            <Check className="h-4 w-4 text-green-600" />
-                                                        </Button>
-                                                        <Button size="icon" variant="ghost" onClick={cancelEditingRemarks} className="h-8 w-8">
-                                                            <X className="h-4 w-4 text-red-600" />
-                                                        </Button>
+                                                            <Check className="h-4 w-4"/>
+                                                        </button>
+                                                        <button
+                                                            onClick={cancelEditingRemarks}
+                                                            className="h-8 w-8 flex items-center justify-center text-red-600 hover:text-red-700 cursor-pointer"
+                                                        >
+                                                            <X className="h-4 w-4"/>
+                                                        </button>
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-sm text-muted-foreground">{student.remarks || "No remarks"}</span>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="ghost"
+                                                <div className="flex items-center justify-between min-h-[24px]">
+                                                    <span
+                                                        className="text-sm text-gray-600">{student.remarks || "No remarks"}</span>
+                                                    <button
                                                         onClick={() => startEditingRemarks(student.id, student.remarks)}
-                                                        className="h-8 px-2"
+                                                        className="p-1 text-gray-400 hover:text-gray-600 cursor-pointer"
                                                     >
-                                                        Edit
-                                                    </Button>
+                                                        <Pencil className="h-3.5 w-3.5"/>
+                                                    </button>
                                                 </div>
                                             )}
                                         </TableCell>
@@ -286,6 +325,14 @@ export default function AddAttendancePage() {
                         </TableBody>
                     </Table>
                 )}
+            </div>
+
+            {/* Save button at the bottom */}
+            <div className="mt-6 flex justify-end">
+                <Button onClick={handleSaveAttendance} disabled={saving || loading} size="lg"
+                        className="px-8 cursor-pointer">
+                    {saving ? "Saving..." : "Save Attendance"}
+                </Button>
             </div>
         </div>
     )
