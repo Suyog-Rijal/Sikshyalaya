@@ -37,7 +37,7 @@ export default function AddAttendancePage() {
     const fetchStudents = async () => {
         setLoading(true)
         try {
-            const response = await AxiosInstance.get("/api/academic/students/")
+            const response = await AxiosInstance.post("/api/academic/attendance-session/")
 
             // Initialize attendance status as null for all students
             const studentsWithAttendance = response.data.map((student) => ({

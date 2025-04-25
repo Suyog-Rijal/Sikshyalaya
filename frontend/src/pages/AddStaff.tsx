@@ -220,7 +220,7 @@ const TeacherOtherInfo = () => {
 
     useEffect(() => {
         try {
-            form.setValue("managementStaff_info.department", '')
+            form.setValue("managementStaff_info.department", "")
         } catch (e) {
             console.log(e)
         }
@@ -346,11 +346,28 @@ const TeacherOtherInfo = () => {
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                {availableSubjects.map((option) => (
-                                                    <SelectItem key={option.id} value={`${option.id}`}>
-                                                        {option.value}
-                                                    </SelectItem>
-                                                ))}
+                                                {availableSubjects.map((option) => {
+                                                    // Find which classes have this subject
+                                                    const classesWithSubject = apiData.staff
+                                                        .filter(
+                                                            (staff) =>
+                                                                form.watch("teacher_info.school_class")?.includes(staff.id) &&
+                                                                staff.subjects.some((subj) => subj.id === option.id),
+                                                        )
+                                                        .map((staff) => staff.name)
+
+                                                    // Format the display text with class name in parentheses
+                                                    const displayText =
+                                                        classesWithSubject.length > 0
+                                                            ? `${option.value} (${classesWithSubject.join(", ")})`
+                                                            : option.value
+
+                                                    return (
+                                                        <SelectItem key={option.id} value={`${option.id}`}>
+                                                            {displayText}
+                                                        </SelectItem>
+                                                    )
+                                                })}
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />

@@ -87,21 +87,43 @@ export default function TeacherAttendanceListPage() {
 
     return (
         <div className="p-4 flex flex-col gap-4">
-            <PageHeader
-                title="Teacher Attendance"
-                breadcrumbs={[
-                    { label: "Dashboard", href: "/" },
-                    { label: "Teacher", href: "/teacher" },
-                    { label: "Attendance", href: "/teacher/attendance" },
-                ]}
-                onRefresh={fetchAttendanceRecords}
-                onPrint={() => console.log("Printing...")}
-                onExport={() => console.log("Exporting...")}
-                primaryAction={{
-                    label: "Take Today's Attendance",
-                    onClick: () => navigate("/attendance/session/create"),
-                    icon: <PlusCircle className="h-4 w-4" />,
-                }}            />
+            {
+                attendanceData.length === 0 ? (
+                    <PageHeader
+                        title="Teacher Attendance"
+                        breadcrumbs={[
+                            { label: "Dashboard", href: "/" },
+                            { label: "Teacher", href: "/teacher" },
+                            { label: "Attendance", href: "/teacher/attendance" },
+                        ]}
+                        onRefresh={fetchAttendanceRecords}
+                        onPrint={() => console.log("Printing...")}
+                        onExport={() => console.log("Exporting...")}
+                        primaryAction={{
+                            label: "Take Today's Attendance",
+                            onClick: () => navigate("/attendance/session/create"),
+                            icon: <PlusCircle className="h-4 w-4" />,
+                        }}            />
+                ): (
+                    <PageHeader
+                        title="Teacher Attendance"
+                        breadcrumbs={[
+                            { label: "Dashboard", href: "/" },
+                            { label: "Teacher", href: "/teacher" },
+                            { label: "Attendance", href: "/teacher/attendance" },
+                        ]}
+                        onRefresh={fetchAttendanceRecords}
+                        onPrint={() => console.log("Printing...")}
+                        onExport={() => console.log("Exporting...")}
+                        primaryAction={{
+                            label: "Attendance Already Taken",
+                            className: "cursor-not-allowed disabled opacity-50",
+                            onClick: () => navigate("/list/attendance"),
+                            icon: <PlusCircle className="h-4 w-4" />,
+                        }}            />
+                )
+            }
+
 
             <TeacherAttendanceDataTable
                 data={attendanceData}

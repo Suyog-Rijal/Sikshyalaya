@@ -20,6 +20,7 @@ interface PageHeaderProps {
     primaryAction?: {
         label: string
         onClick: () => void
+        className?: string
         icon?: React.ReactNode
     }
     secondaryActions?: {
@@ -98,7 +99,7 @@ export function PageHeader({ title, breadcrumbs, onRefresh, onPrint, onExport, p
                         {primaryAction && (
                             <Button
                                 onClick={primaryAction.onClick}
-                                className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                                className={`h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm bg-blue-600 hover:bg-blue-700 cursor-pointer ${primaryAction.className}`}
                             >
                                 {primaryAction.icon && <span className="mr-1">{primaryAction.icon}</span>}
                                 <span>{primaryAction.label}</span>
