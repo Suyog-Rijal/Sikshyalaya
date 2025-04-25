@@ -3,6 +3,7 @@ import uuid
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.db.models import Prefetch, Q
+from django.utils import timezone
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -14,7 +15,7 @@ from academic.serializer import EnrollmentPostSerializer, EnrollmentGetSchoolCla
 	SimpleDepartmentSerializer, AddStaffSerializer, SimpleTeacherSerializer, SimpleManagementStaffSerializer, \
 	SchoolClassGetSerializer, SchoolClassPostSerializer, SubjectListSerializer, RoutineSerializer, \
 	SimpleSchoolClassSerializer, SimpleSubjectSerializer, SimpleStaffSerializer, RoutineSchoolClassGetSerializer, \
-	RoutineTeacherGetSerializer, RoutinePostSerializer, AttendanceSessionSerializer, AttendanceRecordPostSerializer, \
+	RoutineTeacherGetSerializer, RoutinePostSerializer, AttendanceRecordPostSerializer, \
 	AttendanceRecordGetSerializer
 from student.serializer import ListStudentSerializer
 from user.serializer import StudentSerializer, ParentSerializer
@@ -447,12 +448,6 @@ class UpdateSubjectApiView(APIView):
 
 
 @extend_schema(tags=["Attendance"])
-class AttendanceSessionViewset(ModelViewSet):
-	permission_classes = [IsAuthenticated]
-	queryset = AttendanceSession.objects.all()
-	serializer_class = AttendanceSessionSerializer
-
-
 class AttendanceSessionView(APIView):
 	permission_classes = [IsAuthenticated]
 
@@ -465,6 +460,29 @@ class AttendanceSessionView(APIView):
 			)
 
 		try:
+			user = request.user
+			staff = Staff.objects.get(email=user.email)
+			teacher = Teacher.objects.get(staff=staff)
+			class_teacher_of = SchoolClass.objects.get(section__class_teacher=teacher)
+			section = Section.objects.get(class_teacher=teacher)
+			print("Class: ", class_teacher_of)
+			print("Section: ", section)
+			AttendanceSession.objects.create(
+				school_class=class_teacher_of,
+				date=timezone.now(),
+				marked_by=teacher,
+				section=section
+			)
+			return Response(
+				{'detail': 'Attendance session created successfully.'},
+				status=status.HTTP_201_CREATED
+			)
+		except Exception as e:
+			print(e)
+			return Response(
+				{'detail': 'An error occurred while creating attendance session.'},
+				status=status.HTTP_400_BAD_REQUEST
+			)
 
 
 @extend_schema(tags=["Attendance"])
@@ -484,7 +502,8 @@ class AttendanceRecordViewSet(ModelViewSet):
 			selected_date = self.request.query_params.get('selected_date')
 			selected_class = self.request.query_params.get('selected_class')
 			selected_section = self.request.query_params.get('selected_section')
-			attendanceSession = AttendanceSession.objects.get(date=selected_date, school_class_id=selected_class, section_id=selected_section)
+			attendanceSession = AttendanceSession.objects.get(date=selected_date, school_class_id=selected_class,
+			                                                  section_id=selected_section)
 			return AttendanceRecord.objects.filter(session=attendanceSession)
 		except Exception as e:
 			print(e)
@@ -523,7 +542,8 @@ class AttendanceRecordSearchView(APIView):
 	def get(self, request):
 		search_query = request.query_params.get('search')
 		try:
-			student = Enrollment.objects.filter(Q(student__first_name__icontains=search_query) | Q(student__last_name__icontains=search_query)).distinct()
+			student = Enrollment.objects.filter(Q(student__first_name__icontains=search_query) | Q(
+				student__last_name__icontains=search_query)).distinct()
 			record = AttendanceRecord.objects.filter(enrollment__in=student).distinct()
 			serializer = AttendanceRecordGetSerializer(record, many=True)
 			return Response(serializer.data, status=status.HTTP_200_OK)
@@ -551,7 +571,8 @@ class TeacherStudentAttendanceView(APIView):
 			staff = Staff.objects.get(email=request.user.email)
 			teacher = Teacher.objects.get(staff=staff)
 			teacher_class = SchoolClass.objects.filter(section__class_teacher=teacher).distinct()
-			attendanceSession = AttendanceSession.objects.filter(date=selected_date, school_class__in=teacher_class).distinct()
+			attendanceSession = AttendanceSession.objects.filter(date=selected_date,
+			                                                     school_class__in=teacher_class).distinct()
 			attendance_records = AttendanceRecord.objects.filter(session__in=attendanceSession).distinct()
 			serializer = AttendanceRecordGetSerializer(attendance_records, many=True)
 			return Response(serializer.data, status=status.HTTP_200_OK)

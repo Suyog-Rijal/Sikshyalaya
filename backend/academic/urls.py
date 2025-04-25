@@ -1,9 +1,9 @@
 from django.conf import settings
 from django.urls import path
 from .views import EnrollmentApiView, AddStaffApiView, SchoolClassViewSet, SubjectApiView, RoutineViewSet, \
-	RoutineFormGetAPiView, SimpleClassListApiView, UpdateSubjectApiView, AttendanceSessionViewset, \
+	RoutineFormGetAPiView, SimpleClassListApiView, UpdateSubjectApiView, \
 	AttendanceRecordViewSet, DeleteStaffApiView, AddStaffImageView, EnrollmentImageView, TeacherStudentList, \
-	AttendanceRecordSearchView, TeacherStudentAttendanceView
+	AttendanceRecordSearchView, TeacherStudentAttendanceView, AttendanceSessionView
 from rest_framework.routers import DefaultRouter
 from django.conf.urls.static import static
 
@@ -11,7 +11,6 @@ from django.conf.urls.static import static
 router = DefaultRouter()
 router.register(r'class', SchoolClassViewSet, basename='school_class')
 router.register(r'routine', RoutineViewSet, basename='routine')
-router.register('attendance-session', AttendanceSessionViewset, basename='attendance-session')
 router.register('attendance-record', AttendanceRecordViewSet, basename='attendance-record')
 
 urlpatterns = [
@@ -28,6 +27,8 @@ urlpatterns = [
 	path('teacher-student-list/', TeacherStudentList.as_view(), name='teacher-student-list'),
 	path('attendace-search/', AttendanceRecordSearchView.as_view(), name='attendance-search'),
 	path('teacher-student-attendance-record/', TeacherStudentAttendanceView.as_view(), name='teacher-attendance-record'),
+
+	path('attendance-session/', AttendanceSessionView.as_view(), name='attendance-session'),
 ]
 
 urlpatterns += router.urls
