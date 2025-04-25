@@ -1,7 +1,5 @@
 import { PageHeader } from "@/components/ListPage/PageHeader.tsx"
-import { PlusCircle } from "lucide-react"
 import { FilterBar } from "@/components/ListPage/FilterBar.tsx"
-import { useNavigate } from "react-router-dom"
 import { useEffect, useState } from "react"
 import AxiosInstance from "@/auth/AxiosInstance.ts"
 import { toast } from "sonner"
@@ -10,8 +8,7 @@ import { ParentCard } from "@/components/ListPage/ParentCard.tsx"
 import { format } from "date-fns"
 
 
-export function ParentListPage() {
-    const navigate = useNavigate()
+export function TeacherParentList() {
     const sortOptions = [
         { label: "Name A to Z", value: "name_asc" },
         { label: "Name Z to A", value: "name_desc" },
@@ -103,11 +100,7 @@ export function ParentListPage() {
                     onRefresh={() => console.log("Refreshing...")}
                     onPrint={() => console.log("Printing...")}
                     onExport={() => console.log("Exporting...")}
-                    primaryAction={{
-                        label: "Add Parent",
-                        onClick: () => navigate("/parent/add/"),
-                        icon: <PlusCircle className="h-4 w-4" />,
-                    }}
+
                 />
                 <FilterBar
                     title="Parent List"

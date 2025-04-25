@@ -2,23 +2,26 @@ import uuid
 
 from django.db import transaction
 from django.core.exceptions import ValidationError
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
-from academic.models import SchoolClass, Department, Section, Subject, Routine, AttendanceSession, AttendanceRecord
+from academic.models import SchoolClass, Department, Section, Subject, Routine, AttendanceSession, AttendanceRecord, \
+	Enrollment
 from academic.serializer import EnrollmentPostSerializer, EnrollmentGetSchoolClassSerializer, AddStaffGetSerializer, \
 	SimpleDepartmentSerializer, AddStaffSerializer, SimpleTeacherSerializer, SimpleManagementStaffSerializer, \
 	SchoolClassGetSerializer, SchoolClassPostSerializer, SubjectListSerializer, RoutineSerializer, \
 	SimpleSchoolClassSerializer, SimpleSubjectSerializer, SimpleStaffSerializer, RoutineSchoolClassGetSerializer, \
 	RoutineTeacherGetSerializer, RoutinePostSerializer, AttendanceSessionSerializer, AttendanceRecordPostSerializer, \
 	AttendanceRecordGetSerializer
+from student.serializer import ListStudentSerializer
 from user.serializer import StudentSerializer, ParentSerializer
 from user.models import Parent, Teacher, Staff, CustomUser, Student
 from drf_spectacular.utils import extend_schema
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
+from rest_framework import filters
 
 
 class EnrollmentApiView(APIView):
@@ -443,20 +446,33 @@ class UpdateSubjectApiView(APIView):
 			)
 
 
-@extend_schema(tags=["Attendance Session"])
+@extend_schema(tags=["Attendance"])
 class AttendanceSessionViewset(ModelViewSet):
 	permission_classes = [IsAuthenticated]
 	queryset = AttendanceSession.objects.all()
 	serializer_class = AttendanceSessionSerializer
 
 
-@extend_schema(tags=["Attendance Session"])
+class AttendanceSessionView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def post(self, request):
+		user = request.user
+		if not user.has_role('teacher'):
+			return Response(
+				{'detail': 'You do not have permission to create attendance session.'},
+				status=status.HTTP_403_FORBIDDEN
+			)
+
+		try:
+
+
+@extend_schema(tags=["Attendance"])
 class AttendanceRecordViewSet(ModelViewSet):
 	http_method_names = ['post', 'get']
 	permission_classes = [IsAuthenticated]
-	queryset = AttendanceRecord.objects.all()
+	queryset = AttendanceRecord.objects.none()
 	serializer_class = AttendanceRecordGetSerializer
-	lookup_field = 'id'
 
 	def get_serializer_class(self):
 		if self.action == 'create':
@@ -464,4 +480,111 @@ class AttendanceRecordViewSet(ModelViewSet):
 		return AttendanceRecordGetSerializer
 
 	def get_queryset(self):
-		queryset = super().get_queryset()
+		try:
+			selected_date = self.request.query_params.get('selected_date')
+			selected_class = self.request.query_params.get('selected_class')
+			selected_section = self.request.query_params.get('selected_section')
+			attendanceSession = AttendanceSession.objects.get(date=selected_date, school_class_id=selected_class, section_id=selected_section)
+			return AttendanceRecord.objects.filter(session=attendanceSession)
+		except Exception as e:
+			print(e)
+			return AttendanceRecord.objects.none()
+
+
+@extend_schema(tags=["Attendance"])
+class AttendanceRecordSearchView(APIView):
+	permission_classes = [AllowAny]
+
+	@extend_schema(
+		parameters=[
+			OpenApiParameter(
+				name='search',
+				location=OpenApiParameter.QUERY,
+				required=True,
+				type=str,
+				description='Search for student name or roll number'
+			)
+		],
+		responses={
+			200: OpenApiExample(
+				'Success',
+				value={
+					'detail': 'Search results returned successfully.'
+				}
+			),
+			400: OpenApiExample(
+				'Bad Request',
+				value={
+					'detail': 'Please provide a search value.'
+				}
+			)
+		}
+	)
+	def get(self, request):
+		search_query = request.query_params.get('search')
+		try:
+			student = Enrollment.objects.filter(Q(student__first_name__icontains=search_query) | Q(student__last_name__icontains=search_query)).distinct()
+			record = AttendanceRecord.objects.filter(enrollment__in=student).distinct()
+			serializer = AttendanceRecordGetSerializer(record, many=True)
+			return Response(serializer.data, status=status.HTTP_200_OK)
+		except Exception as e:
+			print(e)
+			return Response(
+				{'detail': 'An error occurred while searching attendance records.'},
+				status=status.HTTP_400_BAD_REQUEST
+			)
+
+
+@extend_schema(tags=["Attendance"])
+class TeacherStudentAttendanceView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def get(self, request):
+		if not request.user.has_role('teacher'):
+			return Response(
+				{'detail': 'You do not have permission to view attendance records.'},
+				status=status.HTTP_403_FORBIDDEN
+			)
+
+		try:
+			selected_date = self.request.query_params.get('selected_date')
+			staff = Staff.objects.get(email=request.user.email)
+			teacher = Teacher.objects.get(staff=staff)
+			teacher_class = SchoolClass.objects.filter(section__class_teacher=teacher).distinct()
+			attendanceSession = AttendanceSession.objects.filter(date=selected_date, school_class__in=teacher_class).distinct()
+			attendance_records = AttendanceRecord.objects.filter(session__in=attendanceSession).distinct()
+			serializer = AttendanceRecordGetSerializer(attendance_records, many=True)
+			return Response(serializer.data, status=status.HTTP_200_OK)
+		except Exception as e:
+			print(e)
+			return Response(
+				{'detail': 'An error occurred while retrieving attendance records.'},
+				status=status.HTTP_400_BAD_REQUEST
+			)
+
+
+class TeacherAttendanceSessionCreateAPIView(APIView):
+	pass
+
+
+class TeacherStudentList(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def get(self, request):
+		if not request.user.has_role('admin') and not request.user.has_role('teacher'):
+			return Response(
+				{'detail': 'You do not have permission to view students.'},
+				status=status.HTTP_403_FORBIDDEN
+			)
+		try:
+			staff = Staff.objects.get(email=request.user)
+			teacher = Teacher.objects.get(staff=staff)
+			queryset = queryset = Student.objects.filter(
+				enrollments__school_class__teachers=teacher).distinct().prefetch_related('enrollments')
+			serializer = ListStudentSerializer(queryset, many=True, context={'request': request})
+			return Response(serializer.data, status=status.HTTP_200_OK)
+		except Exception as e:
+			return Response(
+				{'detail': 'An error occurred while retrieving students.'},
+				status=status.HTTP_400_BAD_REQUEST
+			)

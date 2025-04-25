@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { EllipsisVertical } from "lucide-react"
+import {useAuthStore} from "@/store/AuthStore.ts";
 
 interface ParentCardProps {
     id: string
@@ -43,6 +44,10 @@ export function ParentCard({
                                onEdit,
                                onDelete,
                            }: ParentCardProps) {
+
+
+    const {role} = useAuthStore();
+
     return (
         <div className="w-full max-w-sm rounded-lg bg-white p-4 shadow">
             {/* Header */}
@@ -57,8 +62,16 @@ export function ParentCard({
                     <DropdownMenuContent align="end" className="w-36">
                         <DropdownMenuGroup>
                             <DropdownMenuItem onClick={() => onViewDetails?.(id)}>View</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => onEdit?.(id)}>Edit</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => onDelete?.(id)}>Delete</DropdownMenuItem>
+                            {
+                                role === "admin" && (
+                                    <>
+                                        <DropdownMenuItem onClick={() => onEdit?.(id)}>Edit</DropdownMenuItem>
+                                        <DropdownMenuItem className="text-red-500" onClick={() => onDelete?.(id)}>
+                                            Delete
+                                        </DropdownMenuItem>
+                                    </>
+                                )
+                            }
                         </DropdownMenuGroup>
                     </DropdownMenuContent>
                 </DropdownMenu>

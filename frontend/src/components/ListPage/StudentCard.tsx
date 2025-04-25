@@ -21,6 +21,7 @@ import {
 import { EllipsisVertical, Loader2, Trash } from "lucide-react"
 import { CustomStatusBadge } from "@/components/ListPage/CustomStatusBadge.tsx"
 import { useNavigate } from "react-router-dom"
+import {useAuthStore} from "@/store/AuthStore.ts";
 
 interface StudentCardProps {
     id: string
@@ -57,6 +58,9 @@ export function StudentCard({
         }
     }
 
+    const {role} = useAuthStore();
+
+
     return (
         <div className="w-full max-w-sm rounded-lg bg-white p-4 shadow">
             {/* Header */}
@@ -80,14 +84,21 @@ export function StudentCard({
                         <DropdownMenuContent align="end" className="w-36">
                             <DropdownMenuGroup>
                                 <DropdownMenuItem onClick={() => navigate("/test/")}>View</DropdownMenuItem>
-                                <DropdownMenuItem>Edit</DropdownMenuItem>
-                                <DropdownMenuItem
-                                    className="text-destructive focus:text-destructive"
-                                    onClick={() => setDeleteDialogOpen(true)}
-                                >
-                                    <Trash className="h-4 w-4 mr-2" />
-                                    Delete
-                                </DropdownMenuItem>
+
+                                {
+                                    role === "teacher" ? null : (
+                                        <>
+                                            <DropdownMenuItem>Edit</DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                className="text-destructive focus:text-destructive"
+                                                onClick={() => setDeleteDialogOpen(true)}
+                                            >
+                                                <Trash className="h-4 w-4 mr-2" />
+                                                Delete
+                                            </DropdownMenuItem>
+                                        </>
+                                    )
+                                }
                             </DropdownMenuGroup>
                         </DropdownMenuContent>
                     </DropdownMenu>

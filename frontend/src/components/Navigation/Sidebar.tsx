@@ -46,7 +46,7 @@ const menuItems: Menu[] = [
                 icon: "/class.png",
                 label: "Classes",
                 href: "/classes/list/",
-                visible: ["admin", "teacher"],
+                visible: ["admin",],
             },
             {
                 icon: "/subject.png",

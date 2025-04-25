@@ -251,6 +251,9 @@ class AttendanceSession(models.Model):
 		if self.date > timezone.localdate():
 			raise ValidationError("Cannot create attendance session in the future")
 
+	def get_total_present_days(self):
+		return self.records.filter(status=True).count()
+
 	def save(self, *args, **kwargs):
 		is_new = self._state.adding
 		if not self.academic_year:

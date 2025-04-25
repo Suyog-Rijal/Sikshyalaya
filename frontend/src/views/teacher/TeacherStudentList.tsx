@@ -47,7 +47,7 @@ export function TeacherStudentList() {
 
     const fetchStudents = () => {
         setLoading(true)
-        AxiosInstance.get("/api/student/")
+        AxiosInstance.get("/api/academic/teacher-student-list/")
             .then((response) => {
                 setApiData(response.data)
             })
@@ -63,21 +63,6 @@ export function TeacherStudentList() {
     useEffect(() => {
         fetchStudents()
     }, [])
-
-    const handleDelete = (id: string) => {
-        const data = {
-            id: id,
-        }
-        AxiosInstance.post(`/api/student/student-delete/`, data)
-            .then(() => {
-                toast.success("Student deleted successfully")
-                fetchStudents()
-            })
-            .catch((error) => {
-                console.error(error)
-                toast.error("Failed to delete student")
-            })
-    }
 
     const classOptions = useMemo(() => {
         const uniqueClasses = [...new Set(apiData.map((student) => student.school_class))]
@@ -192,7 +177,6 @@ export function TeacherStudentList() {
                             status={each.account_status}
                             schoolClass={each.school_class}
                             section={each.section}
-                            onDelete={handleDelete}
                         />
                     ))
                 ) : (

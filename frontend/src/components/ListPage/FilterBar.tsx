@@ -1,6 +1,5 @@
 "use client"
 
-import type React from "react"
 import { SortAsc } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
@@ -41,7 +40,6 @@ export function FilterBar({
         setSearchText(event.target.value)
         onSearchChange?.(event.target.value)
     }
-
 
     return (
         <div className="w-full py-4 rounded-md">

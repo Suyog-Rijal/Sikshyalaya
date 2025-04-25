@@ -16,6 +16,11 @@ import { Toaster } from "@/components/ui/sonner.tsx";
 import { Logout } from "@/pages/Logout.tsx";
 import { useEffect } from "react";
 import {TeacherStudentList} from "@/views/teacher/TeacherStudentList.tsx";
+import {TeacherParentList} from "@/views/teacher/TeacherParentList.tsx";
+import AttendanceListPage from "@/pages/AdminAttendance.tsx";
+import {TeacherRoutineList} from "@/views/teacher/TeacherRoutineList.tsx";
+import TeacherAttendanceList from "@/views/teacher/TeacherAttendanceList.tsx";
+import AddAttendancePage from "@/views/teacher/AddAttendance.tsx";
 
 function App() {
     const checkAuth = useAuthStore((s) => s.checkAuth);
@@ -41,6 +46,7 @@ function App() {
                             <Route path="/subject/list" element={<SubjectListPage />} />
                             <Route path="/routine/list" element={<RoutineListPage />} />
                             <Route path="/parent/list" element={<ParentListPage />} />
+                            <Route path="/list/attendance" element={<AttendanceListPage />} />
                             <Route path="/logout" element={<Logout />} />
                         </Routes>
                     </DashboardLayout>
@@ -51,8 +57,11 @@ function App() {
                         <Routes>
                             <Route index element={<Dashboard />} />
                             <Route path="/student/list" element={<TeacherStudentList />} />
-                            <Route path="/routine/list" element={<RoutineListPage />} />
+                            <Route path="/parent/list" element={<TeacherParentList />} />
+                            <Route path="/routine/list" element={<TeacherRoutineList />} />
                             <Route path="/subject/list" element={<SubjectListPage />} />
+                            <Route path="/list/attendance" element={<TeacherAttendanceList />} />
+                            <Route path="/attendance/session/create" element={<AddAttendancePage />} />
                             <Route path="/logout" element={<Logout />} />
                         </Routes>
                     </DashboardLayout>

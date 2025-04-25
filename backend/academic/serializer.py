@@ -363,6 +363,7 @@ class AttendanceRecordGetSerializer(serializers.ModelSerializer):
 			return f"{obj.first_name} {obj.last_name}"
 
 	student = StudentInlineSerializer()
+	present_days = serializers.SerializerMethodField()
 
 	class Meta:
 		model = AttendanceRecord
@@ -372,4 +373,8 @@ class AttendanceRecordGetSerializer(serializers.ModelSerializer):
 			'student',
 			'status',
 			'remarks',
+			'present_days',
 		]
+
+	def get_present_days(self, obj):
+		return obj.session.get_total_present_days()

@@ -7,13 +7,21 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { CalendarIcon, Check, Search, X } from "lucide-react"
+import { CalendarIcon, Check, MoreHorizontal, Search, X } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover.tsx"
-import { cn } from "@/lib/utils.ts"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
 import { format } from "date-fns"
-import { Calendar } from "@/components/ui/calendar.tsx"
+import { Calendar } from "@/components/ui/calendar"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface AttendanceRecord {
     id: string
@@ -27,53 +35,30 @@ interface AttendanceRecord {
     present_days: number
 }
 
-interface ClassData {
-    id: string
-    name: string
-    section: {
-        id: string
-        name: string
-    }[]
-    no_of_students: number
-    no_of_subjects: number
-    created_at: string
-    updated_at: string
-}
-
-interface AttendanceDataTableProps {
+interface TeacherAttendanceDataTableProps {
     data: AttendanceRecord[]
-    classData: ClassData[]
-    availableSections: { id: string; name: string }[]
     onStatusChange: (id: string, status: boolean) => void
     onRemarksChange: (id: string, remarks: string) => void
     selectedDate: Date
-    selectedClass: string
-    selectedSection: string
     handleDateChange: (date: Date | undefined) => void
-    handleClassChange: (classId: string) => void
-    handleSectionChange: (sectionId: string) => void
     loading: boolean
 }
 
-export default function AttendanceDataTable({
-                                                data,
-                                                classData,
-                                                availableSections,
-                                                onStatusChange,
-                                                onRemarksChange,
-                                                selectedDate,
-                                                selectedClass,
-                                                selectedSection,
-                                                handleDateChange,
-                                                handleClassChange,
-                                                handleSectionChange,
-                                                loading,
-                                            }: AttendanceDataTableProps) {
+export default function TeacherAttendanceDataTable({
+                                                       data,
+                                                       onStatusChange,
+                                                       onRemarksChange,
+                                                       selectedDate,
+                                                       handleDateChange,
+                                                       loading,
+                                                   }: TeacherAttendanceDataTableProps) {
     const [searchQuery, setSearchQuery] = useState("")
     const [rowsPerPage, setRowsPerPage] = useState("10")
     const [currentPage, setCurrentPage] = useState(1)
     const [editingRemarks, setEditingRemarks] = useState<string | null>(null)
     const [remarksValue, setRemarksValue] = useState("")
+    const [selectedRows, setSelectedRows] = useState<string[]>([])
+    const [selectedAction, setSelectedAction] = useState<string>("none")
 
     // Filter data based on search query
     const filteredData = data.filter((record) =>
@@ -108,6 +93,10 @@ export default function AttendanceDataTable({
         setCurrentPage((prev) => Math.min(prev + 1, totalPages))
     }
 
+    const startEditingRemarks = (id: string, currentRemarks: string | null) => {
+        setEditingRemarks(id)
+        setRemarksValue(currentRemarks || "")
+    }
 
     const saveRemarks = (id: string) => {
         onRemarksChange(id, remarksValue)
@@ -118,20 +107,58 @@ export default function AttendanceDataTable({
         setEditingRemarks(null)
     }
 
+    const handleRowSelection = (id: string, checked: boolean) => {
+        if (checked) {
+            setSelectedRows((prev) => [...prev, id])
+        } else {
+            setSelectedRows((prev) => prev.filter((rowId) => rowId !== id))
+        }
+    }
+
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            setSelectedRows(paginatedData.map((record) => record.id))
+        } else {
+            setSelectedRows([])
+        }
+    }
+
+    const handleBulkSelectedAction = () => {
+        if (selectedRows.length === 0 || selectedAction === "none") {
+            return
+        }
+
+        // Update each selected row
+        selectedRows.forEach((id) => {
+            onStatusChange(id, selectedAction === "present")
+        })
+
+        // Clear selection after action
+        setSelectedRows([])
+        setSelectedAction("none")
+    }
+
     if (loading) {
         return (
             <div className="rounded shadow-md bg-white overflow-hidden">
                 <Table>
                     <TableHeader className="bg-gray-50">
                         <TableRow>
+                            <TableHead className="w-[40px]">
+                                <Checkbox disabled />
+                            </TableHead>
                             <TableHead className="font-semibold">Student</TableHead>
                             <TableHead className="font-semibold w-[120px] text-center">Status</TableHead>
                             <TableHead className="font-semibold">Remarks</TableHead>
+                            <TableHead className="font-semibold w-[80px] text-center">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {Array.from({ length: 5 }).map((_, index) => (
                             <TableRow key={index}>
+                                <TableCell>
+                                    <Skeleton className="h-4 w-4" />
+                                </TableCell>
                                 <TableCell>
                                     <Skeleton className="h-6 w-full" />
                                 </TableCell>
@@ -171,6 +198,28 @@ export default function AttendanceDataTable({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                    {selectedRows.length > 0 && (
+                        <div className="flex items-center gap-2 mr-2">
+                            <span className="text-sm font-medium">{selectedRows.length} selected</span>
+                            <Select value={selectedAction} onValueChange={setSelectedAction}>
+                                <SelectTrigger className="w-[140px]">
+                                    <SelectValue placeholder="Choose action" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">Choose action</SelectItem>
+                                    <SelectItem value="present">Mark Present</SelectItem>
+                                    <SelectItem value="absent">Mark Absent</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Button size="sm" onClick={handleBulkSelectedAction} disabled={selectedAction === "none"}>
+                                Apply
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => setSelectedRows([])}>
+                                Clear
+                            </Button>
+                        </div>
+                    )}
+
                     <div className="relative w-full sm:w-[250px]">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -181,38 +230,6 @@ export default function AttendanceDataTable({
                             onChange={handleSearch}
                         />
                     </div>
-
-                    <Select value={selectedClass} onValueChange={handleClassChange}>
-                        <SelectTrigger className="w-[150px]">
-                            <SelectValue placeholder="Select Class" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="default">--Select class--</SelectItem>
-                            {classData.map((classItem) => (
-                                <SelectItem key={classItem.id} value={classItem.id}>
-                                    {classItem.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-
-                    <Select
-                        value={selectedSection}
-                        onValueChange={handleSectionChange}
-                        disabled={!selectedClass || availableSections.length === 0}
-                    >
-                        <SelectTrigger className="w-[150px]">
-                            <SelectValue placeholder="Select Section" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="default">--Select section</SelectItem>
-                            {availableSections.map((section) => (
-                                <SelectItem key={section.id} value={section.id}>
-                                    {section.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
 
                     <Popover>
                         <PopoverTrigger asChild>
@@ -232,39 +249,42 @@ export default function AttendanceDataTable({
                 <Table>
                     <TableHeader className="bg-gray-50">
                         <TableRow>
+                            <TableHead className="w-[40px]">
+                                <Checkbox
+                                    checked={paginatedData.length > 0 && selectedRows.length === paginatedData.length}
+                                    onCheckedChange={handleSelectAll}
+                                    aria-label="Select all"
+                                />
+                            </TableHead>
                             <TableHead className="font-semibold">Student</TableHead>
                             <TableHead className="font-semibold w-[120px] text-center">Status</TableHead>
-                            <TableHead className="hidden md:table-cell font-semibold">Present Days</TableHead>
                             <TableHead className="font-semibold">Remarks</TableHead>
-
+                            <TableHead className="font-semibold w-[80px] text-center">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {paginatedData.length > 0 ? (
                             paginatedData.map((record) => (
                                 <TableRow key={record.id} className="hover:bg-gray-50">
+                                    <TableCell>
+                                        <Checkbox
+                                            checked={selectedRows.includes(record.id)}
+                                            onCheckedChange={(checked) => handleRowSelection(record.id, checked === true)}
+                                            aria-label={`Select ${record.student.full_name}`}
+                                        />
+                                    </TableCell>
                                     <TableCell className="font-medium">{record.student.full_name}</TableCell>
                                     <TableCell className="text-center">
-                                        <div className="flex justify-center">
-                                            {record.status ? (
-                                                <Badge
-                                                    className="bg-green-100 text-green-800 hover:bg-green-200 cursor-pointer"
-                                                    onClick={() => onStatusChange(record.id, false)}
-                                                >
-                                                    <Check className="mr-1 h-3 w-3" /> Present
-                                                </Badge>
-                                            ) : (
-                                                <Badge
-                                                    variant="outline"
-                                                    className="bg-red-100 text-red-800 hover:bg-red-200 cursor-pointer"
-                                                    onClick={() => onStatusChange(record.id, true)}
-                                                >
-                                                    <X className="mr-1 h-3 w-3" /> Absent
-                                                </Badge>
-                                            )}
-                                        </div>
+                                        {record.status ? (
+                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <Check className="mr-1 h-3 w-3" /> Present
+                      </span>
+                                        ) : (
+                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <X className="mr-1 h-3 w-3" /> Absent
+                      </span>
+                                        )}
                                     </TableCell>
-                                    <TableCell className="hidden md:table-cell">{record.present_days}</TableCell>
                                     <TableCell>
                                         {editingRemarks === record.id ? (
                                             <div className="flex gap-2">
@@ -292,16 +312,38 @@ export default function AttendanceDataTable({
                                             <span className="text-sm text-muted-foreground">{record.remarks || "No remarks"}</span>
                                         )}
                                     </TableCell>
+                                    <TableCell>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                                    <span className="sr-only">Open menu</span>
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem onClick={() => onStatusChange(record.id, true)}>
+                                                    <Check className="mr-2 h-4 w-4 text-green-600" />
+                                                    Mark Present
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => onStatusChange(record.id, false)}>
+                                                    <X className="mr-2 h-4 w-4 text-red-600" />
+                                                    Mark Absent
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem onClick={() => startEditingRemarks(record.id, record.remarks)}>
+                                                    Edit Remarks
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
                                 </TableRow>
                             ))
                         ) : (
                             <TableRow>
                                 <TableCell colSpan={5} className="h-24 text-center">
-                                    {searchQuery
-                                        ? "No matching students found."
-                                        : selectedClass || selectedSection
-                                            ? "No attendance records for the selected filters."
-                                            : "No attendance records for this date."}
+                                    {searchQuery ? "No matching students found." : "No attendance records for this date."}
                                 </TableCell>
                             </TableRow>
                         )}

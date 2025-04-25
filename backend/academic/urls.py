@@ -2,7 +2,8 @@ from django.conf import settings
 from django.urls import path
 from .views import EnrollmentApiView, AddStaffApiView, SchoolClassViewSet, SubjectApiView, RoutineViewSet, \
 	RoutineFormGetAPiView, SimpleClassListApiView, UpdateSubjectApiView, AttendanceSessionViewset, \
-	AttendanceRecordViewSet, DeleteStaffApiView, AddStaffImageView, EnrollmentImageView
+	AttendanceRecordViewSet, DeleteStaffApiView, AddStaffImageView, EnrollmentImageView, TeacherStudentList, \
+	AttendanceRecordSearchView, TeacherStudentAttendanceView
 from rest_framework.routers import DefaultRouter
 from django.conf.urls.static import static
 
@@ -24,6 +25,9 @@ urlpatterns = [
 	path('subject/<uuid:id>/', SubjectApiView.as_view(), name='subject-detail'),
 	path('routine/add/', RoutineFormGetAPiView.as_view(), name='routine-add'),
 	path('class-list/', SimpleClassListApiView.as_view(), name='class-list'),
+	path('teacher-student-list/', TeacherStudentList.as_view(), name='teacher-student-list'),
+	path('attendace-search/', AttendanceRecordSearchView.as_view(), name='attendance-search'),
+	path('teacher-student-attendance-record/', TeacherStudentAttendanceView.as_view(), name='teacher-attendance-record'),
 ]
 
 urlpatterns += router.urls
