@@ -21,6 +21,8 @@ import AttendanceListPage from "@/pages/AdminAttendance.tsx";
 import {TeacherRoutineList} from "@/views/teacher/TeacherRoutineList.tsx";
 import TeacherAttendanceList from "@/views/teacher/TeacherAttendanceList.tsx";
 import AddAttendancePage from "@/views/teacher/AddAttendance.tsx";
+import TeacherAssignmentDetailPage from "@/views/teacher/TeacherAssignmentDetailPage.tsx";
+import TeacherAssignmentList from "@/views/teacher/TeacherAssignmentList.tsx";
 
 function App() {
     const checkAuth = useAuthStore((s) => s.checkAuth);
@@ -62,6 +64,8 @@ function App() {
                             <Route path="/subject/list" element={<SubjectListPage />} />
                             <Route path="/list/attendance" element={<TeacherAttendanceList />} />
                             <Route path="/attendance/session/create" element={<AddAttendancePage />} />
+                            <Route path="/assignment/list" element={<TeacherAssignmentList />} />
+                            <Route path="/assignment/detail/:id" element={<TeacherAssignmentDetailPage />} />s
                             <Route path="/logout" element={<Logout />} />
                         </Routes>
                     </DashboardLayout>

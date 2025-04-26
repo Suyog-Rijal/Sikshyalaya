@@ -1,6 +1,6 @@
 from django.contrib import admin
 from academic.models import AcademicYear, SchoolClass, Section, House, Enrollment, Subject, Department, Routine, \
-	AttendanceRecord, AttendanceSession
+	AttendanceRecord, AttendanceSession, Assignment, AssignmentAttachment, Submission
 
 
 @admin.register(AcademicYear)
@@ -93,3 +93,26 @@ class AttendanceRecordAdmin(admin.ModelAdmin):
 	list_filter = ('session__date', 'status')
 	search_fields = ('student__first_name', 'student__last_name')
 	list_editable = ('status',)
+
+
+@admin.register(Assignment)
+class AssignmentAdmin(admin.ModelAdmin):
+	list_display = ('id', 'title', 'subject', 'due_date', 'created_at')
+	list_filter = ('subject', 'due_date')
+	ordering = ('-due_date',)
+	search_fields = ('title', 'subject__name')
+
+
+@admin.register(AssignmentAttachment)
+class AssignmentAttachmentAdmin(admin.ModelAdmin):
+	list_display = ('id', 'assignment', 'file')
+	list_filter = ('assignment',)
+	search_fields = ('assignment__title',)
+
+
+@admin.register(Submission)
+class SubmissionAdmin(admin.ModelAdmin):
+	list_display = ('id', 'assignment', 'student', 'submission_date', 'status')
+	list_filter = ('assignment', 'status')
+	ordering = ('-submission_date',)
+	search_fields = ('assignment__title', 'student__first_name', 'student__last_name')

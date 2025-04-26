@@ -69,7 +69,7 @@ const menuItems: Menu[] = [
             {
                 icon: "/assignment.png",
                 label: "Assignments",
-                href: "/list/assignments",
+                href: "/assignment/list",
                 visible: ["admin", "teacher", "student", "parent"],
             },
             {
