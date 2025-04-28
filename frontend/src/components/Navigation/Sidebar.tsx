@@ -34,7 +34,7 @@ const menuItems: Menu[] = [
                 icon: "/student.png",
                 label: "Students",
                 href: "/student/list",
-                visible: ["admin", "teacher"],
+                visible: ["admin", "teacher", 'staff'],
             },
             {
                 icon: "/parent.png",
@@ -96,6 +96,12 @@ const menuItems: Menu[] = [
                 href: "/announcement/list",
                 visible: ["admin", "teacher", "student", "parent"],
             },
+            {
+                icon: "/class.png",
+                label: "Fees",
+                href: "/fees/",
+                visible: ["admin", "staff"],
+            },
         ],
     },
     {
@@ -105,13 +111,13 @@ const menuItems: Menu[] = [
                 icon: "/profile.png",
                 label: "Profile",
                 href: "/profile",
-                visible: ["admin", "teacher", "student", "parent"],
+                visible: ["admin", "teacher", "student", "parent", "staff"],
             },
             {
                 icon: "/logout.png",
                 label: "Logout",
                 href: "/logout",
-                visible: ["admin", "teacher", "student", "parent"],
+                visible: ["admin", "teacher", "student", "parent", "staff"],
             },
         ],
     },

@@ -105,6 +105,9 @@ function App() {
                         <Routes>
                             <Route index element={<Dashboard />} />
                             <Route path="/staff/detail/:id" element={<StaffDetailPage />} />
+                            <Route path="/student/list" element={<StudentListPage />} />
+                            <Route path="/student/add" element={<AddStudent />} />
+
                             <Route path="/logout" element={<Logout />} />
                         </Routes>
                     </DashboardLayout>
@@ -132,9 +135,15 @@ function App() {
                 return (
                     <DashboardLayout>
                         <Routes>
-                            <Route index element={<Dashboard />} />
-                            <Route path="/student/list" element={<StudentListPage />} />
-                            <Route path="/logout" element={<Logout />} />
+                            <Route path="/routine/list" element={<RoutineListPage />} />
+                            <Route path="/subject/list" element={<SubjectListPage />} />
+                            <Route path={"/exam/list"} element={<StudentExam />} />
+                            <Route path={"/assignment/list"} element={<StudentAssignment />} />
+                            <Route path={"/leave"} element={<StudentLeave />} />
+                            <Route path={'/announcement/list'} element={<StudentAnnouncement />} />
+                            <Route path={'/list/attendance'} element={<StudentAttendancePage />} />
+                            <Route path={'/profile'} element={<StudentProfilePage />} />
+                            <Route path={'/messages'} element={<Chat />} />
                         </Routes>
                     </DashboardLayout>
                 );
