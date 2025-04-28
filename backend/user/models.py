@@ -171,6 +171,7 @@ class Parent(models.Model):
 	profile_picture = models.ImageField(upload_to='Profile Pictures/', blank=True, null=True)
 	full_name = models.CharField(max_length=60)
 	email = models.EmailField(unique=True, blank=True, null=True)
+	password = models.CharField(max_length=128, blank=True)
 	phone_number = models.CharField(max_length=10)
 	occupation = models.CharField(max_length=100, blank=True, null=True)
 	relationship = models.CharField(max_length=1, choices=RELATIONSHIP_CHOICES)

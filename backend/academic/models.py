@@ -412,3 +412,69 @@ class Leave(models.Model):
 	leave_status = models.CharField(max_length=20, default='pending')
 
 	created_at = models.DateTimeField(auto_now_add=True)
+
+
+class Fees(models.Model):
+	PAYMENT_STATUS_CHOICES = [
+		('PENDING', 'Pending'),
+		('SUCCESS', 'Success'),
+		('FAILED', 'Failed'),
+		('CANCELLED', 'Cancelled'),
+	]
+
+	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+	academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='fees')
+	student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='fees')
+	total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+	paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+	due_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+	payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='PENDING')
+
+	created_at = models.DateTimeField(auto_now_add=True)
+	updated_at = models.DateTimeField(auto_now=True)
+
+	def update_due_and_status(self):
+		self.due_amount = self.total_amount - self.paid_amount
+		if self.paid_amount >= self.total_amount:
+			self.payment_status = 'SUCCESS'
+		elif 0 < self.paid_amount < self.total_amount:
+			self.payment_status = 'PENDING'
+		else:
+			self.payment_status = 'PENDING'
+		self.save()
+
+	def __str__(self):
+		return f"{self.student.get_fullname()} - {self.academic_year}"
+
+
+class OnlinePaymentTransaction(models.Model):
+	PAYMENT_METHOD_CHOICES = [
+		('ESEWA', 'eSewa'),
+		('KHALTI', 'Khalti'),
+		('CARD', 'Card'),
+		('PAYPAL', 'PayPal'),
+	]
+
+	PAYMENT_STATUS_CHOICES = [
+		('PENDING', 'Pending'),
+		('SUCCESS', 'Success'),
+		('FAILED', 'Failed'),
+		('CANCELLED', 'Cancelled'),
+	]
+
+	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+	fees = models.ForeignKey(Fees, on_delete=models.CASCADE, related_name='transactions')
+
+	transaction_id = models.CharField(max_length=100, unique=True)
+	payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES)
+	amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+	status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='PENDING')
+	response_message = models.TextField(blank=True, null=True)  # Optional gateway response JSON or message
+
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	def __str__(self):
+		return f"{self.fees.student.get_fullname()} | {self.payment_method} | {self.status}"
+
