@@ -4,7 +4,7 @@ from .views import EnrollmentApiView, AddStaffApiView, SchoolClassViewSet, Subje
 	RoutineFormGetAPiView, SimpleClassListApiView, UpdateSubjectApiView, \
 	AttendanceRecordViewSet, DeleteStaffApiView, AddStaffImageView, EnrollmentImageView, TeacherStudentList, \
 	AttendanceRecordSearchView, TeacherStudentAttendanceView, AttendanceSessionView, AttendanceSessionDetailView, \
-	AttendanceRecordUpdateView, AttendanceRecordIndividualUpdate
+	AttendanceRecordUpdateView, AttendanceRecordIndividualUpdate, AssignmentViewSet, AssignmentFormGetApiView
 from rest_framework.routers import DefaultRouter
 from django.conf.urls.static import static
 
@@ -13,6 +13,7 @@ router = DefaultRouter()
 router.register(r'class', SchoolClassViewSet, basename='school_class')
 router.register(r'routine', RoutineViewSet, basename='routine')
 router.register('attendance-record', AttendanceRecordViewSet, basename='attendance-record')
+router.register('assignment', AssignmentViewSet, basename='assignment')
 
 urlpatterns = [
 	path('enrollment/', EnrollmentApiView.as_view(), name='enrollment'),
@@ -33,6 +34,8 @@ urlpatterns = [
 	path('attendance-session-detail/<uuid:session_id>/', AttendanceSessionDetailView.as_view(), name='attendance-session-detail'),
 	path('attendance-record-update/', AttendanceRecordUpdateView.as_view(), name='attendance-record-update'),
 	path('attendance-record-individual-update/', AttendanceRecordIndividualUpdate.as_view(), name='attendance-record-individual-update'),
+
+	path('assignment-form-get/', AssignmentFormGetApiView.as_view(), name='assignment-form-get'),
 ]
 
 urlpatterns += router.urls

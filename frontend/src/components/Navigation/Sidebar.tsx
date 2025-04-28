@@ -63,7 +63,7 @@ const menuItems: Menu[] = [
             {
                 icon: "/exam.png",
                 label: "Exams",
-                href: "/list/exams",
+                href: "/exam/list",
                 visible: ["admin", "teacher", "student", "parent"],
             },
             {
@@ -74,8 +74,8 @@ const menuItems: Menu[] = [
             },
             {
                 icon: "/result.png",
-                label: "Results",
-                href: "/list/results",
+                label: "Leave",
+                href: "/leave",
                 visible: ["admin", "teacher", "student", "parent"],
             },
             {
@@ -87,13 +87,13 @@ const menuItems: Menu[] = [
             {
                 icon: "/message.png",
                 label: "Messages",
-                href: "/list/messages",
+                href: "/messages",
                 visible: ["admin", "teacher", "student", "parent"],
             },
             {
                 icon: "/announcement.png",
                 label: "Announcements",
-                href: "/list/announcements",
+                href: "/announcement/list",
                 visible: ["admin", "teacher", "student", "parent"],
             },
         ],
@@ -105,12 +105,6 @@ const menuItems: Menu[] = [
                 icon: "/profile.png",
                 label: "Profile",
                 href: "/profile",
-                visible: ["admin", "teacher", "student", "parent"],
-            },
-            {
-                icon: "/setting.png",
-                label: "Settings",
-                href: "/settings",
                 visible: ["admin", "teacher", "student", "parent"],
             },
             {

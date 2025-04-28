@@ -3,7 +3,7 @@ from django.db import models
 import uuid
 from django.utils import timezone
 from django.db.models import Q
-from user.models import Student, Teacher
+from user.models import Student, Teacher, CustomUser
 
 
 class AcademicYear(models.Model):
@@ -296,6 +296,7 @@ class Assignment(models.Model):
 	section = models.ManyToManyField(Section, blank=True, related_name='assignments')
 	subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='assignments')
 	teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='assignments')
+	status = models.BooleanField(default=True)
 
 	title = models.CharField(max_length=255)
 	description = models.TextField()
@@ -330,3 +331,84 @@ class Submission(models.Model):
 
 	def __str__(self):
 		return f"{self.assignment.title} - {self.student.get_fullname()}"
+
+
+class ChatRoom(models.Model):
+	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+	participants = models.ManyToManyField(CustomUser, related_name='chat_rooms')
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	def get_participants(self):
+		return self.participants.all()
+
+
+class ChatMessage(models.Model):
+	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+	chat_room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name='messages')
+	sender = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='sent_messages')
+	message = models.TextField()
+	timestamp = models.DateTimeField(auto_now_add=True)
+
+	def __str__(self):
+		return f"{self.sender} - {self.timestamp.strftime('%Y-%m-%d %H:%M:%S')}"
+
+
+class ChatAttachments(models.Model):
+	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+	chat_message = models.ForeignKey(ChatMessage, on_delete=models.CASCADE, related_name='attachments')
+	file = models.FileField(upload_to='chat_attachments/')
+	created_at = models.DateTimeField(auto_now_add=True)
+	updated_at = models.DateTimeField(auto_now=True)
+
+	def __str__(self):
+		return f"Attachment for {self.chat_message.sender} - {self.created_at.strftime('%Y-%m-%d %H:%M:%S')}"
+
+
+class Announcement(models.Model):
+	PRIORITY_CHOICES = (
+		('important', 'Important'),
+		('normal', 'Normal'),
+		('urgent', 'Urgent')
+	)
+	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+	academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='announcements', null=True)
+	public_access = models.BooleanField(default=False)
+	school_class = models.ManyToManyField(SchoolClass, blank=True, related_name='announcements')
+	section = models.ManyToManyField(Section, blank=True, related_name='announcements')
+	priority = models.CharField(choices=PRIORITY_CHOICES, default='normal', max_length=10)
+	is_expired = models.BooleanField(default=False)
+	
+	title = models.CharField(max_length=255)
+	description = models.TextField()
+	
+	created_at = models.DateTimeField(auto_now_add=True)
+	updated_at = models.DateTimeField(auto_now=True)
+	
+	def __str__(self):
+		return f"{self.title} - {self.created_at.strftime('%Y-%m-%d %H:%M:%S')}"
+
+
+class Exam(models.Model):
+	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+	academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='exams', null=True)
+	school_class = models.ForeignKey(SchoolClass, on_delete=models.CASCADE, related_name='exams')
+	section = models.ManyToManyField(Section, blank=True, related_name='exams')
+	subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='exams')
+	exam_date = models.DateField()
+	exam_time = models.TimeField()
+	duration = models.DurationField()
+
+	created_at = models.DateTimeField(auto_now_add=True)
+
+
+class Leave(models.Model):
+	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+	student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='leaves')
+	academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='leaves', null=True)
+	leave_reason = models.TextField()
+	max_days = models.PositiveSmallIntegerField(default=30)
+	start_date = models.DateField()
+	end_date = models.DateField()
+	leave_status = models.CharField(max_length=20, default='pending')
+
+	created_at = models.DateTimeField(auto_now_add=True)

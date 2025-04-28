@@ -100,9 +100,6 @@ export function ParentListPage() {
                         { label: "Dashboard", href: "/" },
                         { label: "Parents", href: "/parents/list/" },
                     ]}
-                    onRefresh={() => console.log("Refreshing...")}
-                    onPrint={() => console.log("Printing...")}
-                    onExport={() => console.log("Exporting...")}
                     primaryAction={{
                         label: "Add Parent",
                         onClick: () => navigate("/parent/add/"),

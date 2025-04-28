@@ -89,21 +89,7 @@ export function Navbar() {
 
                 {/* Right side icons - Hidden on mobile */}
                 <div className="hidden md:flex items-center gap-1 lg:gap-3">
-                    <Button variant="shadowed" size="icon">
-                        <Clock className="h-4 w-4 lg:h-5 lg:w-5 text-gray-500"/>
-                        <span className="sr-only">Time</span>
-                    </Button>
 
-                    <Button variant="shadowed" size="icon">
-                        <Moon className="h-4 w-4 lg:h-5 lg:w-5 text-gray-500"/>
-                        <span className="sr-only">Toggle theme</span>
-                    </Button>
-
-                    <Button variant="shadowed" size="icon" className="relative">
-                        <Bell className="h-4 w-4 lg:h-5 lg:w-5 text-gray-500"/>
-                        <span className="sr-only">Notifications</span>
-                        <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-red-500"/>
-                    </Button>
 
                     <Button variant="shadowed" size="icon" className="relative">
                         <MessageSquare className="h-4 w-4 lg:h-5 lg:w-5 text-gray-500"/>
@@ -111,10 +97,7 @@ export function Navbar() {
                         <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-blue-500"/>
                     </Button>
 
-                    <Button variant="shadowed" size="icon">
-                        <LineChart className="h-4 w-4 lg:h-5 lg:w-5 text-gray-500"/>
-                        <span className="sr-only">Analytics</span>
-                    </Button>
+
 
                     <Button variant="shadowed" size="icon" onClick={toggleFullscreen}>
                         <Maximize2 className="h-4 w-4 lg:h-5 lg:w-5 text-gray-500"/>

@@ -1,14 +1,18 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { PageHeader } from "@/components/ListPage/PageHeader"
-import { toast } from "sonner"
-import { PlusCircle, Filter } from 'lucide-react'
 import { useNavigate } from "react-router-dom"
+import { toast } from "sonner"
+import { PlusCircle, Filter, Search, BookOpen, Users, Clock } from "lucide-react"
+import { isPast } from "date-fns"
+
+import { PageHeader } from "@/components/ListPage/PageHeader"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import {TeacherAssignmentCard} from "@/views/teacher/TeacherAssignmentCard.tsx";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { TeacherAssignmentCard } from "./TeacherAssignmentCard"
 
 // Assignment interface
 export interface Assignment {
@@ -23,12 +27,21 @@ export interface Assignment {
         id: string
         name: string
     }
+    section?: {
+        id: string
+        name: string
+    }
     dueDate: string
-    status: "assigned" | "submitted" | "graded"
+    status: "active" | "inactive" | "draft"
     submissionCount: number
     totalStudents: number
     createdAt: string
-    attachments: number
+    attachments: {
+        id: string
+        name: string
+        type: string
+        url: string
+    }[]
 }
 
 // Dummy data for assignments
@@ -43,14 +56,31 @@ const dummyAssignments: Assignment[] = [
         },
         class: {
             id: "class-10a",
-            name: "Class 10-A",
+            name: "Class 10",
+        },
+        section: {
+            id: "section-a",
+            name: "Section A",
         },
         dueDate: "2025-05-10T23:59:59Z",
-        status: "submitted",
+        status: "active",
         submissionCount: 18,
         totalStudents: 25,
         createdAt: "2025-05-01T10:30:00Z",
-        attachments: 2,
+        attachments: [
+            {
+                id: "att-1",
+                name: "algebra_worksheet.pdf",
+                type: "application/pdf",
+                url: "#",
+            },
+            {
+                id: "att-2",
+                name: "formula_sheet.docx",
+                type: "application/msword",
+                url: "#",
+            },
+        ],
     },
     {
         id: "2",
@@ -63,14 +93,25 @@ const dummyAssignments: Assignment[] = [
         },
         class: {
             id: "class-9b",
-            name: "Class 9-B",
+            name: "Class 9",
+        },
+        section: {
+            id: "section-b",
+            name: "Section B",
         },
         dueDate: "2025-05-15T23:59:59Z",
-        status: "assigned",
+        status: "active",
         submissionCount: 5,
         totalStudents: 30,
         createdAt: "2025-05-03T14:15:00Z",
-        attachments: 1,
+        attachments: [
+            {
+                id: "att-3",
+                name: "lab_instructions.pdf",
+                type: "application/pdf",
+                url: "#",
+            },
+        ],
     },
     {
         id: "3",
@@ -83,14 +124,18 @@ const dummyAssignments: Assignment[] = [
         },
         class: {
             id: "class-11c",
-            name: "Class 11-C",
+            name: "Class 11",
+        },
+        section: {
+            id: "section-c",
+            name: "Section C",
         },
         dueDate: "2025-05-20T23:59:59Z",
-        status: "graded",
+        status: "active",
         submissionCount: 22,
         totalStudents: 22,
         createdAt: "2025-04-28T09:45:00Z",
-        attachments: 0,
+        attachments: [],
     },
     {
         id: "4",
@@ -103,14 +148,37 @@ const dummyAssignments: Assignment[] = [
         },
         class: {
             id: "class-10b",
-            name: "Class 10-B",
+            name: "Class 10",
+        },
+        section: {
+            id: "section-b",
+            name: "Section B",
         },
         dueDate: "2025-05-25T23:59:59Z",
-        status: "assigned",
+        status: "active",
         submissionCount: 0,
         totalStudents: 28,
         createdAt: "2025-05-04T11:20:00Z",
-        attachments: 3,
+        attachments: [
+            {
+                id: "att-4",
+                name: "research_guidelines.pdf",
+                type: "application/pdf",
+                url: "#",
+            },
+            {
+                id: "att-5",
+                name: "presentation_template.pptx",
+                type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                url: "#",
+            },
+            {
+                id: "att-6",
+                name: "sample_project.pdf",
+                type: "application/pdf",
+                url: "#",
+            },
+        ],
     },
     {
         id: "5",
@@ -123,14 +191,25 @@ const dummyAssignments: Assignment[] = [
         },
         class: {
             id: "class-12a",
-            name: "Class 12-A",
+            name: "Class 12",
+        },
+        section: {
+            id: "section-a",
+            name: "Section A",
         },
         dueDate: "2025-05-12T23:59:59Z",
-        status: "submitted",
+        status: "active",
         submissionCount: 15,
         totalStudents: 20,
         createdAt: "2025-05-02T13:10:00Z",
-        attachments: 1,
+        attachments: [
+            {
+                id: "att-7",
+                name: "algorithm_specs.pdf",
+                type: "application/pdf",
+                url: "#",
+            },
+        ],
     },
     {
         id: "6",
@@ -143,24 +222,74 @@ const dummyAssignments: Assignment[] = [
         },
         class: {
             id: "class-11a",
-            name: "Class 11-A",
+            name: "Class 11",
+        },
+        section: {
+            id: "section-a",
+            name: "Section A",
         },
         dueDate: "2025-05-30T23:59:59Z",
-        status: "assigned",
+        status: "inactive",
         submissionCount: 8,
         totalStudents: 26,
         createdAt: "2025-04-30T15:45:00Z",
-        attachments: 2,
+        attachments: [
+            {
+                id: "att-8",
+                name: "climate_data.xlsx",
+                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                url: "#",
+            },
+            {
+                id: "att-9",
+                name: "report_template.docx",
+                type: "application/msword",
+                url: "#",
+            },
+        ],
+    },
+    {
+        id: "7",
+        title: "Physics Problem Set: Mechanics and Motion",
+        description:
+            "Solve the problems related to Newton's laws of motion, projectile motion, and conservation of energy from Chapter 4.",
+        subject: {
+            id: "phys-107",
+            name: "Physics",
+        },
+        class: {
+            id: "class-12b",
+            name: "Class 12",
+        },
+        section: {
+            id: "section-b",
+            name: "Section B",
+        },
+        dueDate: "2025-05-18T23:59:59Z",
+        status: "draft",
+        submissionCount: 0,
+        totalStudents: 24,
+        createdAt: "2025-05-05T09:30:00Z",
+        attachments: [
+            {
+                id: "att-10",
+                name: "physics_problems.pdf",
+                type: "application/pdf",
+                url: "#",
+            },
+        ],
     },
 ]
 
-export default function TeacherAssignmentList() {
+export default function TeacherAssignmentPage() {
     const [assignments, setAssignments] = useState<Assignment[]>([])
     const [loading, setLoading] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState<string>("all")
     const [subjectFilter, setSubjectFilter] = useState<string>("all")
     const [classFilter, setClassFilter] = useState<string>("all")
+    const [sectionFilter, setSectionFilter] = useState<string>("all")
+    const [activeTab, setActiveTab] = useState("all")
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -192,18 +321,38 @@ export default function TeacherAssignmentList() {
             assignment.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             assignment.description.toLowerCase().includes(searchQuery.toLowerCase())
 
-        const matchesStatus = statusFilter === "all" || assignment.status === statusFilter
+        const matchesStatus =
+            statusFilter === "all" ||
+            (statusFilter === "expired" && isPast(new Date(assignment.dueDate)) && assignment.status === "active") ||
+            (statusFilter !== "expired" && assignment.status === statusFilter)
 
         const matchesSubject = subjectFilter === "all" || assignment.subject.id === subjectFilter
 
         const matchesClass = classFilter === "all" || assignment.class.id === classFilter
 
-        return matchesSearch && matchesStatus && matchesSubject && matchesClass
+        const matchesSection = sectionFilter === "all" || assignment.section?.id === sectionFilter
+
+        const matchesTab =
+            activeTab === "all" ||
+            (activeTab === "active" && assignment.status === "active") ||
+            (activeTab === "inactive" && assignment.status === "inactive") ||
+            (activeTab === "draft" && assignment.status === "draft")
+
+        return matchesSearch && matchesStatus && matchesSubject && matchesClass && matchesSection && matchesTab
     })
 
-    // Get unique subjects and classes for filters
+    // Get unique subjects, classes, and sections for filters
     const subjects = [...new Map(assignments.map((item) => [item.subject.id, item.subject])).values()]
     const classes = [...new Map(assignments.map((item) => [item.class.id, item.class])).values()]
+    const sections = [
+        ...new Map(assignments.filter((item) => item.section).map((item) => [item.section?.id, item.section])).values(),
+    ]
+
+    // Stats for dashboard cards
+    const activeAssignments = assignments.filter((a) => a.status === "active").length
+    const inactiveAssignments = assignments.filter((a) => a.status === "inactive").length
+    const draftAssignments = assignments.filter((a) => a.status === "draft").length
+    const totalAssignments = assignments.length
 
     const handleDeleteAssignment = async (id: string) => {
         try {
@@ -228,7 +377,7 @@ export default function TeacherAssignmentList() {
                     id: `${Date.now()}`,
                     title: `Copy of ${assignmentToDuplicate.title}`,
                     createdAt: new Date().toISOString(),
-                    status: "assigned" as const,
+                    status: "draft" as const,
                     submissionCount: 0,
                 }
 
@@ -246,14 +395,37 @@ export default function TeacherAssignmentList() {
         }
     }
 
+    const handleToggleStatus = async (id: string) => {
+        try {
+            const assignmentToUpdate = assignments.find((assignment) => assignment.id === id)
+            if (assignmentToUpdate) {
+                const newStatus = assignmentToUpdate.status === "active" ? "inactive" : "active"
+
+                // In a real application, you would call your API
+                // await AxiosInstance.patch(`/api/academic/assignments/${id}/`, { status: newStatus })
+
+                // Update local state
+                setAssignments(
+                    assignments.map((assignment) =>
+                        assignment.id === id ? { ...assignment, status: newStatus as "active" | "inactive" | "draft" } : assignment,
+                    ),
+                )
+
+                toast.success(`Assignment ${newStatus === "active" ? "activated" : "deactivated"} successfully`)
+            }
+        } catch (error) {
+            console.error("Error updating assignment status:", error)
+            toast.error("Failed to update assignment status")
+        }
+    }
+
     return (
-        <div className="p-4 flex flex-col gap-4">
+        <div className="p-4 flex flex-col gap-6">
             <PageHeader
-                title="Teacher Assignments"
+                title="Assignments"
                 breadcrumbs={[
                     { label: "Dashboard", href: "/" },
-                    { label: "Teacher", href: "/teacher" },
-                    { label: "Assignments", href: "/teacher/assignments" },
+                    { label: "Assignments", href: "/assignment/list" },
                 ]}
                 onRefresh={fetchAssignments}
                 onPrint={() => console.log("Printing...")}
@@ -265,44 +437,89 @@ export default function TeacherAssignmentList() {
                 }}
             />
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-2">
-                <div className="relative w-full sm:w-[300px]">
-                    <Input
-                        type="search"
-                        placeholder="Search assignments..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full"
-                    />
+            {/* Dashboard Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Assignments</CardTitle>
+                        <BookOpen className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{totalAssignments}</div>
+                        <p className="text-xs text-muted-foreground">All created assignments</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Active Assignments</CardTitle>
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{activeAssignments}</div>
+                        <p className="text-xs text-muted-foreground">Visible to students</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Inactive Assignments</CardTitle>
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{inactiveAssignments}</div>
+                        <p className="text-xs text-muted-foreground">Hidden from students</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Draft Assignments</CardTitle>
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{draftAssignments}</div>
+                        <p className="text-xs text-muted-foreground">Work in progress</p>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+                    <TabsList>
+                        <TabsTrigger value="all">All</TabsTrigger>
+                        <TabsTrigger value="active">Active</TabsTrigger>
+                        <TabsTrigger value="inactive">Inactive</TabsTrigger>
+                        <TabsTrigger value="draft">Drafts</TabsTrigger>
+                    </TabsList>
+
+                    {/* Search on the right */}
+                    <div className="relative w-full sm:w-[300px]">
+                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            type="search"
+                            placeholder="Search assignments..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-8"
+                        />
+                    </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                {/* Right side filters: Status, Class, Section, Subject */}
+                <div className="flex flex-wrap items-center gap-2 mb-4 justify-end">
+                    {/* Status Filter */}
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
                         <SelectTrigger className="w-[140px]">
                             <SelectValue placeholder="Status" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Statuses</SelectItem>
-                            <SelectItem value="assigned">Assigned</SelectItem>
-                            <SelectItem value="submitted">Submitted</SelectItem>
-                            <SelectItem value="graded">Graded</SelectItem>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="inactive">Inactive</SelectItem>
+                            <SelectItem value="draft">Draft</SelectItem>
+                            <SelectItem value="expired">Expired</SelectItem>
                         </SelectContent>
                     </Select>
 
-                    <Select value={subjectFilter} onValueChange={setSubjectFilter}>
-                        <SelectTrigger className="w-[140px]">
-                            <SelectValue placeholder="Subject" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Subjects</SelectItem>
-                            {subjects.map((subject) => (
-                                <SelectItem key={subject.id} value={subject.id}>
-                                    {subject.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-
+                    {/* Class Filter */}
                     <Select value={classFilter} onValueChange={setClassFilter}>
                         <SelectTrigger className="w-[140px]">
                             <SelectValue placeholder="Class" />
@@ -317,20 +534,87 @@ export default function TeacherAssignmentList() {
                         </SelectContent>
                     </Select>
 
+                    {/* Section Filter */}
+                    <Select value={sectionFilter} onValueChange={setSectionFilter}>
+                        <SelectTrigger className="w-[140px]">
+                            <SelectValue placeholder="Section" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Sections</SelectItem>
+                            {sections.map((section) => (
+                                // @ts-expect-error: dsfaf
+                                <SelectItem key={section?.id} value={section?.id}>
+                                    {section?.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    {/* Subject Filter */}
+                    <Select value={subjectFilter} onValueChange={setSubjectFilter}>
+                        <SelectTrigger className="w-[140px]">
+                            <SelectValue placeholder="Subject" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Subjects</SelectItem>
+                            {subjects.map((subject) => (
+                                <SelectItem key={subject.id} value={subject.id}>
+                                    {subject.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
                     <Button variant="outline" size="icon" className="h-10 w-10">
                         <Filter className="h-4 w-4" />
                     </Button>
                 </div>
-            </div>
 
-            <TeacherAssignmentCard
-                assignments={filteredAssignments}
-                loading={loading}
-                onDelete={handleDeleteAssignment}
-                onDuplicate={handleDuplicateAssignment}
-                onView={(id) => navigate(`/assignment/detail/${id}`)}
-                onEdit={(id) => navigate(`/assignments/${id}/edit`)}
-            />
+                <TabsContent value="all" className="mt-0">
+                    <TeacherAssignmentCard
+                        assignments={filteredAssignments}
+                        loading={loading}
+                        onDelete={handleDeleteAssignment}
+                        onDuplicate={handleDuplicateAssignment}
+                        onView={(id) => navigate(`/assignment/detail/${id}`)}
+                        onEdit={(id) => navigate(`/assignment/edit/${id}`)}
+                        onToggleStatus={handleToggleStatus}
+                    />
+                </TabsContent>
+                <TabsContent value="active" className="mt-0">
+                    <TeacherAssignmentCard
+                        assignments={filteredAssignments}
+                        loading={loading}
+                        onDelete={handleDeleteAssignment}
+                        onDuplicate={handleDuplicateAssignment}
+                        onView={(id) => navigate(`/assignment/detail/${id}`)}
+                        onEdit={(id) => navigate(`/assignments/${id}/edit`)}
+                        onToggleStatus={handleToggleStatus}
+                    />
+                </TabsContent>
+                <TabsContent value="inactive" className="mt-0">
+                    <TeacherAssignmentCard
+                        assignments={filteredAssignments}
+                        loading={loading}
+                        onDelete={handleDeleteAssignment}
+                        onDuplicate={handleDuplicateAssignment}
+                        onView={(id) => navigate(`/assignment/detail/${id}`)}
+                        onEdit={(id) => navigate(`/assignments/${id}/edit`)}
+                        onToggleStatus={handleToggleStatus}
+                    />
+                </TabsContent>
+                <TabsContent value="draft" className="mt-0">
+                    <TeacherAssignmentCard
+                        assignments={filteredAssignments}
+                        loading={loading}
+                        onDelete={handleDeleteAssignment}
+                        onDuplicate={handleDuplicateAssignment}
+                        onView={(id) => navigate(`/assignment/detail/${id}`)}
+                        onEdit={(id) => navigate(`/assignments/${id}/edit`)}
+                        onToggleStatus={handleToggleStatus}
+                    />
+                </TabsContent>
+            </Tabs>
         </div>
     )
 }

@@ -10,13 +10,13 @@ from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
 from academic.models import SchoolClass, Department, Section, Subject, Routine, AttendanceSession, AttendanceRecord, \
-	Enrollment
+	Enrollment, Assignment
 from academic.serializer import EnrollmentPostSerializer, EnrollmentGetSchoolClassSerializer, AddStaffGetSerializer, \
 	SimpleDepartmentSerializer, AddStaffSerializer, SimpleTeacherSerializer, SimpleManagementStaffSerializer, \
 	SchoolClassGetSerializer, SchoolClassPostSerializer, SubjectListSerializer, RoutineSerializer, \
 	SimpleSchoolClassSerializer, SimpleSubjectSerializer, SimpleStaffSerializer, RoutineSchoolClassGetSerializer, \
 	RoutineTeacherGetSerializer, RoutinePostSerializer, AttendanceRecordPostSerializer, \
-	AttendanceRecordGetSerializer
+	AttendanceRecordGetSerializer, AssignmentSerializer, AssignmentFormGetSerializer
 from student.serializer import ListStudentSerializer
 from user.serializer import StudentSerializer, ParentSerializer
 from user.models import Parent, Teacher, Staff, CustomUser, Student
@@ -547,7 +547,8 @@ class AttendanceRecordIndividualUpdate(APIView):
 			return Response({'message': 'Attendance record updated successfully.'}, status=status.HTTP_200_OK)
 		except Exception as e:
 			print(e)
-			return Response({'error': 'An error occurred while updating attendance record.'}, status=status.HTTP_400_BAD_REQUEST)
+			return Response({'error': 'An error occurred while updating attendance record.'},
+			                status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema(tags=["Attendance"])
@@ -672,5 +673,33 @@ class TeacherStudentList(APIView):
 		except Exception as e:
 			return Response(
 				{'detail': 'An error occurred while retrieving students.'},
+				status=status.HTTP_400_BAD_REQUEST
+			)
+
+
+@extend_schema(tags=['Assignment'])
+class AssignmentViewSet(ModelViewSet):
+	http_method_names = ['get', 'post']
+	permission_classes = [AllowAny]
+	queryset = Assignment.objects.all()
+	serializer_class = AssignmentSerializer
+
+
+@extend_schema(tags=['Assignment'])
+class AssignmentFormGetApiView(APIView):
+	permission_classes = [AllowAny]
+
+	def get(self, request):
+		try:
+			user = request.user
+			staff = Staff.objects.get(email=user.email)
+			teacher = Teacher.objects.get(staff=staff)
+			classes = teacher.school_class.all()
+			serializer = AssignmentFormGetSerializer(classes, many=True)
+			return Response(serializer.data, status=status.HTTP_200_OK)
+		except Exception as e:
+			print(e)
+			return Response(
+				{'detail': 'An error occurred while retrieving assignment form data.'},
 				status=status.HTTP_400_BAD_REQUEST
 			)

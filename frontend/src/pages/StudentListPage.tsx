@@ -158,9 +158,6 @@ export function StudentListPage() {
                         { label: "Dashboard", href: "/" },
                         { label: "Student", href: "/student/list/" },
                     ]}
-                    onRefresh={fetchStudents}
-                    onPrint={() => console.log("Printing...")}
-                    onExport={() => console.log("Exporting...")}
                     primaryAction={{
                         label: "Add Student",
                         onClick: () => navigate("/student/add/"),

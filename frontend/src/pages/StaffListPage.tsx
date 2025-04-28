@@ -113,9 +113,6 @@ export function StaffListPage() {
                         { label: "Dashboard", href: "/" },
                         { label: "Staff", href: "/staff/list/" },
                     ]}
-                    onRefresh={fetchStaffMembers}
-                    onPrint={() => console.log("Printing...")}
-                    onExport={() => console.log("Exporting...")}
                     primaryAction={{
                         label: "Add Staff",
                         onClick: () => navigate("/staff/add/"),

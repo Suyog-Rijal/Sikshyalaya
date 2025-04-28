@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from academic.models import Enrollment, AcademicYear, SchoolClass, Section, House, Subject, Department, Routine, \
-	AttendanceSession, AttendanceRecord
+	AttendanceSession, AttendanceRecord, Assignment
 from user.models import Staff, Teacher, ManagementStaff, Student
 
 
@@ -396,3 +396,23 @@ class AttendanceSessionDetailViewUpdateSerializer(serializers.ModelSerializer):
 		instance.remarks = validated_data.get('remarks', instance.remarks)
 		instance.save()
 		return instance
+
+
+class AssignmentSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Assignment
+		fields = [
+			'id',
+		]
+
+
+class AssignmentFormGetSerializer(serializers.ModelSerializer):
+	section = SimpleSectionSerializer(many=True)
+
+	class Meta:
+		model = SchoolClass
+		fields = [
+			'id',
+			'name',
+			'section',
+		]
