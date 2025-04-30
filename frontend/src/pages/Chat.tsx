@@ -17,6 +17,7 @@ import {
     ImageIcon,
     Download,
     User,
+    Plus,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -24,12 +25,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
 // Types
@@ -52,6 +48,7 @@ interface Message {
     fileUrl?: string
     fileName?: string
     fileSize?: string
+    deleted?: boolean
 }
 
 interface Conversation {
@@ -63,7 +60,7 @@ interface Conversation {
 // Dummy data
 const currentUser: ChatUser = {
     id: "user-1",
-    name: "John Doe",
+    name: "Slade Juarez",
     avatar: "/green-tractor-field.png",
     role: "Teacher",
 }
@@ -71,98 +68,106 @@ const currentUser: ChatUser = {
 const dummyUsers: ChatUser[] = [
     {
         id: "user-2",
-        name: "Jane Smith",
+        name: "Slade Juarez",
         avatar: "/javascript-code-abstract.png",
-        role: "Admin",
-        unreadCount: 3,
+        role: "teacher",
     },
     {
         id: "user-3",
-        name: "Michael Johnson",
+        name: "Wyoming Golden ",
         avatar: "/musical-notes-flowing.png",
         role: "Teacher",
     },
     {
         id: "user-4",
-        name: "Sarah Williams",
+        name: "Admin Admin",
         avatar: "/abstract-southwest.png",
-        role: "Student",
+        role: "admin",
         unreadCount: 1,
-    },
-    {
-        id: "user-5",
-        name: "David Brown",
-        avatar: "/database-structure.png",
-        role: "Teacher",
-    },
-    {
-        id: "user-6",
-        name: "Emily Davis",
-        avatar: "/abstract-geometric-ed.png",
-        role: "Student",
     },
 ]
 
-// Generate dummy conversations
-const dummyConversations: Conversation[] = dummyUsers.map((user) => ({
-    id: `conv-${user.id}`,
-    participants: [user, currentUser],
-    lastMessage: {
-        id: `msg-${user.id}-last`,
-        senderId: user.id === "user-2" || user.id === "user-4" ? user.id : "user-1",
-        receiverId: user.id === "user-2" || user.id === "user-4" ? "user-1" : user.id,
-        content:
-            user.id === "user-2"
-                ? "Can you review the curriculum changes?"
-                : user.id === "user-3"
-                    ? "I'll send the report by tomorrow."
-                    : user.id === "user-4"
-                        ? "When is the assignment due?"
-                        : user.id === "user-5"
-                            ? "Thanks for your help with the project."
-                            : "Let me know if you need anything else.",
-        timestamp:
-            user.id === "user-2"
-                ? "2025-05-10T16:45:00Z"
-                : user.id === "user-3"
-                    ? "2025-05-10T12:30:00Z"
-                    : user.id === "user-4"
-                        ? "2025-05-10T09:15:00Z"
-                        : user.id === "user-5"
-                            ? "2025-05-09T14:20:00Z"
-                            : "2025-05-09T10:05:00Z",
-        status: user.id === "user-2" || user.id === "user-4" ? "delivered" : "read",
-        type: "text",
-    },
-}))
-
-// Generate dummy messages for the first conversation
-const dummyMessages: Record<string, Message[]> = {
+// Generate initial messages for each conversation (only 2 messages per conversation)
+const initialMessages: Record<string, Message[]> = {
     "conv-user-2": [
         {
             id: "msg-1",
-            senderId: "user-1",
-            receiverId: "user-2",
-            content: "Hi Jane, how are you doing today?",
-            timestamp: "2025-05-10T14:30:00Z",
+            senderId: "user-2",
+            receiverId: "user-1",
+            content: "Test, Recently you have been doing late on assignment submission. Please be careful next time!",
+            timestamp: new Date().toISOString(),
             status: "read",
             type: "text",
         },
         {
             id: "msg-2",
-            senderId: "user-2",
-            receiverId: "user-1",
-            content: "I'm doing well, thanks for asking! How about you?",
-            timestamp: "2025-05-10T14:32:00Z",
+            senderId: "user-1",
+            receiverId: "user-2",
+            content: "Thank you sir for reminding me. I will submit my today english assignment on time!",
+            timestamp: new Date(Date.now() - 5 * 60000).toISOString(), // 5 minutes ago
+            status: "read",
+            type: "text",
+        },
+    ],
+    "conv-user-3": [
+        {
+            id: "msg-1",
+            senderId: "user-1",
+            receiverId: "user-3",
+            content: "Hi Wyoming, do you have the lesson plans ready for next week?",
+            timestamp: new Date().toISOString(),
             status: "read",
             type: "text",
         },
         {
+            id: "msg-2",
+            senderId: "user-3",
+            receiverId: "user-1",
+            content: "Yes, I'll send them to you by tomorrow morning.",
+            timestamp: new Date(Date.now() - 10 * 60000).toISOString(), // 10 minutes ago
+            status: "read",
+            type: "text",
+        },
+    ],
+    "conv-user-4": [
+        {
+            id: "msg-1",
+            senderId: "user-1",
+            receiverId: "user-4",
+            content: "Hello Admin, I need help with the new grading system.",
+            timestamp: new Date().toISOString(),
+            status: "read",
+            type: "text",
+        },
+        {
+            id: "msg-2",
+            senderId: "user-4",
+            receiverId: "user-1",
+            content: "Sure, what specific issues are you having with it?",
+            timestamp: new Date(Date.now() - 15 * 60000).toISOString(), // 15 minutes ago
+            status: "delivered",
+            type: "text",
+        },
+    ],
+}
+
+// Generate dummy conversations
+const dummyConversations: Conversation[] = dummyUsers.map((user) => ({
+    id: `conv-${user.id}`,
+    participants: [user, currentUser],
+    lastMessage: initialMessages[`conv-${user.id}`][1], // Use the last message as the conversation preview
+}))
+
+// Full message history (not shown by default)
+const fullMessageHistory: Record<string, Message[]> = {
+    "conv-user-2": [
+        ...initialMessages["conv-user-2"],
+        {
             id: "msg-3",
             senderId: "user-1",
             receiverId: "user-2",
-            content: "I'm good too. I wanted to discuss the new curriculum changes.",
-            timestamp: "2025-05-10T14:35:00Z",
+            content: "Have you completed your registration for all classes?",
+            timestamp: new Date(Date.now() - 2 * 3600000).toISOString(), // 2 hours ago
             status: "read",
             type: "text",
         },
@@ -170,8 +175,8 @@ const dummyMessages: Record<string, Message[]> = {
             id: "msg-4",
             senderId: "user-2",
             receiverId: "user-1",
-            content: "Sure, I've been reviewing them. What specific aspects would you like to discuss?",
-            timestamp: "2025-05-10T14:40:00Z",
+            content: "Yes, I've registered for all required courses.",
+            timestamp: new Date(Date.now() - 1.5 * 3600000).toISOString(), // 1.5 hours ago
             status: "read",
             type: "text",
         },
@@ -179,140 +184,122 @@ const dummyMessages: Record<string, Message[]> = {
             id: "msg-5",
             senderId: "user-1",
             receiverId: "user-2",
-            content: "I'm particularly interested in the changes to the science curriculum.",
-            timestamp: "2025-05-10T14:45:00Z",
+            content: "Great! Here's the orientation schedule.",
+            timestamp: new Date(Date.now() - 1 * 3600000).toISOString(), // 1 hour ago
             status: "read",
             type: "text",
         },
         {
             id: "msg-6",
-            senderId: "user-2",
-            receiverId: "user-1",
-            content: "I've attached the detailed document with all the proposed changes.",
-            timestamp: "2025-05-10T14:50:00Z",
+            senderId: "user-1",
+            receiverId: "user-2",
+            content: "Orientation_Schedule.pdf",
+            timestamp: new Date(Date.now() - 55 * 60000).toISOString(), // 55 minutes ago
             status: "read",
-            type: "text",
+            type: "file",
+            fileUrl: "#",
+            fileName: "Orientation_Schedule.pdf",
+            fileSize: "1.2 MB",
         },
         {
             id: "msg-7",
             senderId: "user-2",
             receiverId: "user-1",
-            content: "Curriculum_Changes_2025.pdf",
-            timestamp: "2025-05-10T14:51:00Z",
+            content: "Thank you! I'll review it right away.",
+            timestamp: new Date(Date.now() - 45 * 60000).toISOString(), // 45 minutes ago
             status: "read",
-            type: "file",
-            fileUrl: "#",
-            fileName: "Curriculum_Changes_2025.pdf",
-            fileSize: "2.4 MB",
+            type: "text",
+        },
+    ],
+    "conv-user-3": [
+        ...initialMessages["conv-user-3"],
+        {
+            id: "msg-3",
+            senderId: "user-3",
+            receiverId: "user-1",
+            content: "I've also prepared some new materials for the science class.",
+            timestamp: new Date(Date.now() - 3 * 3600000).toISOString(), // 3 hours ago
+            status: "read",
+            type: "text",
         },
         {
-            id: "msg-8",
+            id: "msg-4",
             senderId: "user-1",
-            receiverId: "user-2",
-            content: "Thanks for sharing! I'll review it and get back to you with my thoughts.",
-            timestamp: "2025-05-10T15:00:00Z",
+            receiverId: "user-3",
+            content: "That's excellent! Can you share them with me?",
+            timestamp: new Date(Date.now() - 2.5 * 3600000).toISOString(), // 2.5 hours ago
             status: "read",
             type: "text",
         },
         {
-            id: "msg-9",
-            senderId: "user-2",
+            id: "msg-5",
+            senderId: "user-3",
             receiverId: "user-1",
-            content: "Great! Also, here's a visual representation of the key changes.",
-            timestamp: "2025-05-10T15:05:00Z",
-            status: "read",
-            type: "text",
-        },
-        {
-            id: "msg-10",
-            senderId: "user-2",
-            receiverId: "user-1",
-            content: "Curriculum_Infographic.jpg",
-            timestamp: "2025-05-10T15:06:00Z",
+            content: "Science_Materials.jpg",
+            timestamp: new Date(Date.now() - 2 * 3600000).toISOString(), // 2 hours ago
             status: "read",
             type: "image",
-            fileUrl: "/comprehensive-curriculum-overview.png",
-            fileName: "Curriculum_Infographic.jpg",
-            fileSize: "1.2 MB",
+            fileUrl: "/science-materials.png",
+            fileName: "Science_Materials.jpg",
+            fileSize: "2.3 MB",
         },
+    ],
+    "conv-user-4": [
+        ...initialMessages["conv-user-4"],
         {
-            id: "msg-11",
+            id: "msg-3",
             senderId: "user-1",
-            receiverId: "user-2",
-            content: "This is very helpful. When do we need to implement these changes?",
-            timestamp: "2025-05-10T15:10:00Z",
+            receiverId: "user-4",
+            content: "I'm having trouble with the grade submission feature.",
+            timestamp: new Date(Date.now() - 4 * 3600000).toISOString(), // 4 hours ago
             status: "read",
             type: "text",
         },
         {
-            id: "msg-12",
-            senderId: "user-2",
+            id: "msg-4",
+            senderId: "user-4",
             receiverId: "user-1",
-            content: "The implementation is scheduled for the next academic year, but we should start preparing now.",
-            timestamp: "2025-05-10T15:15:00Z",
+            content: "I'll need to see the error. Can you send a screenshot?",
+            timestamp: new Date(Date.now() - 3.5 * 3600000).toISOString(), // 3.5 hours ago
             status: "read",
             type: "text",
         },
         {
-            id: "msg-13",
+            id: "msg-5",
             senderId: "user-1",
-            receiverId: "user-2",
-            content: "Understood. Let's schedule a meeting with the department heads to discuss this further.",
-            timestamp: "2025-05-10T15:20:00Z",
+            receiverId: "user-4",
+            content: "Error_Screenshot.png",
+            timestamp: new Date(Date.now() - 3 * 3600000).toISOString(), // 3 hours ago
             status: "read",
-            type: "text",
+            type: "image",
+            fileUrl: "/error-screenshot.png",
+            fileName: "Error_Screenshot.png",
+            fileSize: "1.5 MB",
         },
         {
-            id: "msg-14",
-            senderId: "user-2",
+            id: "msg-6",
+            senderId: "user-4",
             receiverId: "user-1",
-            content: "Good idea. How about next Tuesday at 2 PM?",
-            timestamp: "2025-05-10T15:25:00Z",
+            content: "Thanks, I'll look into this and get back to you soon.",
+            timestamp: new Date(Date.now() - 2 * 3600000).toISOString(), // 2 hours ago
             status: "read",
-            type: "text",
-        },
-        {
-            id: "msg-15",
-            senderId: "user-1",
-            receiverId: "user-2",
-            content: "That works for me. I'll send out the meeting invites.",
-            timestamp: "2025-05-10T15:30:00Z",
-            status: "read",
-            type: "text",
-        },
-        {
-            id: "msg-16",
-            senderId: "user-2",
-            receiverId: "user-1",
-            content: "Perfect! Looking forward to it.",
-            timestamp: "2025-05-10T15:35:00Z",
-            status: "read",
-            type: "text",
-        },
-        {
-            id: "msg-17",
-            senderId: "user-2",
-            receiverId: "user-1",
-            content: "Can you review the curriculum changes?",
-            timestamp: "2025-05-10T16:45:00Z",
-            status: "delivered",
             type: "text",
         },
     ],
 }
 
-// Generate empty message arrays for other conversations
-dummyConversations.forEach((conv) => {
-    if (!dummyMessages[conv.id]) {
-        dummyMessages[conv.id] = []
-    }
-})
-
 export default function Chat() {
     const [searchQuery, setSearchQuery] = useState("")
+    const [searchMessagesQuery, setSearchMessagesQuery] = useState("")
     const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(dummyConversations[0])
-    const [messages, setMessages] = useState<Message[]>(dummyMessages["conv-user-2"])
+    const [messages, setMessages] = useState<Message[]>(initialMessages["conv-user-2"])
     const [newMessage, setNewMessage] = useState("")
+    const [isSearchingMessages, setIsSearchingMessages] = useState(false)
+    const [showFullHistory, setShowFullHistory] = useState<Record<string, boolean>>({
+        "conv-user-2": false,
+        "conv-user-3": false,
+        "conv-user-4": false,
+    })
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -391,6 +378,30 @@ export default function Chat() {
         }
     }
 
+    // Handle message deletion
+    const handleDeleteMessage = (messageId: string) => {
+        setMessages((prev) =>
+            prev.map((msg) => (msg.id === messageId ? { ...msg, deleted: true, content: "This message was deleted" } : msg)),
+        )
+    }
+
+    // Toggle full message history
+    const toggleFullHistory = (conversationId: string) => {
+        if (showFullHistory[conversationId]) {
+            // If currently showing full history, switch back to initial messages
+            setMessages(initialMessages[conversationId] || [])
+        } else {
+            // If currently showing initial messages, switch to full history
+            setMessages(fullMessageHistory[conversationId] || [])
+        }
+
+        // Update the state
+        setShowFullHistory((prev) => ({
+            ...prev,
+            [conversationId]: !prev[conversationId],
+        }))
+    }
+
     // Format timestamp
     const formatMessageTime = (timestamp: string) => {
         const date = new Date(timestamp)
@@ -404,6 +415,19 @@ export default function Chat() {
             return format(date, "MMM d, h:mm a")
         }
     }
+
+    // Filter messages based on search query
+    const filteredMessages = messages.filter((message) => {
+        if (!searchMessagesQuery) return true
+
+        const searchTerm = searchMessagesQuery.toLowerCase()
+        if (message.type === "text") {
+            return message.content.toLowerCase().includes(searchTerm)
+        } else if (message.type === "file" || message.type === "image") {
+            return message.fileName?.toLowerCase().includes(searchTerm) || false
+        }
+        return false
+    })
 
     // Get message status icon
     const getMessageStatusIcon = (status: Message["status"]) => {
@@ -426,6 +450,21 @@ export default function Chat() {
     // Get other participant from conversation
     const getOtherParticipant = (conversation: Conversation): ChatUser => {
         return conversation.participants.find((p) => p.id !== currentUser.id) || currentUser
+    }
+
+    // Handle conversation selection
+    const handleSelectConversation = (conversation: Conversation) => {
+        setSelectedConversation(conversation)
+        const convId = conversation.id
+
+        // Reset to initial messages when switching conversations
+        setMessages(initialMessages[convId] || [])
+
+        // Reset the full history flag
+        setShowFullHistory((prev) => ({
+            ...prev,
+            [convId]: false,
+        }))
     }
 
     return (
@@ -472,10 +511,7 @@ export default function Chat() {
                                             "flex items-center p-3 rounded-md cursor-pointer transition-colors",
                                             isSelected ? "bg-gray-100" : "hover:bg-gray-50",
                                         )}
-                                        onClick={() => {
-                                            setSelectedConversation(conversation)
-                                            setMessages(dummyMessages[conversation.id] || [])
-                                        }}
+                                        onClick={() => handleSelectConversation(conversation)}
                                     >
                                         <Avatar className="h-10 w-10 mr-3">
                                             <AvatarImage src={otherUser.avatar || "/placeholder.svg"} alt={otherUser.name} />
@@ -559,15 +595,52 @@ export default function Chat() {
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                    <DropdownMenuItem>Delete</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setIsSearchingMessages(!isSearchingMessages)}>
+                                        {isSearchingMessages ? "Exit Search" : "Search Messages"}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => toggleFullHistory(selectedConversation.id)}>
+                                        {showFullHistory[selectedConversation.id] ? "Show Less Messages" : "Show More Messages"}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem>Clear Chat History</DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>
 
+                        {/* Message search bar - only shown when searching */}
+                        {isSearchingMessages && (
+                            <div className="p-3 border-b">
+                                <div className="relative">
+                                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                    <Input
+                                        placeholder="Search in conversation..."
+                                        value={searchMessagesQuery}
+                                        onChange={(e) => setSearchMessagesQuery(e.target.value)}
+                                        className="pl-8"
+                                    />
+                                </div>
+                            </div>
+                        )}
+
                         {/* Messages area */}
                         <ScrollArea className="h-full overflow-hidden">
                             <div className="p-4 space-y-4">
-                                {messages.map((message, index) => {
+                                {/* Show more messages button (only if not showing full history) */}
+                                {!showFullHistory[selectedConversation.id] &&
+                                    fullMessageHistory[selectedConversation.id]?.length > 2 && (
+                                        <div className="flex justify-center">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="text-xs"
+                                                onClick={() => toggleFullHistory(selectedConversation.id)}
+                                            >
+                                                <Plus className="h-3 w-3 mr-1" />
+                                                Show Previous Messages
+                                            </Button>
+                                        </div>
+                                    )}
+
+                                {filteredMessages.map((message, index) => {
                                     const isCurrentUser = message.senderId === currentUser.id
 
                                     // Check if we need to show date separator
@@ -602,23 +675,76 @@ export default function Chat() {
                                                     </Avatar>
                                                 )}
 
-                                                <div className={cn("max-w-[70%]")}>
-                                                    {message.type === "text" ? (
+                                                <div className={cn("max-w-[70%] group")}>
+                                                    {message.deleted ? (
                                                         <div
                                                             className={cn(
-                                                                "px-4 py-2.5 rounded-lg text-sm",
-                                                                isCurrentUser ? "bg-primary text-primary-foreground" : "bg-gray-100 text-gray-800",
+                                                                "px-4 py-2.5 rounded-lg text-sm italic",
+                                                                isCurrentUser
+                                                                    ? "bg-primary/30 text-primary-foreground/70"
+                                                                    : "bg-gray-100 text-gray-500",
                                                             )}
                                                         >
                                                             {message.content}
                                                         </div>
+                                                    ) : message.type === "text" ? (
+                                                        <div className="relative">
+                                                            <div
+                                                                className={cn(
+                                                                    "px-4 py-2.5 rounded-lg text-sm",
+                                                                    isCurrentUser ? "bg-primary text-primary-foreground" : "bg-gray-100 text-gray-800",
+                                                                )}
+                                                            >
+                                                                {message.content}
+                                                            </div>
+                                                            {isCurrentUser && (
+                                                                <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <DropdownMenu>
+                                                                        <DropdownMenuTrigger asChild>
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-6 w-6 bg-primary/20 hover:bg-primary/30"
+                                                                            >
+                                                                                <MoreHorizontal className="h-3 w-3 text-primary-foreground" />
+                                                                            </Button>
+                                                                        </DropdownMenuTrigger>
+                                                                        <DropdownMenuContent align="end">
+                                                                            <DropdownMenuItem onClick={() => handleDeleteMessage(message.id)}>
+                                                                                Delete Message
+                                                                            </DropdownMenuItem>
+                                                                        </DropdownMenuContent>
+                                                                    </DropdownMenu>
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     ) : message.type === "image" ? (
                                                         <div
                                                             className={cn(
-                                                                "rounded-lg overflow-hidden border",
+                                                                "rounded-lg overflow-hidden border relative",
                                                                 isCurrentUser ? "bg-primary/10" : "bg-gray-100",
                                                             )}
                                                         >
+                                                            {isCurrentUser && (
+                                                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                                                    <DropdownMenu>
+                                                                        <DropdownMenuTrigger asChild>
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-6 w-6 bg-white/80 backdrop-blur-sm"
+                                                                            >
+                                                                                <MoreHorizontal className="h-3 w-3" />
+                                                                            </Button>
+                                                                        </DropdownMenuTrigger>
+                                                                        <DropdownMenuContent align="end">
+                                                                            <DropdownMenuItem onClick={() => handleDeleteMessage(message.id)}>
+                                                                                Delete
+                                                                            </DropdownMenuItem>
+                                                                        </DropdownMenuContent>
+                                                                    </DropdownMenu>
+                                                                </div>
+                                                            )}
                                                             <div className="p-2 flex items-center gap-2 border-b bg-white">
                                                                 <ImageIcon className="h-4 w-4 text-gray-500" />
                                                                 <span className="text-xs font-medium">{message.fileName}</span>
@@ -637,7 +763,32 @@ export default function Chat() {
                                                             </div>
                                                         </div>
                                                     ) : (
-                                                        <div className={cn("rounded-lg border", isCurrentUser ? "bg-primary/10" : "bg-gray-100")}>
+                                                        <div
+                                                            className={cn(
+                                                                "rounded-lg border relative",
+                                                                isCurrentUser ? "bg-primary/10" : "bg-gray-100",
+                                                            )}
+                                                        >
+                                                            {isCurrentUser && (
+                                                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                                                    <DropdownMenu>
+                                                                        <DropdownMenuTrigger asChild>
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-6 w-6 bg-white/80 backdrop-blur-sm"
+                                                                            >
+                                                                                <MoreHorizontal className="h-3 w-3" />
+                                                                            </Button>
+                                                                        </DropdownMenuTrigger>
+                                                                        <DropdownMenuContent align="end">
+                                                                            <DropdownMenuItem onClick={() => handleDeleteMessage(message.id)}>
+                                                                                Delete
+                                                                            </DropdownMenuItem>
+                                                                        </DropdownMenuContent>
+                                                                    </DropdownMenu>
+                                                                </div>
+                                                            )}
                                                             <div className="p-3 flex items-center gap-3 bg-white rounded-lg">
                                                                 <div className="bg-gray-100 p-2 rounded-md">
                                                                     <FileText className="h-6 w-6 text-gray-500" />

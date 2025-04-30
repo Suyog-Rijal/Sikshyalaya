@@ -21,6 +21,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
+import {useAuthStore} from "@/store/AuthStore.ts";
 
 interface Assignment {
     id: string
@@ -55,84 +56,25 @@ export function StudentAssignment() {
         return format(date, "MMMM dd, yyyy")
     }
 
+    const {role} = useAuthStore()
+
     useEffect(() => {
         // Simulate API call to fetch assignments
         setTimeout(() => {
             const mockAssignments: Assignment[] = [
                 {
                     id: "1",
-                    title: "Mathematics Problem Set",
-                    subject: "Mathematics",
-                    description:
-                        "Complete problems 1-20 from Chapter 5 on Algebra. Show all your work and explain your reasoning for each step.",
-                    dueDate: "2024-05-15",
-                    assignedDate: "2024-05-01",
-                    status: "Pending",
-                    attachments: [
-                        {
-                            name: "Chapter5_Problems.pdf",
-                            url: "/files/chapter5_problems.pdf",
-                        },
-                    ],
-                },
-                {
-                    id: "2",
-                    title: "Science Lab Report",
-                    subject: "Science",
-                    description:
-                        "Write a detailed lab report on the photosynthesis experiment conducted in class. Include your observations, data analysis, and conclusions.",
-                    dueDate: "2024-05-10",
-                    assignedDate: "2024-04-25",
-                    status: "Submitted",
-                    attachments: [
-                        {
-                            name: "Lab_Report_Template.docx",
-                            url: "/files/lab_report_template.docx",
-                        },
-                    ],
-                },
-                {
-                    id: "3",
-                    title: "English Essay",
+                    title: "Test assignment",
                     subject: "English",
                     description:
-                        "Write a 1000-word analytical essay on the themes of identity in the novel we studied this semester.",
-                    dueDate: "2024-05-08",
-                    assignedDate: "2024-04-20",
-                    status: "Graded",
-                    grade: "A",
-                    feedback:
-                        "Excellent analysis and well-structured arguments. Your writing shows deep understanding of the themes.",
-                },
-                {
-                    id: "4",
-                    title: "History Research Paper",
-                    subject: "History",
-                    description:
-                        "Research and write a 5-page paper on a significant historical event from the 20th century. Include at least 3 primary sources.",
-                    dueDate: "2024-05-20",
-                    assignedDate: "2024-04-15",
+                        "Test assignment description",
+                    dueDate: "2024-06-01",
+                    assignedDate: "2024-06-01",
                     status: "Pending",
                     attachments: [
                         {
-                            name: "Research_Guidelines.pdf",
-                            url: "/files/research_guidelines.pdf",
-                        },
-                    ],
-                },
-                {
-                    id: "5",
-                    title: "Computer Science Project",
-                    subject: "Computer Science",
-                    description:
-                        "Develop a simple calculator application using the programming language taught in class. Submit both your code and a brief report.",
-                    dueDate: "2024-05-25",
-                    assignedDate: "2024-05-05",
-                    status: "Pending",
-                    attachments: [
-                        {
-                            name: "Project_Requirements.pdf",
-                            url: "/files/project_requirements.pdf",
+                            name: "All Tables Structure.pdf",
+                            url: "/files/chapter5_problems.pdf",
                         },
                     ],
                 },
@@ -317,7 +259,11 @@ export function StudentAssignment() {
                                 <TableHead className="hidden lg:table-cell">Assigned Date</TableHead>
                                 <TableHead>Due Date</TableHead>
                                 <TableHead>Status</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
+                                {
+                                    role == 'admin' ? (
+                                        <TableHead className="text-right">Actions</TableHead>
+                                    ): null
+                                }
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -374,20 +320,24 @@ export function StudentAssignment() {
                                             </div>
                                         </TableCell>
                                         <TableCell>{getStatusBadge(assignment.status)}</TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <Button variant="outline" size="sm" onClick={() => openViewDialog(assignment)}>
-                                                    <Eye className="h-4 w-4 mr-1" />
-                                                    View
-                                                </Button>
-                                                {assignment.status === "Pending" && (
-                                                    <Button variant="default" size="sm" onClick={() => openSubmitDialog(assignment)}>
-                                                        <Upload className="h-4 w-4 mr-1" />
-                                                        Submit
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </TableCell>
+                                        {
+                                            role == 'admin' ? (
+                                                <TableCell className="text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        <Button variant="outline" size="sm" onClick={() => openViewDialog(assignment)}>
+                                                            <Eye className="h-4 w-4 mr-1" />
+                                                            View
+                                                        </Button>
+                                                        {assignment.status === "Pending" && (
+                                                            <Button variant="default" size="sm" onClick={() => openSubmitDialog(assignment)}>
+                                                                <Upload className="h-4 w-4 mr-1" />
+                                                                Submit
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                            ): null
+                                        }
                                     </TableRow>
                                 ))
                             )}

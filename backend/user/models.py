@@ -181,6 +181,11 @@ class Parent(models.Model):
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
 
+	def check_password(self, raw_password):
+		if self.password.startswith('pbkdf2_'):
+			return check_password(raw_password, self.password)
+		return self.password == raw_password
+
 	def clean(self):
 		if self.relationship == 'G':
 			if not self.phone_number:

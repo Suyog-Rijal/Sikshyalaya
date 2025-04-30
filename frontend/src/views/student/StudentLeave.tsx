@@ -134,6 +134,17 @@ export function StudentLeave() {
                     status: "Pending",
                     appliedOn: "2024-05-15",
                 },
+                {
+                    id: "4",
+                    startDate: "2024-05-01",
+                    endDate: "2024-05-06",
+                    days: 3,
+                    reason: "Test leave",
+                    status: "Approved",
+                    appliedOn: "2024-04-30",
+                    responseDate: "2024-04-30",
+
+                },
             ]
 
             setLeaveRequests(mockLeaveRequests)

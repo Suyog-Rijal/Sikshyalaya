@@ -79,6 +79,15 @@ export function LeavePage() {
                     created_at: "2024-05-10T09:30:00",
                 },
                 {
+                    id: "345",
+                    student: "Test Copeland",
+                    leave_reason: "Test leave",
+                    start_date: "2024-05-01",
+                    end_date: "2024-05-06",
+                    leave_status: "pending",
+                    created_at: "2024-05-10T09:30:00",
+                },
+                {
                     id: "2",
                     student: "Emma Johnson",
                     leave_reason: "Medical appointment and recovery",

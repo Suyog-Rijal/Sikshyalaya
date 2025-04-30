@@ -52,61 +52,61 @@ export function TeacherDashboard() {
         // Simulate API call to fetch teacher data
         setTimeout(() => {
             const mockTeacherData: TeacherData = {
-                name: "Sarah Johnson",
+                name: "Slade Juarez",
                 avatar: "/teacher-avatar.png",
-                department: "Science Department",
+                department: "Science",
                 todaySchedule: [
                     {
                         id: "s1",
-                        subject: "Physics 101",
-                        class: "Grade 11-A",
+                        subject: "English",
+                        class: "Class One-A",
                         time: "10:30 AM - 11:30 AM",
-                        room: "Lab 3",
+                        room: "Class One",
                     },
                     {
                         id: "s2",
-                        subject: "Advanced Physics",
-                        class: "Grade 12-B",
+                        subject: "Nepali",
+                        class: "Class Two-B",
                         time: "1:15 PM - 2:45 PM",
-                        room: "Room 201",
+                            room: "Class BigBen",
                     },
                     {
                         id: "s3",
-                        subject: "Faculty Meeting",
-                        class: "Staff",
+                        subject: "English",
+                        class: "Class One-B",
                         time: "3:30 PM - 4:30 PM",
-                        room: "Conference Room",
+                        room: "Tilicho",
                     },
                 ],
                 upcomingAssessments: [
                     {
                         id: "a1",
-                        title: "Forces and Motion Quiz",
+                        title: "Nepali Quiz test",
                         type: "Quiz",
-                        class: "Grade 11-A",
+                        class: "Grade One-A",
                         dueDate: "2024-05-10",
                     },
                     {
                         id: "a2",
-                        title: "Lab Report: Electrical Circuits",
+                        title: "English essay writing (1000 word)",
                         type: "Assignment",
-                        class: "Grade 12-B",
+                        class: "Grade Two-B",
                         dueDate: "2024-05-15",
                     },
-                    {
-                        id: "a3",
-                        title: "Mid-Term Examination",
-                        type: "Exam",
-                        class: "Grade 11-A",
-                        dueDate: "2024-05-20",
-                    },
-                    {
-                        id: "a4",
-                        title: "Quantum Physics Presentation",
-                        type: "Assignment",
-                        class: "Grade 12-B",
-                        dueDate: "2024-05-25",
-                    },
+                    // {
+                    //     id: "a3",
+                    //     title: "Mid-Term Examination",
+                    //     type: "Exam",
+                    //     class: "Grade 11-A",
+                    //     dueDate: "2024-05-20",
+                    // },
+                    // {
+                    //     id: "a4",
+                    //     title: "Quantum Physics Presentation",
+                    //     type: "Assignment",
+                    //     class: "Grade 12-B",
+                    //     dueDate: "2024-05-25",
+                    // },
                 ],
                 leaveRequests: [
                     {
@@ -317,7 +317,7 @@ export function TeacherDashboard() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-500">Total Classes</p>
-                                <h3 className="text-2xl font-bold mt-1">4</h3>
+                                <h3 className="text-2xl font-bold mt-1">3</h3>
                             </div>
                             <div className="bg-blue-50 p-3 rounded-full">
                                 <BookOpen className="h-6 w-6 text-blue-600" />
@@ -331,7 +331,7 @@ export function TeacherDashboard() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-500">Total Students</p>
-                                <h3 className="text-2xl font-bold mt-1">112</h3>
+                                <h3 className="text-2xl font-bold mt-1">5</h3>
                             </div>
                             <div className="bg-green-50 p-3 rounded-full">
                                 <Users className="h-6 w-6 text-green-600" />

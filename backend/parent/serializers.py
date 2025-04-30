@@ -29,3 +29,9 @@ class ParentListSerializer(serializers.ModelSerializer):
 			'created_at',
 			'guardian_of',
 		]
+
+
+class ParentDetailSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Parent
+		fields = '__all__'

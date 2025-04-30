@@ -199,9 +199,9 @@ export function ExamRoutinesPage() {
                     class: "Grade 2",
                     section: "B",
                     date: "2024-06-10",
-                    startTime: "11:00 AM",
-                    endTime: "12:00 PM",
-                    venue: "Room 104",
+                    startTime: "11:11 AM",
+                    endTime: "3:12 PM",
+                    venue: "Class Two",
                     status: "upcoming",
                 }
             ]
@@ -577,7 +577,7 @@ export function ExamRoutinesPage() {
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent>
-                                                    <SelectItem value="Grade 8">Grade 8</SelectItem>
+                                                    <SelectItem value="Grade 2">Grade 2</SelectItem>
                                                     <SelectItem value="Grade 9">Grade 9</SelectItem>
                                                     <SelectItem value="Grade 10">Grade 10</SelectItem>
                                                     <SelectItem value="Grade 11">Grade 11</SelectItem>

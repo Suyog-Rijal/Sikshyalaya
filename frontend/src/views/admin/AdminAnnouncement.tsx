@@ -98,174 +98,158 @@ const sections = [
 // Dummy data for announcements
 const dummyAnnouncements: Announcement[] = [
     {
-        id: "ann-1",
-        title: "School Annual Day Celebration",
-        description:
-            "We are excited to announce our Annual Day Celebration on December 15th. All students are required to participate in the cultural events. Parents are cordially invited to attend the function starting at 5:00 PM in the school auditorium.",
-        createdAt: "2025-05-01T10:30:00Z",
-        publishedAt: "2025-05-01T12:00:00Z",
-        status: "published",
-        isPublic: true,
-        createdBy: {
-            id: "user-1",
-            name: "Principal Johnson",
-            role: "Principal",
+        "id": "ann-1",
+        "title": "Annual Sports Meet and Cultural Day Celebration",
+        "description": "We are thrilled to invite all students and their families to our upcoming Annual Sports Meet and Cultural Day Celebration, which will be held on December 15th. This year’s event promises to be a vibrant showcase of athletic skills, creative performances, and school spirit. All students are expected to participate in both the sports competitions and cultural performances, with rehearsals taking place in the weeks leading up to the event. The festivities will begin promptly at 5:00 PM in the school auditorium, followed by the sports meet on the school grounds. Parents, guardians, and friends of the school community are warmly invited to join us for this memorable evening. Come celebrate our students' hard work and achievements!",
+        "createdAt": "2025-05-01T10:30:00Z",
+        "publishedAt": "2025-05-01T12:00:00Z",
+        "status": "published",
+        "isPublic": true,
+        "createdBy": {
+            "id": "user-1",
+            "name": "Ms. Admin Admin",
+            "role": "Admin"
         },
-        priority: "important",
-        attachments: [
-            {
-                id: "att-1",
-                name: "annual_day_schedule.pdf",
-                type: "application/pdf",
-                url: "#",
-            },
-        ],
+        "priority": "important",
+
     },
     {
-        id: "ann-2",
-        title: "Mathematics Olympiad Registration",
-        description:
-            "Registration for the National Mathematics Olympiad is now open. Interested students from classes 9-12 can register through their mathematics teachers. The preliminary round will be held on June 10th.",
-        createdAt: "2025-05-03T09:15:00Z",
-        publishedAt: "2025-05-03T11:00:00Z",
-        status: "published",
-        isPublic: false,
-        class: {
-            id: "class-9",
-            name: "Class 9",
+        "id": "ann-2",
+        "title": "Inter-School Drawing Competition",
+        "description": "We are excited to announce the upcoming Inter-School Drawing Competition, which will be held on June 10th at 9:00 AM in the school’s art hall. This competition provides a wonderful opportunity for our talented students to showcase their creativity and artistic skills. Students from various grades are invited to participate, and the theme for this year’s competition is 'Nature's Wonders'. Participants will have two hours to complete their artwork, with all necessary materials provided by the school. The winners will be awarded prizes and their artwork will be displayed at the school's annual exhibition. Parents and guardians are invited to attend the event and support their children’s efforts. Registration for the competition is open until June 5th, so be sure to sign up soon!",
+        "createdAt": "2025-05-01T14:00:00Z",
+        "publishedAt": "2025-05-01T16:00:00Z",
+        "status": "published",
+        "isPublic": true,
+        "createdBy": {
+            "id": "user-2",
+            "name": "Ms. Admin Admin",
+            "role": "Admin"
         },
-        section: {
-            id: "section-a",
-            name: "Section A",
-        },
-        createdBy: {
-            id: "user-2",
-            name: "Ms. Williams",
-            role: "Mathematics Department Head",
-        },
-        priority: "normal",
-    },
-    {
-        id: "ann-3",
-        title: "Parent-Teacher Meeting",
-        description:
-            "The Parent-Teacher Meeting for this semester will be held on May 20th from 9:00 AM to 2:00 PM. Parents are requested to book their slots in advance through the school portal.",
-        createdAt: "2025-05-05T14:20:00Z",
-        publishedAt: "2025-05-05T16:00:00Z",
-        status: "published",
-        isPublic: true,
-        createdBy: {
-            id: "user-3",
-            name: "Admin Office",
-            role: "Administration",
-        },
-        priority: "important",
-        attachments: [
-            {
-                id: "att-2",
-                name: "ptm_schedule.pdf",
-                type: "application/pdf",
-                url: "#",
-            },
-        ],
-    },
-    {
-        id: "ann-4",
-        title: "Science Project Submission Deadline",
-        description:
-            "This is a reminder that the Science Project submissions for Class 10 are due on May 25th. Please ensure that all project reports are submitted in both digital and physical formats as per the guidelines shared earlier.",
-        createdAt: "2025-05-10T11:30:00Z",
-        publishedAt: "2025-05-10T13:00:00Z",
-        status: "published",
-        isPublic: false,
-        class: {
-            id: "class-10",
-            name: "Class 10",
-        },
-        createdBy: {
-            id: "user-4",
-            name: "Dr. Roberts",
-            role: "Science Department Head",
-        },
-        priority: "urgent",
-    },
-    {
-        id: "ann-5",
-        title: "Holiday Notice: Founder's Day",
-        description:
-            "The school will remain closed on May 30th on account of Founder's Day. Special assembly and celebrations will be held on May 29th, and all students are expected to attend in formal uniform.",
-        createdAt: "2025-05-15T08:45:00Z",
-        publishedAt: "2025-05-15T10:00:00Z",
-        status: "published",
-        isPublic: true,
-        createdBy: {
-            id: "user-1",
-            name: "Principal Johnson",
-            role: "Principal",
-        },
-        priority: "normal",
-    },
-    {
-        id: "ann-6",
-        title: "Sports Day Tryouts",
-        description:
-            "Tryouts for the Annual Sports Day will begin next week. Students interested in participating should register with their Physical Education teachers by Friday.",
-        createdAt: "2025-05-18T13:10:00Z",
-        publishedAt: "",
-        status: "draft",
-        isPublic: true,
-        createdBy: {
-            id: "user-5",
-            name: "Mr. Thompson",
-            role: "Physical Education Head",
-        },
-        priority: "normal",
-    },
-    {
-        id: "ann-7",
-        title: "Class 12 Pre-Board Examination Schedule",
-        description:
-            "The Pre-Board Examinations for Class 12 will commence from June 5th. The detailed schedule has been attached. Students are advised to prepare accordingly and ensure they have completed all their practical submissions.",
-        createdAt: "2025-05-20T09:30:00Z",
-        publishedAt: "2025-05-20T11:00:00Z",
-        status: "published",
-        isPublic: false,
-        class: {
-            id: "class-12",
-            name: "Class 12",
-        },
-        createdBy: {
-            id: "user-6",
-            name: "Mrs. Davis",
-            role: "Examination Coordinator",
-        },
-        priority: "urgent",
-        attachments: [
-            {
-                id: "att-3",
-                name: "pre_board_schedule.pdf",
-                type: "application/pdf",
-                url: "#",
-            },
-        ],
-    },
-    {
-        id: "ann-8",
-        title: "Library Book Return Notice",
-        description:
-            "All students are requested to return their library books before the end of the term. Any unreturned books will result in fines and may affect the issuance of report cards.",
-        createdAt: "2025-05-22T15:45:00Z",
-        publishedAt: "2025-05-22T16:30:00Z",
-        expiresAt: "2025-05-01T00:00:00Z",
-        status: "expired",
-        isPublic: true,
-        createdBy: {
-            id: "user-7",
-            name: "Ms. Clark",
-            role: "Librarian",
-        },
-        priority: "important",
-    },
+        "priority": "normal",
+    }
+
+    // {
+    //     id: "ann-3",
+    //     title: "Parent-Teacher Meeting",
+    //     description:
+    //         "The Parent-Teacher Meeting for this semester will be held on May 20th from 9:00 AM to 2:00 PM. Parents are requested to book their slots in advance through the school portal.",
+    //     createdAt: "2025-05-05T14:20:00Z",
+    //     publishedAt: "2025-05-05T16:00:00Z",
+    //     status: "published",
+    //     isPublic: true,
+    //     createdBy: {
+    //         id: "user-3",
+    //         name: "Admin Office",
+    //         role: "Administration",
+    //     },
+    //     priority: "important",
+    //     attachments: [
+    //         {
+    //             id: "att-2",
+    //             name: "ptm_schedule.pdf",
+    //             type: "application/pdf",
+    //             url: "#",
+    //         },
+    //     ],
+    // },
+    // {
+    //     id: "ann-4",
+    //     title: "Science Project Submission Deadline",
+    //     description:
+    //         "This is a reminder that the Science Project submissions for Class 10 are due on May 25th. Please ensure that all project reports are submitted in both digital and physical formats as per the guidelines shared earlier.",
+    //     createdAt: "2025-05-10T11:30:00Z",
+    //     publishedAt: "2025-05-10T13:00:00Z",
+    //     status: "published",
+    //     isPublic: false,
+    //     class: {
+    //         id: "class-10",
+    //         name: "Class 10",
+    //     },
+    //     createdBy: {
+    //         id: "user-4",
+    //         name: "Dr. Roberts",
+    //         role: "Science Department Head",
+    //     },
+    //     priority: "urgent",
+    // },
+    // {
+    //     id: "ann-5",
+    //     title: "Holiday Notice: Founder's Day",
+    //     description:
+    //         "The school will remain closed on May 30th on account of Founder's Day. Special assembly and celebrations will be held on May 29th, and all students are expected to attend in formal uniform.",
+    //     createdAt: "2025-05-15T08:45:00Z",
+    //     publishedAt: "2025-05-15T10:00:00Z",
+    //     status: "published",
+    //     isPublic: true,
+    //     createdBy: {
+    //         id: "user-1",
+    //         name: "Principal Johnson",
+    //         role: "Principal",
+    //     },
+    //     priority: "normal",
+    // },
+    // {
+    //     id: "ann-6",
+    //     title: "Sports Day Tryouts",
+    //     description:
+    //         "Tryouts for the Annual Sports Day will begin next week. Students interested in participating should register with their Physical Education teachers by Friday.",
+    //     createdAt: "2025-05-18T13:10:00Z",
+    //     publishedAt: "",
+    //     status: "draft",
+    //     isPublic: true,
+    //     createdBy: {
+    //         id: "user-5",
+    //         name: "Mr. Thompson",
+    //         role: "Physical Education Head",
+    //     },
+    //     priority: "normal",
+    // },
+    // {
+    //     id: "ann-7",
+    //     title: "Class 12 Pre-Board Examination Schedule",
+    //     description:
+    //         "The Pre-Board Examinations for Class 12 will commence from June 5th. The detailed schedule has been attached. Students are advised to prepare accordingly and ensure they have completed all their practical submissions.",
+    //     createdAt: "2025-05-20T09:30:00Z",
+    //     publishedAt: "2025-05-20T11:00:00Z",
+    //     status: "published",
+    //     isPublic: false,
+    //     class: {
+    //         id: "class-12",
+    //         name: "Class 12",
+    //     },
+    //     createdBy: {
+    //         id: "user-6",
+    //         name: "Mrs. Davis",
+    //         role: "Examination Coordinator",
+    //     },
+    //     priority: "urgent",
+    //     attachments: [
+    //         {
+    //             id: "att-3",
+    //             name: "pre_board_schedule.pdf",
+    //             type: "application/pdf",
+    //             url: "#",
+    //         },
+    //     ],
+    // },
+    // {
+    //     id: "ann-8",
+    //     title: "Library Book Return Notice",
+    //     description:
+    //         "All students are requested to return their library books before the end of the term. Any unreturned books will result in fines and may affect the issuance of report cards.",
+    //     createdAt: "2025-05-22T15:45:00Z",
+    //     publishedAt: "2025-05-22T16:30:00Z",
+    //     expiresAt: "2025-05-01T00:00:00Z",
+    //     status: "expired",
+    //     isPublic: true,
+    //     createdBy: {
+    //         id: "user-7",
+    //         name: "Ms. Clark",
+    //         role: "Librarian",
+    //     },
+    //     priority: "important",
+    // },
 ]
 
 export default function AdminAnnouncementPage() {

@@ -39,7 +39,10 @@ import {StudentLeave} from "@/views/student/StudentLeave.tsx";
 import {StudentAnnouncement} from "@/views/student/StudentAnnouncement.tsx";
 import {StudentAttendancePage} from "@/views/student/StudentAttendance.tsx";
 import StudentProfilePage from "@/views/student/StudentProfile.tsx";
-// import TeacherDashboard from "@/views/teacher/Dashboard.tsx";
+import Fees from "@/views/admin/Fees.tsx";
+import {ParentDashboard} from "@/views/parent/Dashboard.tsx";
+import {StudentDetailPage} from "@/views/student/StudentDetail.tsx";
+import AdminFeesDashboard from "@/pages/AdminFees.tsx";
 
 function App() {
     const checkAuth = useAuthStore((s) => s.checkAuth);
@@ -59,8 +62,13 @@ function App() {
                             <Route index element={<Dashboard />} />
                             <Route path="/staff/list" element={<StaffListPage />} />
                             <Route path="/staff/add" element={<AddStaff />} />
+                            <Route path={'/staff/detail/:id'} element={<StaffDetailPage />} />
+
                             <Route path="/student/list" element={<StudentListPage />} />
                             <Route path="/student/add" element={<AddStudent />} />
+                            <Route path={'/students/detail/:id'} element={<StudentDetailPage />} />
+
+
                             <Route path="/classes/list" element={<ClassListPage />} />
                             <Route path="/subject/list" element={<SubjectListPage />} />
                             <Route path="/routine/list" element={<RoutineListPage />} />
@@ -72,6 +80,8 @@ function App() {
                             <Route path={'announcement/list'} element={<AdminAnnouncementPage />} />
                             <Route path={'leave/'} element={<LeavePage />} />
                             <Route path={'exam/list'} element={<ExamRoutinesPage />} />
+
+                            <Route path={'fees/'} element={<Fees />} />
                             <Route path="/logout" element={<Logout />} />
                         </Routes>
                     </DashboardLayout>
@@ -90,9 +100,9 @@ function App() {
                             <Route path="/assignment/list" element={<TeacherAssignmentList />} />
                             <Route path="/assignment/detail/:id" element={<TeacherAssignmentDetailPage />} />s
                             <Route path={'/assignment/edit/:id'} element={<TeacherAssignmentEdit />} />
-                            <Route path={'announcement/list'} element={<TeacherAnnouncementPage />} />
-                            <Route path={'exam/list'} element={<ExamRoutinesPage />} />
-                            <Route path={'leave/'} element={<LeavePage />} />
+                            <Route path={'/announcement/list'} element={<TeacherAnnouncementPage />} />
+                            <Route path={'/exam/list'} element={<ExamRoutinesPage />} />
+                            <Route path={'/leave'} element={<LeavePage />} />
 
                             <Route path={'/messages'} element={<Chat />} />
                             <Route path="/logout" element={<Logout />} />
@@ -107,6 +117,7 @@ function App() {
                             <Route path="/staff/detail/:id" element={<StaffDetailPage />} />
                             <Route path="/student/list" element={<StudentListPage />} />
                             <Route path="/student/add" element={<AddStudent />} />
+                            <Route path={'/fees'} element={<AdminFeesDashboard />} />
 
                             <Route path="/logout" element={<Logout />} />
                         </Routes>
@@ -135,6 +146,7 @@ function App() {
                 return (
                     <DashboardLayout>
                         <Routes>
+                            <Route index element={<ParentDashboard />} />
                             <Route path="/routine/list" element={<RoutineListPage />} />
                             <Route path="/subject/list" element={<SubjectListPage />} />
                             <Route path={"/exam/list"} element={<StudentExam />} />
@@ -144,6 +156,9 @@ function App() {
                             <Route path={'/list/attendance'} element={<StudentAttendancePage />} />
                             <Route path={'/profile'} element={<StudentProfilePage />} />
                             <Route path={'/messages'} element={<Chat />} />
+                            <Route path={'fees/'} element={<Fees />} />
+
+                            <Route path="/logout" element={<Logout />} />
                         </Routes>
                     </DashboardLayout>
                 );

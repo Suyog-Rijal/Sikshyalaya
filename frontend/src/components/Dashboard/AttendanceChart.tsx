@@ -7,32 +7,32 @@ const secondaryColor = '#ffc658';
 const data = [
     {
         name: 'Sun',
-        present: 40,
-        absent: 24,
+        present: 5,
+        absent: 0,
     },
     {
         name: 'Mon',
-        present: 30,
-        absent: 13,
+        present: 4,
+        absent: 1,
     },
     {
         name: 'Tue',
-        present: 20,
-        absent: 19,
+        present: 4,
+        absent: 1,
     },
     {
         name: 'Wed',
-        present: 27,
-        absent: 3,
+        present: 5,
+        absent: 0,
     },
     {
         name: 'Thu',
-        present: 18,
-        absent: 4,
+        present: 3,
+        absent: 2,
     },
     {
         name: 'Fri',
-        present: 45,
+        present: 2,
         absent: 3,
     },
 ];

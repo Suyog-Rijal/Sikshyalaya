@@ -69,15 +69,15 @@ export function StudentDashboard() {
         setTimeout(() => {
             const mockStudent: Student = {
                 id: "S12345",
-                name: "Rahul Sharma",
+                name: "Wyoming Golden",
                 profilePicture: "/student-avatar.png",
-                grade: "10",
+                grade: "One",
                 section: "A",
                 rollNumber: 15,
                 attendance: {
-                    present: 85,
-                    absent: 5,
-                    total: 90,
+                    present: 7,
+                    absent: 1,
+                    total: 8,
                 },
                 gpa: "3.8",
             }
@@ -85,49 +85,56 @@ export function StudentDashboard() {
             const mockTodaySchedule: ClassSchedule[] = [
                 {
                     id: "1",
-                    subject: "Mathematics",
-                    time: "9:00 AM - 10:00 AM",
-                    teacher: "Mr. Patel",
-                    room: "Room 101",
+                    subject: "Nepali",
+                    time: "10:00 AM - 10:45 AM",
+                    teacher: "Madeline Gomez",
+                    room: "Class one (A)",
                 },
                 {
                     id: "2",
-                    subject: "Science",
-                    time: "10:15 AM - 11:15 AM",
-                    teacher: "Ms. Gupta",
-                    room: "Lab 3",
+                    subject: "English",
+                    time: "10:45 AM - 11:30 AM",
+                    teacher: "Slade Juarez",
+                    room: "Class one (A)",
+                },
+                {
+                    id: "3",
+                    subject: "Gk",
+                    time: "11:30 AM - 12:15 PM",
+                    teacher: "Signe Mccormick",
+                    room: "Class one (A)",
                 },
                 {
                     id: "3",
                     subject: "English",
-                    time: "11:30 AM - 12:30 PM",
-                    teacher: "Mrs. Singh",
-                    room: "Room 105",
+                    time: "12:15 PM - 1:00 PM",
+                    teacher: "Slade Juarez",
+                    room: "Class one (A)",
                 },
             ]
 
             const mockAssignments: Assignment[] = [
                 {
                     id: "1",
-                    title: "Algebra Problem Set",
-                    subject: "Mathematics",
+                    title: "Algebra set 1",
+                    subject: "Maths",
                     dueDate: "2024-05-15",
                     status: "Pending",
                 },
-                {
-                    id: "2",
-                    title: "Science Lab Report",
-                    subject: "Science",
-                    dueDate: "2024-05-10",
-                    status: "Submitted",
-                },
-                {
-                    id: "3",
-                    title: "Essay on Shakespeare",
-                    subject: "English",
-                    dueDate: "2024-05-08",
-                    status: "Graded",
-                },
+                // {
+                //     id: "2",
+                //     title: "Science Lab Report",
+                //     subject: "Science",
+                //     dueDate: "2024-05-10",
+                //     status: "Submitted",
+                // },
+                // {
+                //     id: "3",
+                //     title: "Essay on Shakespeare",
+                //     subject: "English",
+                //     dueDate: "2024-05-08",
+                //     status: "Graded",
+                // },
             ]
 
             const mockExams: Exam[] = [
@@ -278,8 +285,8 @@ export function StudentDashboard() {
                         </CardHeader>
                         <CardContent className="pt-2">
                             <div className="flex justify-between mb-2">
-                                <span className="text-sm text-gray-600">GPA</span>
-                                <span className="text-sm font-medium">{student.gpa}/4.0</span>
+                                {/*<span className="text-sm text-gray-600">GPA</span>*/}
+                                {/*<span className="text-sm font-medium">{student.gpa}/4.0</span>*/}
                             </div>
                             <div className="flex justify-between mb-2">
                                 <span className="text-sm text-gray-600">Pending Assignments</span>

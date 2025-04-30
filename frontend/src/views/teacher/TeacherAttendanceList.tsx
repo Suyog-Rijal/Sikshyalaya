@@ -133,7 +133,7 @@ export default function TeacherAttendancePage() {
     return (
         <div className="p-4 flex flex-col gap-4">
             <PageHeader
-                title="Teacher Attendance"
+                title="Student Attendance"
                 breadcrumbs={[
                     { label: "Dashboard", href: "/" },
                     { label: "Teacher", href: "/teacher" },

@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from academic.models import Enrollment
 from .models import Student, Parent
 
 
@@ -34,6 +36,26 @@ class StudentSerializer(serializers.ModelSerializer):
 		]
 
 		read_only_fields = ['created_at', 'updated_at']
+
+
+class StudentDetailSerializer(serializers.ModelSerializer):
+	class InlineParentSerializer(serializers.ModelSerializer):
+		class Meta:
+			model = Parent
+			fields = '__all__'
+
+	father = InlineParentSerializer()
+	mother = InlineParentSerializer()
+	guardian = InlineParentSerializer()
+
+	class Meta:
+		model = Student
+		fields = '__all__'
+		read_only_fields = ['created_at', 'updated_at']
+		extra_kwargs = {
+			'password': {'write_only': True},
+		}
+
 
 
 class ParentSerializer(serializers.ModelSerializer):

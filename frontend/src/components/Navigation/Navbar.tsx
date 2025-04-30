@@ -107,14 +107,20 @@ export function Navbar() {
 
                 {/* User Profile - Always visible */}
                 <div className={'justify-center items-center ml-2 p-2 rounded-md shadow hidden lg:flex'}>
-                    <p className={'text-xs'}>Suyog Rijal</p>
+                    {/*<p className={'text-xs'}>Admin  Admin</p>*/}
+                    {/*<p className={'text-xs'}>Slade Juarez</p>*/}
+                    {/*<p className={'text-xs'}>Wyoming Golden</p>*/}
+                    {/*<p className={'text-xs'}>Admin Admin</p>*/}
+                    {/*<p className={'text-xs'}>Test Copeland</p>*/}
+                    {/*<p className={'text-xs'}>Quinn Soto</p>*/}
+                    <p className={'text-xs'}>Castro Cusrtis</p>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="shadowed"
                                     className="relative ml-2 h-8 w-8 rounded-full cursor-pointer p-0 overflow-hidden">
                                 <img
                                     src="https://scontent.fpkr1-1.fna.fbcdn.net/v/t39.30808-6/474068142_1602199393997697_2323060703896075487_n.jpg?stp=dst-jpg_p526x296_tt6&_nc_cat=101&ccb=1-7&_nc_sid=127cfc&_nc_ohc=y_aLfAosMA8Q7kNvgEnTF-W&_nc_oc=Adh_kCnZr5dZOTQNwVUUYOgytKhHagHG8ZKgdtWO9iGN7ALaRL-Lf4bQlkABPeNDeKk&_nc_zt=23&_nc_ht=scontent.fpkr1-1.fna&_nc_gid=AWtQJF2aWFJKY6vuDQSoznf&oh=00_AYFss97wfDk9pMbSKRYi532sulFSEYzCdoLDnmLJZNz6Aw&oe=67D715A7"
-                                    alt="Avatar"
+                                    alt=""
                                     className="rounded-full object-cover"
                                 />
                             </Button>

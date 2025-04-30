@@ -1,10 +1,12 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
-import { PlusCircle, Filter, Search, BookOpen, Users, Clock } from "lucide-react"
-import { isPast } from "date-fns"
+import { PlusCircle, Filter, Search, BookOpen, Users, Clock, X, Upload, Calendar } from "lucide-react"
+import { isPast, format } from "date-fns"
 
 import { PageHeader } from "@/components/ListPage/PageHeader"
 import { Button } from "@/components/ui/button"
@@ -13,6 +15,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TeacherAssignmentCard } from "./TeacherAssignmentCard"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 
 // Assignment interface
 export interface Assignment {
@@ -46,239 +60,97 @@ export interface Assignment {
 
 // Dummy data for assignments
 const dummyAssignments: Assignment[] = [
+    // Existing assignments...
+
     {
-        id: "1",
-        title: "Mathematics Problem Set: Algebra Fundamentals",
-        description: "Complete problems 1-20 in Chapter 3. Show all work and explain your reasoning for each step.",
+        id: "8",
+        title: "Coloring Fun: Fruits and Vegetables",
+        description:
+            "Color the pictures of fruits and vegetables in your activity book (Pages 5-8). Use bright colors and stay within the lines!",
         subject: {
-            id: "math-101",
+            id: "art-201",
+            name: "Art",
+        },
+        class: {
+            id: "class-1",
+            name: "Class 1",
+        },
+        section: {
+            id: "section-a",
+            name: "Section A",
+        },
+        dueDate: "2025-05-07T23:59:59Z",
+        status: "active",
+        submissionCount: 10,
+        totalStudents: 20,
+        createdAt: "2025-05-01T08:00:00Z",
+        attachments: [
+            {
+                id: "att-11",
+                name: "fruit_veggie_coloring_pages.pdf",
+                type: "application/pdf",
+                url: "#",
+            },
+        ],
+    },
+    {
+        id: "9",
+        title: "Counting Practice: Numbers 1 to 50",
+        description:
+            "Write numbers from 1 to 50 in your math notebook. Draw 5 things you can count in your home and write how many there are.",
+        subject: {
+            id: "math-202",
             name: "Mathematics",
         },
         class: {
-            id: "class-10a",
-            name: "Class 10",
+            id: "class-2",
+            name: "Class 2",
         },
         section: {
             id: "section-a",
             name: "Section A",
         },
-        dueDate: "2025-05-10T23:59:59Z",
+        dueDate: "2025-05-08T23:59:59Z",
         status: "active",
-        submissionCount: 18,
-        totalStudents: 25,
-        createdAt: "2025-05-01T10:30:00Z",
-        attachments: [
-            {
-                id: "att-1",
-                name: "algebra_worksheet.pdf",
-                type: "application/pdf",
-                url: "#",
-            },
-            {
-                id: "att-2",
-                name: "formula_sheet.docx",
-                type: "application/msword",
-                url: "#",
-            },
-        ],
-    },
-    {
-        id: "2",
-        title: "Science Lab Report: Photosynthesis Experiment",
-        description:
-            "Write a detailed lab report on the photosynthesis experiment conducted in class. Include hypothesis, methodology, results, and conclusion.",
-        subject: {
-            id: "sci-102",
-            name: "Science",
-        },
-        class: {
-            id: "class-9b",
-            name: "Class 9",
-        },
-        section: {
-            id: "section-b",
-            name: "Section B",
-        },
-        dueDate: "2025-05-15T23:59:59Z",
-        status: "active",
-        submissionCount: 5,
-        totalStudents: 30,
-        createdAt: "2025-05-03T14:15:00Z",
-        attachments: [
-            {
-                id: "att-3",
-                name: "lab_instructions.pdf",
-                type: "application/pdf",
-                url: "#",
-            },
-        ],
-    },
-    {
-        id: "3",
-        title: "English Literature Essay: Shakespeare's Macbeth",
-        description:
-            "Write a 1000-word analytical essay on the theme of ambition in Shakespeare's Macbeth. Use textual evidence to support your arguments.",
-        subject: {
-            id: "eng-103",
-            name: "English",
-        },
-        class: {
-            id: "class-11c",
-            name: "Class 11",
-        },
-        section: {
-            id: "section-c",
-            name: "Section C",
-        },
-        dueDate: "2025-05-20T23:59:59Z",
-        status: "active",
-        submissionCount: 22,
+        submissionCount: 12,
         totalStudents: 22,
-        createdAt: "2025-04-28T09:45:00Z",
-        attachments: [],
-    },
-    {
-        id: "4",
-        title: "History Research Project: Ancient Civilizations",
-        description:
-            "Research and create a presentation on one ancient civilization of your choice. Cover aspects such as governance, culture, achievements, and legacy.",
-        subject: {
-            id: "hist-104",
-            name: "History",
-        },
-        class: {
-            id: "class-10b",
-            name: "Class 10",
-        },
-        section: {
-            id: "section-b",
-            name: "Section B",
-        },
-        dueDate: "2025-05-25T23:59:59Z",
-        status: "active",
-        submissionCount: 0,
-        totalStudents: 28,
-        createdAt: "2025-05-04T11:20:00Z",
+        createdAt: "2025-05-01T09:00:00Z",
         attachments: [
             {
-                id: "att-4",
-                name: "research_guidelines.pdf",
-                type: "application/pdf",
-                url: "#",
-            },
-            {
-                id: "att-5",
-                name: "presentation_template.pptx",
-                type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                url: "#",
-            },
-            {
-                id: "att-6",
-                name: "sample_project.pdf",
+                id: "att-12",
+                name: "counting_practice_sheet.pdf",
                 type: "application/pdf",
                 url: "#",
             },
         ],
     },
-    {
-        id: "5",
-        title: "Computer Science Programming Assignment: Algorithms",
-        description:
-            "Implement the sorting algorithms discussed in class (bubble sort, insertion sort, and selection sort) and compare their performance with different input sizes.",
-        subject: {
-            id: "cs-105",
-            name: "Computer Science",
-        },
-        class: {
-            id: "class-12a",
-            name: "Class 12",
-        },
-        section: {
-            id: "section-a",
-            name: "Section A",
-        },
-        dueDate: "2025-05-12T23:59:59Z",
-        status: "active",
-        submissionCount: 15,
-        totalStudents: 20,
-        createdAt: "2025-05-02T13:10:00Z",
-        attachments: [
-            {
-                id: "att-7",
-                name: "algorithm_specs.pdf",
-                type: "application/pdf",
-                url: "#",
-            },
-        ],
-    },
-    {
-        id: "6",
-        title: "Geography Project: Climate Change Impact",
-        description:
-            "Create a detailed report on the impact of climate change on a specific region of your choice. Include data, charts, and proposed solutions.",
-        subject: {
-            id: "geo-106",
-            name: "Geography",
-        },
-        class: {
-            id: "class-11a",
-            name: "Class 11",
-        },
-        section: {
-            id: "section-a",
-            name: "Section A",
-        },
-        dueDate: "2025-05-30T23:59:59Z",
-        status: "inactive",
-        submissionCount: 8,
-        totalStudents: 26,
-        createdAt: "2025-04-30T15:45:00Z",
-        attachments: [
-            {
-                id: "att-8",
-                name: "climate_data.xlsx",
-                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                url: "#",
-            },
-            {
-                id: "att-9",
-                name: "report_template.docx",
-                type: "application/msword",
-                url: "#",
-            },
-        ],
-    },
-    {
-        id: "7",
-        title: "Physics Problem Set: Mechanics and Motion",
-        description:
-            "Solve the problems related to Newton's laws of motion, projectile motion, and conservation of energy from Chapter 4.",
-        subject: {
-            id: "phys-107",
-            name: "Physics",
-        },
-        class: {
-            id: "class-12b",
-            name: "Class 12",
-        },
-        section: {
-            id: "section-b",
-            name: "Section B",
-        },
-        dueDate: "2025-05-18T23:59:59Z",
-        status: "draft",
-        submissionCount: 0,
-        totalStudents: 24,
-        createdAt: "2025-05-05T09:30:00Z",
-        attachments: [
-            {
-                id: "att-10",
-                name: "physics_problems.pdf",
-                type: "application/pdf",
-                url: "#",
-            },
-        ],
-    },
+];
+
+// Dummy data for subjects, classes, and sections
+const allSubjects = [
+    { id: "math-101", name: "Mathematics" },
+    { id: "sci-102", name: "Science" },
+    { id: "eng-103", name: "English" },
+    { id: "hist-104", name: "History" },
+    { id: "cs-105", name: "Computer Science" },
+    { id: "geo-106", name: "Geography" },
+    { id: "phys-107", name: "Physics" },
+]
+
+const allClasses = [
+    { id: "class-9b", name: "Class 1" },
+    { id: "class-10a", name: "Class 10" },
+    { id: "class-10b", name: "Class 10" },
+    { id: "class-11a", name: "Class 11" },
+    { id: "class-11c", name: "Class 11" },
+    { id: "class-12a", name: "Class 12" },
+    { id: "class-12b", name: "Class 12" },
+]
+
+const allSections = [
+    { id: "section-a", name: "Section A" },
+    { id: "section-b", name: "Section B" },
+    { id: "section-c", name: "Section C" },
 ]
 
 export default function TeacherAssignmentPage() {
@@ -291,6 +163,19 @@ export default function TeacherAssignmentPage() {
     const [sectionFilter, setSectionFilter] = useState<string>("all")
     const [activeTab, setActiveTab] = useState("all")
     const navigate = useNavigate()
+
+    // Add Assignment Dialog State
+    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+    const [newAssignment, setNewAssignment] = useState({
+        title: "",
+        description: "",
+        subjectId: "",
+        classId: "",
+        sectionId: "",
+        dueDate: new Date(),
+        status: "draft" as "active" | "inactive" | "draft",
+    })
+    const [attachments, setAttachments] = useState<File[]>([])
 
     useEffect(() => {
         fetchAssignments()
@@ -419,6 +304,102 @@ export default function TeacherAssignmentPage() {
         }
     }
 
+    // Handle input changes for new assignment
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        const { name, value } = e.target
+        setNewAssignment((prev) => ({ ...prev, [name]: value }))
+    }
+
+    // Handle file uploads
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            const fileList = Array.from(e.target.files)
+            setAttachments((prev) => [...prev, ...fileList])
+        }
+    }
+
+    // Remove an attachment
+    const handleRemoveAttachment = (index: number) => {
+        setAttachments((prev) => prev.filter((_, i) => i !== index))
+    }
+
+    // Handle date selection
+    const handleDateChange = (date: Date | undefined) => {
+        if (date) {
+            setNewAssignment((prev) => ({ ...prev, dueDate: date }))
+        }
+    }
+
+    // Handle form submission
+    const handleSubmitAssignment = async () => {
+        try {
+            // Validate form
+            if (!newAssignment.title || !newAssignment.description || !newAssignment.subjectId || !newAssignment.classId) {
+                toast.error("Please fill in all required fields")
+                return
+            }
+
+            // Create assignment object
+            const subject = allSubjects.find((s) => s.id === newAssignment.subjectId)
+            const classObj = allClasses.find((c) => c.id === newAssignment.classId)
+            const section = allSections.find((s) => s.id === newAssignment.sectionId)
+
+            if (!subject || !classObj) {
+                toast.error("Invalid subject or class selected")
+                return
+            }
+
+            const createdAssignment: Assignment = {
+                id: `new-${Date.now()}`,
+                title: newAssignment.title,
+                description: newAssignment.description,
+                subject: subject,
+                class: classObj,
+                section: section,
+                dueDate: newAssignment.dueDate.toISOString(),
+                status: newAssignment.status,
+                submissionCount: 0,
+                totalStudents: 0,
+                createdAt: new Date().toISOString(),
+                attachments: attachments.map((file, index) => ({
+                    id: `new-att-${index}`,
+                    name: file.name,
+                    type: file.type,
+                    url: "#", // In a real app, this would be the uploaded file URL
+                })),
+            }
+
+            // In a real application, you would upload files and create the assignment via API
+            // const formData = new FormData()
+            // formData.append('title', newAssignment.title)
+            // ...other fields
+            // attachments.forEach(file => formData.append('attachments', file))
+            // const response = await AxiosInstance.post('/api/academic/assignments/', formData)
+            // const createdAssignment = response.data
+
+            // Update local state
+            setAssignments([createdAssignment, ...assignments])
+
+            // Reset form and close dialog
+            setNewAssignment({
+                title: "",
+                description: "",
+                subjectId: "",
+                classId: "",
+                sectionId: "",
+                dueDate: new Date(),
+                status: "draft",
+            })
+            setAttachments([])
+            setIsAddDialogOpen(false)
+
+            toast.success("Assignment created successfully")
+        } catch (error) {
+            console.error("Error creating assignment:", error)
+            toast.error("Failed to create assignment")
+        }
+    }
+
     return (
         <div className="p-4 flex flex-col gap-6">
             <PageHeader
@@ -432,7 +413,7 @@ export default function TeacherAssignmentPage() {
                 onExport={() => console.log("Exporting...")}
                 primaryAction={{
                     label: "Create Assignment",
-                    onClick: () => navigate("/teacher/assignments/create"),
+                    onClick: () => setIsAddDialogOpen(true),
                     icon: <PlusCircle className="h-4 w-4" />,
                 }}
             />
@@ -615,6 +596,213 @@ export default function TeacherAssignmentPage() {
                     />
                 </TabsContent>
             </Tabs>
+
+            {/* Add Assignment Dialog */}
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Create New Assignment</DialogTitle>
+                        <DialogDescription>
+                            Fill in the details below to create a new assignment. Click save when you're done.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        {/* Title */}
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="title" className="text-right">
+                                Title <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                                id="title"
+                                name="title"
+                                value={newAssignment.title}
+                                onChange={handleInputChange}
+                                placeholder="Enter assignment title"
+                                className="col-span-3"
+                                required
+                            />
+                        </div>
+
+                        {/* Description */}
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="description" className="text-right">
+                                Description <span className="text-red-500">*</span>
+                            </Label>
+                            <Textarea
+                                id="description"
+                                name="description"
+                                value={newAssignment.description}
+                                onChange={handleInputChange}
+                                placeholder="Enter assignment description"
+                                className="col-span-3"
+                                required
+                            />
+                        </div>
+
+                        {/* Subject */}
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="subject" className="text-right">
+                                Subject <span className="text-red-500">*</span>
+                            </Label>
+                            <Select
+                                value={newAssignment.subjectId}
+                                onValueChange={(value) => setNewAssignment((prev) => ({ ...prev, subjectId: value }))}
+                            >
+                                <SelectTrigger className="col-span-3">
+                                    <SelectValue placeholder="Select a subject" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {allSubjects.map((subject) => (
+                                        <SelectItem key={subject.id} value={subject.id}>
+                                            {subject.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Class */}
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="class" className="text-right">
+                                Class <span className="text-red-500">*</span>
+                            </Label>
+                            <Select
+                                value={newAssignment.classId}
+                                onValueChange={(value) => setNewAssignment((prev) => ({ ...prev, classId: value }))}
+                            >
+                                <SelectTrigger className="col-span-3">
+                                    <SelectValue placeholder="Select a class" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {allClasses.map((cls) => (
+                                        <SelectItem key={cls.id} value={cls.id}>
+                                            {cls.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Section */}
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="section" className="text-right">
+                                Section
+                            </Label>
+                            <Select
+                                value={newAssignment.sectionId}
+                                onValueChange={(value) => setNewAssignment((prev) => ({ ...prev, sectionId: value }))}
+                            >
+                                <SelectTrigger className="col-span-3">
+                                    <SelectValue placeholder="Select a section (optional)" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {allSections.map((section) => (
+                                        <SelectItem key={section.id} value={section.id}>
+                                            {section.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Due Date */}
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="dueDate" className="text-right">
+                                Due Date <span className="text-red-500">*</span>
+                            </Label>
+                            <div className="col-span-3">
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                            <Calendar className="mr-2 h-4 w-4" />
+                                            {newAssignment.dueDate ? format(newAssignment.dueDate, "PPP") : "Select a date"}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0">
+                                        <CalendarComponent
+                                            mode="single"
+                                            selected={newAssignment.dueDate}
+                                            onSelect={handleDateChange}
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                        </div>
+
+                        {/* Status */}
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="status" className="text-right">
+                                Status
+                            </Label>
+                            <Select
+                                value={newAssignment.status}
+                                onValueChange={(value: "active" | "inactive" | "draft") =>
+                                    setNewAssignment((prev) => ({ ...prev, status: value }))
+                                }
+                            >
+                                <SelectTrigger className="col-span-3">
+                                    <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="active">Active</SelectItem>
+                                    <SelectItem value="inactive">Inactive</SelectItem>
+                                    <SelectItem value="draft">Draft</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Attachments */}
+                        <div className="grid grid-cols-4 items-start gap-4">
+                            <Label htmlFor="attachments" className="text-right pt-2">
+                                Attachments
+                            </Label>
+                            <div className="col-span-3 space-y-4">
+                                <div className="flex items-center gap-2">
+                                    <Input id="attachments" type="file" onChange={handleFileChange} className="flex-1" multiple />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => document.getElementById("attachments")?.click()}
+                                    >
+                                        <Upload className="h-4 w-4" />
+                                    </Button>
+                                </div>
+
+                                {/* Attachment List */}
+                                {attachments.length > 0 && (
+                                    <div className="border rounded-md p-2 space-y-2">
+                                        <p className="text-sm font-medium">Attached Files:</p>
+                                        <ul className="space-y-1">
+                                            {attachments.map((file, index) => (
+                                                <li key={index} className="flex items-center justify-between text-sm p-1 bg-gray-50 rounded">
+                                                    <span className="truncate max-w-[200px]">{file.name}</span>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-6 w-6"
+                                                        onClick={() => handleRemoveAttachment(index)}
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </Button>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleSubmitAssignment}>Create Assignment</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

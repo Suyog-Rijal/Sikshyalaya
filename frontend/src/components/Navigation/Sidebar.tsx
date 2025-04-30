@@ -100,7 +100,7 @@ const menuItems: Menu[] = [
                 icon: "/class.png",
                 label: "Fees",
                 href: "/fees/",
-                visible: ["admin", "staff"],
+                visible: ["admin", "staff", "parent"],
             },
         ],
     },

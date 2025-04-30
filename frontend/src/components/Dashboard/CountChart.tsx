@@ -9,12 +9,12 @@ const secondaryColor = '#ffc658';
 const data = [
     {
         name: 'Boys',
-        count: 25,
+        count: 3,
         fill: primaryColor,
     },
     {
         name: 'Girls ',
-        count: 43,
+        count: 1,
         fill: secondaryColor,
     }
 ];
@@ -62,14 +62,14 @@ export const CountChart = () => {
 
                 <div className={'flex flex-col items-center'}>
                     <div className={`w-4 h-4 rounded-full bg-[${primaryColor}]`}></div>
-                    <h1 className={'font-semibold text-lg'}>3002</h1>
-                    <p className={'text-sm'}>Boys 55%</p>
+                    <h1 className={'font-semibold text-lg'}>3</h1>
+                    <p className={'text-sm'}>Boys 75%</p>
                 </div>
 
                 <div className={'flex flex-col items-center'}>
                     <div className={`w-4 h-4 rounded-full bg-[${secondaryColor}]`}></div>
-                    <h1 className={'font-semibold text-lg'}>3002</h1>
-                    <p className={'text-sm'}>Girls 55%</p>
+                    <h1 className={'font-semibold text-lg'}>3</h1>
+                    <p className={'text-sm'}>Girls 25%</p>
                 </div>
 
 
