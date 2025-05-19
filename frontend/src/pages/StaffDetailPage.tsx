@@ -1,20 +1,15 @@
 "use client"
 
+import { DialogTrigger } from "@/components/ui/dialog"
+
 import { useEffect, useState, type ReactNode } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { PageHeader } from "@/components/ListPage/PageHeader.tsx"
-import { Lock, EyeOffIcon, EyeIcon, Pencil } from "lucide-react"
+import { EyeOffIcon, EyeIcon, Pencil } from "lucide-react"
 import { CustomStatusBadge } from "@/components/ListPage/CustomStatusBadge.tsx"
 import AxiosInstance from "@/auth/AxiosInstance.ts"
 import { toast } from "sonner"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog.tsx"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { Input } from "@/components/ui/input.tsx"
 import { Label } from "@/components/ui/label.tsx"
@@ -434,13 +429,8 @@ export function StaffDetailPage() {
                     ]}
                     primaryAction={{
                         label: "Edit Detail",
-                        onClick: () => navigate("/staff/add/"),
+                        onClick: () => navigate(`/staff/edit/${params.id}`),
                         icon: <Pencil className="h-4 w-4" />,
-                    }}
-                    secondaryActions={{
-                        label: "Login Details",
-                        onClick: () => setShowLoginDetails(true),
-                        icon: <Lock className="h-4 w-4" />,
                     }}
                 />
 

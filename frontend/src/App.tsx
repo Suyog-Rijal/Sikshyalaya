@@ -43,6 +43,7 @@ import Fees from "@/views/admin/Fees.tsx";
 import {ParentDashboard} from "@/views/parent/Dashboard.tsx";
 import {StudentDetailPage} from "@/views/student/StudentDetail.tsx";
 import AdminFeesDashboard from "@/pages/AdminFees.tsx";
+import {EditStaff} from "@/views/admin/EditStaff.tsx";
 
 function App() {
     const checkAuth = useAuthStore((s) => s.checkAuth);
@@ -63,6 +64,7 @@ function App() {
                             <Route path="/staff/list" element={<StaffListPage />} />
                             <Route path="/staff/add" element={<AddStaff />} />
                             <Route path={'/staff/detail/:id'} element={<StaffDetailPage />} />
+                            <Route path={'/staff/edit/:id'} element={<EditStaff />} />
 
                             <Route path="/student/list" element={<StudentListPage />} />
                             <Route path="/student/add" element={<AddStudent />} />
