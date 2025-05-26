@@ -48,263 +48,97 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { PageHeader } from "@/components/ListPage/PageHeader"
-import {Assignment} from "@/views/teacher/TeacherAssignmentList.tsx";
-
-// Student submission interface
-interface StudentSubmission {
+import axiosInstance from "@/auth/AxiosInstance.ts";
+import {useAuthStore} from "@/store/AuthStore.ts";
+// Updated interfaces to match the new API response
+interface Subject {
     id: string
-    studentId: string
-    studentName: string
-    submittedAt: string
-    status: "submitted" | "late" | "graded" | "not_submitted"
-    grade?: number
-    feedback?: string
-    files: {
-        id: string
-        name: string
-        type: string
-        url: string
-        size: string
-    }[]
+    name: string
+    full_marks: number
+    pass_marks: number
 }
 
-// Dummy data for a single assignment
-const dummyAssignment: Assignment = {
-    id: "1",
-    title: "Mathematics Problem Set: Algebra Fundamentals",
-    description:
-        "Complete problems 1-20 in Chapter 3. Show all work and explain your reasoning for each step. This assignment is designed to reinforce your understanding of algebraic concepts including equations, inequalities, and functions. Pay special attention to the word problems at the end of the chapter, which require you to translate real-world scenarios into mathematical expressions.",
-    subject: {
-        id: "math-101",
-        name: "Mathematics",
-    },
-    class: {
-        id: "class-10a",
-        name: "Class 10",
-    },
-    section: {
-        id: "section-a",
-        name: "Section A",
-    },
-    dueDate: "2025-05-10T23:59:59Z",
-    status: "active",
-    submissionCount: 18,
-    totalStudents: 25,
-    createdAt: "2025-05-01T10:30:00Z",
-    attachments: [
-        {
-            id: "att-1",
-            name: "algebra_worksheet.pdf",
-            type: "application/pdf",
-            url: "#",
-        },
-        {
-            id: "att-2",
-            name: "formula_sheet.docx",
-            type: "application/msword",
-            url: "#",
-        },
-    ],
+interface SchoolClass {
+    id: string
+    name: string
 }
 
-// Dummy data for student submissions
-const dummySubmissions: StudentSubmission[] = [
-    {
-        id: "sub-1",
-        studentId: "std-101",
-        studentName: "Alex Johnson",
-        submittedAt: "2025-05-08T14:30:00Z",
-        status: "graded",
-        grade: 92,
-        feedback: "Excellent work! Your solutions were well-explained.",
-        files: [
-            {
-                id: "file-1",
-                name: "alex_johnson_algebra.pdf",
-                type: "application/pdf",
-                url: "#",
-                size: "2.4 MB",
-            },
-        ],
-    },
-    {
-        id: "sub-2",
-        studentId: "std-102",
-        studentName: "Maria Garcia",
-        submittedAt: "2025-05-09T09:15:00Z",
-        status: "graded",
-        grade: 88,
-        feedback: "Good work, but check your work on problem 15.",
-        files: [
-            {
-                id: "file-2",
-                name: "maria_garcia_math_hw.pdf",
-                type: "application/pdf",
-                url: "#",
-                size: "1.8 MB",
-            },
-        ],
-    },
-    {
-        id: "sub-3",
-        studentId: "std-103",
-        studentName: "James Wilson",
-        submittedAt: "2025-05-10T22:45:00Z",
-        status: "submitted",
-        files: [
-            {
-                id: "file-3",
-                name: "james_wilson_assignment.pdf",
-                type: "application/pdf",
-                url: "#",
-                size: "3.1 MB",
-            },
-            {
-                id: "file-4",
-                name: "additional_notes.docx",
-                type: "application/msword",
-                url: "#",
-                size: "520 KB",
-            },
-        ],
-    },
-    {
-        id: "sub-4",
-        studentId: "std-104",
-        studentName: "Sophia Chen",
-        submittedAt: "2025-05-11T01:20:00Z",
-        status: "late",
-        files: [
-            {
-                id: "file-5",
-                name: "sophia_chen_math.pdf",
-                type: "application/pdf",
-                url: "#",
-                size: "2.2 MB",
-            },
-        ],
-    },
-    {
-        id: "sub-5",
-        studentId: "std-105",
-        studentName: "Mohammed Al-Farsi",
-        submittedAt: "2025-05-09T16:40:00Z",
-        status: "graded",
-        grade: 95,
-        feedback: "Outstanding work! Your approach to problem 18 was particularly creative.",
-        files: [
-            {
-                id: "file-6",
-                name: "mohammed_alfarsi_algebra_solutions.pdf",
-                type: "application/pdf",
-                url: "#",
-                size: "2.7 MB",
-            },
-        ],
-    },
-    {
-        id: "sub-6",
-        studentId: "std-106",
-        studentName: "Emma Thompson",
-        submittedAt: "2025-05-10T19:55:00Z",
-        status: "submitted",
-        files: [
-            {
-                id: "file-7",
-                name: "emma_thompson_homework.pdf",
-                type: "application/pdf",
-                url: "#",
-                size: "1.9 MB",
-            },
-        ],
-    },
-    {
-        id: "sub-7",
-        studentId: "std-107",
-        studentName: "Daniel Kim",
-        submittedAt: "2025-05-07T11:30:00Z",
-        status: "graded",
-        grade: 90,
-        feedback: "Very good work. Your explanations were clear and concise.",
-        files: [
-            {
-                id: "file-8",
-                name: "daniel_kim_math_assignment.pdf",
-                type: "application/pdf",
-                url: "#",
-                size: "2.1 MB",
-            },
-        ],
-    },
-    {
-        id: "sub-8",
-        studentId: "std-108",
-        studentName: "Olivia Martinez",
-        status: "not_submitted",
-        submittedAt: "",
-        files: [],
-    },
-    {
-        id: "sub-9",
-        studentId: "std-109",
-        studentName: "William Taylor",
-        status: "not_submitted",
-        submittedAt: "",
-        files: [],
-    },
-]
+interface Section {
+    name: string | null
+}
+
+interface Student {
+    id: string
+    full_name: string
+}
+
+interface Submission {
+    id: string
+    student: Student
+    submission_date: string
+    file: string
+    status: string
+    marks: number | null
+}
+
+interface Assignment {
+    id: string
+    title: string
+    description: string
+    due_date: string
+    subject: Subject
+    school_class: SchoolClass
+    section: Section
+    is_active: boolean
+    total_students: number
+    total_submissions: number
+    submissions: Submission[]
+    created_at: string
+}
 
 export default function TeacherAssignmentDetailPage() {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
     const [assignment, setAssignment] = useState<Assignment | null>(null)
-    const [submissions, setSubmissions] = useState<StudentSubmission[]>([])
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState("details")
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState<string>("all")
     const [gradingDialogOpen, setGradingDialogOpen] = useState(false)
-    const [selectedSubmission, setSelectedSubmission] = useState<StudentSubmission | null>(null)
+    const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
     const [gradeValue, setGradeValue] = useState<string>("")
 
+    const {role} = useAuthStore()
     useEffect(() => {
         fetchAssignmentDetails()
     }, [id])
 
     const fetchAssignmentDetails = async () => {
         setLoading(true)
-        try {
-            // In a real application, you would fetch from your API
-            // const response = await AxiosInstance.get(`/api/academic/assignments/${id}/`)
-            // setAssignment(response.data)
-
-            // Using dummy data for now
-            setTimeout(() => {
-                setAssignment(dummyAssignment)
-                setSubmissions(dummySubmissions)
+        axiosInstance.get(`/api/academic/assignment/${id}/`)
+            .then((response) => {
+                setAssignment(response.data)
                 setLoading(false)
-            }, 800)
-        } catch (error) {
-            console.error("Error fetching assignment details:", error)
-            toast.error("Failed to load assignment details. Please try again.")
-            setLoading(false)
-        }
+            })
+            .catch((error) => {
+                console.error("Error fetching assignment details:", error)
+            })
+            .finally(() => {
+                setLoading(false)
+            })
     }
 
     const handleDeleteAssignment = async () => {
-        try {
-            // In a real application, you would call your API
-            // await AxiosInstance.delete(`/api/academic/assignments/${id}/`)
-
-            toast.success("Assignment deleted successfully")
-            navigate("/teacher/assignments")
-        } catch (error) {
-            console.error("Error deleting assignment:", error)
-            toast.error("Failed to delete assignment")
-        }
+        axiosInstance.delete(`/api/academic/assignment/${id}/`)
+            .then(() => {
+                navigate("/assignment/list")
+                toast.success("Assignment deleted successfully")
+            })
+            .catch((error) => {
+                console.error("Error deleting assignment:", error)
+            })
     }
 
     const handleDuplicateAssignment = async () => {
@@ -325,7 +159,7 @@ export default function TeacherAssignmentDetailPage() {
     const handleToggleStatus = async () => {
         try {
             if (assignment) {
-                const newStatus = assignment.status === "active" ? "inactive" : "active"
+                const newStatus = assignment.is_active ? "inactive" : "active"
 
                 // In a real application, you would call your API
                 // await AxiosInstance.patch(`/api/academic/assignments/${id}/`, { status: newStatus })
@@ -333,7 +167,7 @@ export default function TeacherAssignmentDetailPage() {
                 // Update local state
                 setAssignment({
                     ...assignment,
-                    status: newStatus as "active" | "inactive" | "draft",
+                    is_active: newStatus === "active",
                 })
 
                 toast.success(`Assignment ${newStatus === "active" ? "activated" : "deactivated"} successfully`)
@@ -344,27 +178,39 @@ export default function TeacherAssignmentDetailPage() {
         }
     }
 
-    const handleGradeSubmission = () => {
+    const handleGradeSubmission = async () => {
         if (!selectedSubmission || !gradeValue) return
 
         const grade = Number.parseInt(gradeValue)
-        if (isNaN(grade) || grade < 0 || grade > 100) {
-            toast.error("Please enter a valid grade between 0 and 100")
+        if (isNaN(grade) || grade < 0 || grade > (assignment?.subject.full_marks || 100)) {
+            toast.error(`Please enter a valid grade between 0 and ${assignment?.subject.full_marks || 100}`)
             return
         }
 
-        // In a real application, you would call your API
-        // await AxiosInstance.post(`/api/academic/assignments/${id}/submissions/${selectedSubmission.id}/grade`, { grade })
+        axiosInstance.put("/api/academic/assignment-grade/", {
+            submission_id: selectedSubmission.id,
+            marks: grade,
+        })
+            .then(() => {
+                toast.success("Submission graded successfully")
+                setGradingDialogOpen(false)
+                setSelectedSubmission(null)
+                setGradeValue("")
 
-        // Update local state
-        setSubmissions(
-            submissions.map((sub) => (sub.id === selectedSubmission.id ? { ...sub, status: "graded", grade } : sub)),
-        )
-
-        toast.success(`Submission graded successfully`)
-        setGradingDialogOpen(false)
-        setSelectedSubmission(null)
-        setGradeValue("")
+                setAssignment((prev) => {
+                    if (!prev) return prev
+                    return {
+                        ...prev,
+                        submissions: prev.submissions.map((sub) =>
+                            sub.id === selectedSubmission.id ? { ...sub, status: "Graded", marks: grade } : sub,
+                        ),
+                    }
+                })
+            })
+            .catch((error) => {
+                console.error("Error grading submission:", error)
+                toast.error("Failed to grade submission")
+            })
     }
 
     const getStatusIcon = (status: string) => {
@@ -396,46 +242,38 @@ export default function TeacherAssignmentDetailPage() {
 
     const getSubmissionStatusBadge = (status: string) => {
         switch (status) {
-            case "submitted":
-                return (
-                    <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">
-                        Submitted
-                    </Badge>
-                )
-            case "late":
-                return (
-                    <Badge variant="outline" className="bg-amber-50 text-amber-700 hover:bg-amber-50">
-                        Late
-                    </Badge>
-                )
-            case "graded":
+            case "Graded":
                 return (
                     <Badge variant="outline" className="bg-blue-50 text-blue-700 hover:bg-blue-50">
                         Graded
                     </Badge>
                 )
-            case "not_submitted":
+            case "Not Graded":
                 return (
-                    <Badge variant="outline" className="bg-red-50 text-red-700 hover:bg-red-50">
-                        Not Submitted
+                    <Badge variant="outline" className="bg-amber-50 text-amber-700 hover:bg-amber-50">
+                        Not Graded
                     </Badge>
                 )
             default:
-                return null
+                return (
+                    <Badge variant="outline" className="bg-gray-50 text-gray-700 hover:bg-gray-50">
+                        {status}
+                    </Badge>
+                )
         }
     }
 
-    // Filter submissions based on search query and status filter
-    const filteredSubmissions = submissions.filter((submission) => {
-        const matchesSearch = submission.studentName.toLowerCase().includes(searchQuery.toLowerCase())
-        const matchesStatus = statusFilter === "all" || submission.status === statusFilter
-        return matchesSearch && matchesStatus
-    })
+    const filteredSubmissions =
+        assignment?.submissions.filter((submission) => {
+            const matchesSearch = submission.student.full_name.toLowerCase().includes(searchQuery.toLowerCase())
+            const matchesStatus = statusFilter === "all" || submission.status === statusFilter
+            return matchesSearch && matchesStatus
+        }) || []
 
     // const submittedCount = submissions.filter((s) => s.status === "submitted" || s.status === "late").length
     // const gradedCount = submissions.filter((s) => s.status === "graded").length
     // const lateCount = submissions.filter((s) => s.status === "late").length
-    const notSubmittedCount = submissions.filter((s) => s.status === "not_submitted").length
+    // const notSubmittedCount = submissions.filter((s) => s.status === "not_submitted").length
 
     if (loading) {
         return (
@@ -473,8 +311,8 @@ export default function TeacherAssignmentDetailPage() {
         )
     }
 
-    const isPastDue = isPast(new Date(assignment.dueDate))
-    const isActive = assignment.status === "active"
+    const isPastDue = isPast(new Date(assignment.due_date))
+    const isActive = assignment.is_active
 
     return (
         <div className="p-4 flex flex-col gap-6">
@@ -490,8 +328,10 @@ export default function TeacherAssignmentDetailPage() {
             <div className="flex items-center gap-2 mb-2">
                 <h1 className="text-2xl font-bold">{assignment.title}</h1>
                 <div className="flex items-center ml-2">
-                    {getStatusIcon(assignment.status)}
-                    <span className="ml-1 text-sm text-muted-foreground capitalize">{assignment.status}</span>
+                    {getStatusIcon(assignment.is_active ? "active" : "inactive")}
+                    <span className="ml-1 text-sm text-muted-foreground capitalize">
+            {assignment.is_active ? "active" : "inactive"}
+          </span>
                 </div>
             </div>
 
@@ -500,7 +340,7 @@ export default function TeacherAssignmentDetailPage() {
                     {assignment.subject.name}
                 </Badge>
                 <Badge variant="outline" className="bg-purple-50 text-purple-700 hover:bg-purple-50">
-                    {assignment.class.name} {assignment.section?.name}
+                    {assignment.school_class.name} {assignment.section?.name}
                 </Badge>
                 <Badge
                     variant="outline"
@@ -510,9 +350,9 @@ export default function TeacherAssignmentDetailPage() {
                             : "bg-green-50 text-green-700 hover:bg-green-50",
                     )}
                 >
-                    Due: {format(new Date(assignment.dueDate), "MMM d, yyyy")}
+                    Due: {format(new Date(assignment.due_date), "MMM d, yyyy")}
                     {isPastDue && isActive && (
-                        <span className="ml-1">(Overdue by {formatDistanceToNow(new Date(assignment.dueDate))})</span>
+                        <span className="ml-1">(Overdue by {formatDistanceToNow(new Date(assignment.due_date))})</span>
                     )}
                 </Badge>
             </div>
@@ -521,7 +361,7 @@ export default function TeacherAssignmentDetailPage() {
                 <TabsList className="mb-4">
                     <TabsTrigger value="details">Details</TabsTrigger>
                     <TabsTrigger value="submissions">
-                        Submissions ({submissions.length - notSubmittedCount}/{assignment.totalStudents})
+                        Submissions ({assignment.total_submissions}/{assignment.total_students})
                     </TabsTrigger>
                 </TabsList>
 
@@ -535,74 +375,61 @@ export default function TeacherAssignmentDetailPage() {
                                 <p className="whitespace-pre-line">{assignment.description}</p>
                             </div>
 
-                            {assignment.attachments.length > 0 && (
-                                <div className="mt-6">
-                                    <h3 className="text-lg font-medium mb-2">Attachments</h3>
-                                    <div className="grid gap-2">
-                                        {assignment.attachments.map((attachment) => (
-                                            <div key={attachment.id} className="flex items-center p-3 border rounded-md hover:bg-muted/50">
-                                                {getFileIcon(attachment.type)}
-                                                <span className="ml-2 flex-grow">{attachment.name}</span>
-                                                <Button variant="ghost" size="sm" asChild>
-                                                    <a href={attachment.url} download target="_blank" rel="noopener noreferrer">
-                                                        <Download className="h-4 w-4 mr-1" />
-                                                        Download
-                                                    </a>
-                                                </Button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
+                            {/*{assignment.attachments.length > 0 && (*/}
+                            {/*    <div className="mt-6">*/}
+                            {/*        <h3 className="text-lg font-medium mb-2">Attachments</h3>*/}
+                            {/*        <div className="grid gap-2">*/}
+                            {/*            {assignment.attachments.map((attachment) => (*/}
+                            {/*                <div key={attachment.id} className="flex items-center p-3 border rounded-md hover:bg-muted/50">*/}
+                            {/*                    {getFileIcon(attachment.type)}*/}
+                            {/*                    <span className="ml-2 flex-grow">{attachment.name}</span>*/}
+                            {/*                    <Button variant="ghost" size="sm" asChild>*/}
+                            {/*                        <a href={attachment.url} download target="_blank" rel="noopener noreferrer">*/}
+                            {/*                            <Download className="h-4 w-4 mr-1" />*/}
+                            {/*                            Download*/}
+                            {/*                        </a>*/}
+                            {/*                    </Button>*/}
+                            {/*                </div>*/}
+                            {/*            ))}*/}
+                            {/*        </div>*/}
+                            {/*    </div>*/}
+                            {/*)}*/}
                         </CardContent>
                         <CardFooter className="flex flex-col items-start gap-4 sm:flex-row sm:justify-between sm:items-center border-t pt-4">
                             <div className="text-sm text-muted-foreground">
                                 <div className="flex items-center">
                                     <Calendar className="h-4 w-4 mr-2" />
-                                    Created: {format(new Date(assignment.createdAt), "MMM d, yyyy")}
+                                    {/*Created: {format(new Date(assignment.createdAt), "MMM d, yyyy")}*/}
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Button variant="outline" onClick={() => navigate(`/assignment/edit/${id}`)}>
-                                    <Pencil className="h-4 w-4 mr-2" />
-                                    Edit Assignment
-                                </Button>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="outline" size="icon">
-                                            <MoreHorizontal className="h-4 w-4" />
+                            {
+                                role == "teacher" ? (
+                                    <div className="flex items-center gap-2">
+                                        <Button variant="outline" onClick={() => navigate(`/assignment/edit/${id}`)}>
+                                            <Pencil className="h-4 w-4 mr-2"/>
+                                            Edit Assignment
                                         </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                        <DropdownMenuItem onClick={handleDuplicateAssignment}>
-                                            <Copy className="h-4 w-4 mr-2" />
-                                            Duplicate
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={handleToggleStatus}>
-                                            {isActive ? (
-                                                <>
-                                                    <ToggleLeft className="h-4 w-4 mr-2" />
-                                                    Deactivate
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <ToggleRight className="h-4 w-4 mr-2" />
-                                                    Activate
-                                                </>
-                                            )}
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem
-                                            onClick={() => setDeleteDialogOpen(true)}
-                                            className="text-red-600 focus:text-red-600"
-                                        >
-                                            <Trash2 className="h-4 w-4 mr-2" />
-                                            Delete
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="outline" size="icon">
+                                                    <MoreHorizontal className="h-4 w-4"/>
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                <DropdownMenuSeparator/>
+                                                <DropdownMenuItem
+                                                    onClick={() => setDeleteDialogOpen(true)}
+                                                    className="text-red-600 focus:text-red-600"
+                                                >
+                                                    <Trash2 className="h-4 w-4 mr-2"/>
+                                                    Delete
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+                                ) : null
+                            }
                         </CardFooter>
                     </Card>
                 </TabsContent>
@@ -613,15 +440,17 @@ export default function TeacherAssignmentDetailPage() {
                             <div className="flex justify-between items-center">
                                 <h2 className="text-xl font-semibold">Student Submissions</h2>
                                 <div className="text-sm text-muted-foreground">
-                                    {submissions.length - notSubmittedCount} of {assignment.totalStudents} students have submitted
+                                    {assignment.total_submissions} of {assignment.total_students} students have
+                                                                   submitted
                                 </div>
                             </div>
                         </CardHeader>
                         <CardContent>
                             {/* Search and Filters */}
-                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                            <div
+                                className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                                 <div className="relative w-full sm:w-[300px]">
-                                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground"/>
                                     <Input
                                         type="search"
                                         placeholder="Search students..."
@@ -638,10 +467,8 @@ export default function TeacherAssignmentDetailPage() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="all">All Submissions</SelectItem>
-                                            <SelectItem value="submitted">Submitted</SelectItem>
-                                            <SelectItem value="late">Late</SelectItem>
-                                            <SelectItem value="graded">Graded</SelectItem>
-                                            <SelectItem value="not_submitted">Not Submitted</SelectItem>
+                                            <SelectItem value="Not Graded">Not Graded</SelectItem>
+                                            <SelectItem value="Graded">Graded</SelectItem>
                                         </SelectContent>
                                     </Select>
 
@@ -667,14 +494,14 @@ export default function TeacherAssignmentDetailPage() {
                                         <TableBody>
                                             {filteredSubmissions.map((submission) => (
                                                 <TableRow key={submission.id}>
-                                                    <TableCell className="font-medium">{submission.studentName}</TableCell>
+                                                    <TableCell className="font-medium">{submission.student.full_name}</TableCell>
                                                     <TableCell>{getSubmissionStatusBadge(submission.status)}</TableCell>
                                                     <TableCell>
-                                                        {submission.submittedAt ? (
+                                                        {submission.submission_date ? (
                                                             <>
-                                                                {format(new Date(submission.submittedAt), "MMM d, yyyy")}
+                                                                {format(new Date(submission.submission_date), "MMM d, yyyy")}
                                                                 <div className="text-xs text-muted-foreground">
-                                                                    {format(new Date(submission.submittedAt), "h:mm a")}
+                                                                    {format(new Date(submission.submission_date), "h:mm a")}
                                                                 </div>
                                                             </>
                                                         ) : (
@@ -682,63 +509,52 @@ export default function TeacherAssignmentDetailPage() {
                                                         )}
                                                     </TableCell>
                                                     <TableCell>
-                                                        {submission.grade !== undefined ? (
-                                                            <span className="font-medium">{submission.grade}/100</span>
+                                                        {submission.marks !== undefined ? (
+                                                            <span className="font-medium">
+                                {submission.marks}/{assignment?.subject.full_marks}
+                              </span>
                                                         ) : (
                                                             <span className="text-muted-foreground">Not graded</span>
                                                         )}
                                                     </TableCell>
                                                     <TableCell>
-                                                        {submission.files.length > 0 ? (
-                                                            <div className="flex flex-col gap-1">
-                                                                {submission.files.map((file) => (
-                                                                    <TooltipProvider key={file.id}>
-                                                                        <Tooltip>
-                                                                            <TooltipTrigger asChild>
-                                                                                <div className="flex items-center text-xs text-blue-600 hover:underline">
-                                                                                    {getFileIcon(file.type)}
-                                                                                    <span className="ml-1 truncate max-w-[150px]">{file.name}</span>
-                                                                                </div>
-                                                                            </TooltipTrigger>
-                                                                            <TooltipContent>
-                                                                                <p>
-                                                                                    {file.name} ({file.size})
-                                                                                </p>
-                                                                            </TooltipContent>
-                                                                        </Tooltip>
-                                                                    </TooltipProvider>
-                                                                ))}
+                                                        {submission.file ? (
+                                                            <div className="flex items-center text-xs text-blue-600 hover:underline">
+                                                                <FileText className="w-4 h-4 mr-1" />
+                                                                <span className="truncate max-w-[150px]">{submission.file.split("/").pop()}</span>
                                                             </div>
                                                         ) : (
-                                                            <span className="text-muted-foreground">No files</span>
+                                                            <span className="text-muted-foreground">No file</span>
                                                         )}
                                                     </TableCell>
                                                     <TableCell className="text-right">
                                                         <div className="flex justify-end gap-2">
-                                                            {submission.files.length > 0 && (
+                                                            {submission.file && (
                                                                 <Button variant="ghost" size="sm" asChild>
-                                                                    <a href={submission.files[0]?.url} download target="_blank" rel="noopener noreferrer">
+                                                                    <a href={submission.file} download target="_blank" rel="noopener noreferrer">
                                                                         <Download className="h-4 w-4 mr-1" />
                                                                         Download
                                                                     </a>
                                                                 </Button>
                                                             )}
-                                                            {submission.status !== "not_submitted" && (
-                                                                <Button
-                                                                    variant="outline"
-                                                                    size="sm"
-                                                                    disabled={submission.status === "graded"}
-                                                                    onClick={() => {
-                                                                        if (submission.status !== "graded") {
-                                                                            setSelectedSubmission(submission)
-                                                                            setGradingDialogOpen(true)
-                                                                        }
-                                                                    }}
-                                                                >
-                                                                    <PenLine className="h-4 w-4 mr-1" />
-                                                                    Grade Assignment
-                                                                </Button>
-                                                            )}
+                                                            {
+                                                                role == "teacher" ? (
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        disabled={submission.status === "Graded"}
+                                                                        onClick={() => {
+                                                                            if (submission.status !== "Graded") {
+                                                                                setSelectedSubmission(submission)
+                                                                                setGradingDialogOpen(true)
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        <PenLine className="h-4 w-4 mr-1" />
+                                                                        Grade Assignment
+                                                                    </Button>
+                                                                ) : null
+                                                            }
                                                         </div>
                                                     </TableCell>
                                                 </TableRow>
@@ -759,10 +575,6 @@ export default function TeacherAssignmentDetailPage() {
                             <div className="text-sm text-muted-foreground">
                                 Last updated: {format(new Date(), "MMM d, yyyy h:mm a")}
                             </div>
-                            <Button variant="outline">
-                                <Download className="h-4 w-4 mr-2" />
-                                Export Submissions
-                            </Button>
                         </CardFooter>
                     </Card>
                 </TabsContent>
@@ -795,21 +607,22 @@ export default function TeacherAssignmentDetailPage() {
                     <DialogHeader>
                         <DialogTitle>Grade Assignment</DialogTitle>
                         <DialogDescription>
-                            Enter the marks obtained by {selectedSubmission?.studentName} out of 100.
+                            Enter the marks obtained by {selectedSubmission?.student.full_name} out of{" "}
+                            {assignment?.subject.full_marks}.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
                         <div className="flex items-center gap-2">
                             <Input
                                 type="number"
-                                placeholder="Enter marks (0-100)"
+                                placeholder={`Enter marks (0-${assignment?.subject.full_marks})`}
                                 value={gradeValue}
                                 onChange={(e) => setGradeValue(e.target.value)}
                                 min="0"
-                                max="100"
+                                max={assignment?.subject.full_marks}
                                 className="flex-1"
                             />
-                            <span className="text-sm text-muted-foreground">/100</span>
+                            <span className="text-sm text-muted-foreground">/{assignment?.subject.full_marks}</span>
                         </div>
                     </div>
                     <DialogFooter>

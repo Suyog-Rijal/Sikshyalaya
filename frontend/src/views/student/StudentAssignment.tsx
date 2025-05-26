@@ -2,16 +2,30 @@
 
 import type React from "react"
 
-import { useState, useEffect, useRef } from "react"
-import { FileText, Search, Calendar, Clock, Upload, CheckCircle, X, Download, Eye } from "lucide-react"
-import { format } from "date-fns"
-import { Card, CardContent } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Badge } from "@/components/ui/badge"
+import { useState, useEffect } from "react"
+import { useParams, useNavigate } from "react-router-dom"
+import { format, isPast, formatDistanceToNow } from "date-fns"
+import { toast } from "sonner"
+import {
+    ArrowLeft,
+    Calendar,
+    Download,
+    Upload,
+    FileText,
+    Clock,
+    CheckCircle2,
+    AlertCircle,
+    File,
+    X,
+    CloudUpload,
+} from "lucide-react"
+
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Progress } from "@/components/ui/progress"
+import { Label } from "@/components/ui/label"
 import {
     Dialog,
     DialogContent,
@@ -20,463 +34,408 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
-import { toast } from "sonner"
-import {useAuthStore} from "@/store/AuthStore.ts";
+import { PageHeader } from "@/components/ListPage/PageHeader"
+import axiosInstance from "@/auth/AxiosInstance.ts"
+import { useAuthStore } from "@/store/AuthStore.ts"
+
+interface Subject {
+    id: string
+    name: string
+    full_marks: number
+    pass_marks: number
+}
+
+interface SchoolClass {
+    id: string
+    name: string
+}
+
+interface Section {
+    name: string | null
+}
+
+interface StudentSubmission {
+    id: string
+    submission_date: string
+    file: string
+    status: string
+    marks: number | null
+}
 
 interface Assignment {
     id: string
     title: string
-    subject: string
     description: string
-    dueDate: string
-    assignedDate: string
-    status: "Pending" | "Submitted" | "Graded"
-    grade?: string
-    feedback?: string
-    attachments?: {
-        name: string
-        url: string
-    }[]
+    due_date: string
+    subject: Subject
+    school_class: SchoolClass
+    section: Section
+    is_active: boolean
+    total_students: number
+    total_submissions: number
+    created_at: string
+    student_submission?: StudentSubmission
 }
 
-export function StudentAssignment() {
-    const [assignments, setAssignments] = useState<Assignment[]>([])
+export default function SubmissionPage() {
+    const { id } = useParams<{ id: string }>()
+    const navigate = useNavigate()
+    const [assignment, setAssignment] = useState<Assignment | null>(null)
     const [loading, setLoading] = useState(true)
-    const [searchText, setSearchText] = useState("")
-    const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null)
-    const [submitDialogOpen, setSubmitDialogOpen] = useState(false)
-    const [viewDialogOpen, setViewDialogOpen] = useState(false)
-    const [selectedFiles, setSelectedFiles] = useState<File[]>([])
     const [uploading, setUploading] = useState(false)
-    const [uploadProgress, setUploadProgress] = useState(0)
-    const fileInputRef = useRef<HTMLInputElement>(null)
-
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString)
-        return format(date, "MMMM dd, yyyy")
-    }
-
-    const {role} = useAuthStore()
+    const [selectedFile, setSelectedFile] = useState<File | null>(null)
+    const [submitDialogOpen, setSubmitDialogOpen] = useState(false)
 
     useEffect(() => {
-        // Simulate API call to fetch assignments
-        setTimeout(() => {
-            const mockAssignments: Assignment[] = [
-                {
-                    id: "1",
-                    title: "Test assignment",
-                    subject: "English",
-                    description:
-                        "Test assignment description",
-                    dueDate: "2024-06-01",
-                    assignedDate: "2024-06-01",
-                    status: "Pending",
-                    attachments: [
-                        {
-                            name: "All Tables Structure.pdf",
-                            url: "/files/chapter5_problems.pdf",
-                        },
-                    ],
-                },
-            ]
+        fetchAssignmentDetails()
+    }, [id])
 
-            setAssignments(mockAssignments)
+    const fetchAssignmentDetails = async () => {
+        setLoading(true)
+        try {
+            const response = await axiosInstance.get(`/api/academic/assignment/${id}/`)
+            setAssignment(response.data)
+        } catch (error) {
+            console.error("Error fetching assignment details:", error)
+            toast.error("Failed to load assignment details")
+        } finally {
             setLoading(false)
-        }, 1500)
-    }, [])
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            setSelectedFiles(Array.from(e.target.files))
         }
     }
 
-    const handleSubmit = () => {
-        if (selectedFiles.length === 0) {
-            toast.error("Please select files to upload")
+    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0]
+        if (file) {
+            // Check file size (e.g., max 10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                toast.error("File size must be less than 10MB")
+                return
+            }
+            setSelectedFile(file)
+        }
+    }
+
+    const handleSubmitAssignment = async () => {
+        if (!selectedFile) {
+            toast.error("Please select a file to submit")
             return
         }
 
         setUploading(true)
-        setUploadProgress(0)
+        try {
+            const formData = new FormData()
+            formData.append("assignment", id!)
+            formData.append("file", selectedFile)
 
-        // Simulate upload progress
-        const interval = setInterval(() => {
-            setUploadProgress((prev) => {
-                if (prev >= 100) {
-                    clearInterval(interval)
-                    return 100
-                }
-                return prev + 5
+            await axiosInstance.post("/api/academic/submission/", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
             })
-        }, 100)
 
-        // Simulate upload completion
-        setTimeout(() => {
-            clearInterval(interval)
-            setUploadProgress(100)
-
-            // Update assignment status
-            if (selectedAssignment) {
-                setAssignments((prev) =>
-                    prev.map((assignment) =>
-                        assignment.id === selectedAssignment.id ? { ...assignment, status: "Submitted" } : assignment,
-                    ),
-                )
-            }
-
-            setUploading(false)
-            setSelectedFiles([])
+            toast.success("Assignment submitted successfully!")
             setSubmitDialogOpen(false)
-            toast.success("Assignment submitted successfully")
-        }, 2000)
-    }
-
-    const removeSelectedFile = (index: number) => {
-        setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
-    }
-
-    const openSubmitDialog = (assignment: Assignment) => {
-        setSelectedAssignment(assignment)
-        setSubmitDialogOpen(true)
-    }
-
-    const openViewDialog = (assignment: Assignment) => {
-        setSelectedAssignment(assignment)
-        setViewDialogOpen(true)
-    }
-
-    // Filter assignments based on search text
-    const filteredAssignments = assignments.filter(
-        (assignment) =>
-            assignment.title.toLowerCase().includes(searchText.toLowerCase()) ||
-            assignment.subject.toLowerCase().includes(searchText.toLowerCase()),
-    )
-
-    // Count assignments by status
-    const pendingCount = assignments.filter((a) => a.status === "Pending").length
-    const submittedCount = assignments.filter((a) => a.status === "Submitted").length
-    const gradedCount = assignments.filter((a) => a.status === "Graded").length
-
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case "Pending":
-                return (
-                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                        Pending
-                    </Badge>
-                )
-            case "Submitted":
-                return (
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                        Submitted
-                    </Badge>
-                )
-            case "Graded":
-                return (
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                        Graded
-                    </Badge>
-                )
-            default:
-                return null
+            setSelectedFile(null)
+            fetchAssignmentDetails() // Refresh to show updated submission
+        } catch (error) {
+            console.error("Error submitting assignment:", error)
+            toast.error("Failed to submit assignment")
+        } finally {
+            setUploading(false)
         }
     }
 
+    const getStatusIcon = (status: string) => {
+        switch (status) {
+            case "Graded":
+                return <CheckCircle2 className="h-4 w-4 text-green-500" />
+            case "Not Graded":
+                return <Clock className="h-4 w-4 text-amber-500" />
+            default:
+                return <AlertCircle className="h-4 w-4 text-gray-500" />
+        }
+    }
+
+    const getFileIcon = (fileName: string) => {
+        const extension = fileName.split(".").pop()?.toLowerCase()
+        switch (extension) {
+            case "pdf":
+                return <FileText className="h-4 w-4 text-red-500" />
+            case "doc":
+            case "docx":
+                return <FileText className="h-4 w-4 text-blue-500" />
+            case "xls":
+            case "xlsx":
+                return <FileText className="h-4 w-4 text-green-500" />
+            case "ppt":
+            case "pptx":
+                return <FileText className="h-4 w-4 text-orange-500" />
+            default:
+                return <File className="h-4 w-4 text-gray-500" />
+        }
+    }
+
+    const getSubmissionStatusBadge = (status: string) => {
+        switch (status) {
+            case "Graded":
+                return (
+                    <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        Graded
+                    </Badge>
+                )
+            case "Not Graded":
+                return (
+                    <Badge variant="outline" className="bg-amber-50 text-amber-700 hover:bg-amber-50">
+                        <Clock className="h-3 w-3 mr-1" />
+                        Submitted - Pending Review
+                    </Badge>
+                )
+            default:
+                return (
+                    <Badge variant="outline" className="bg-gray-50 text-gray-700 hover:bg-gray-50">
+                        Not Submitted
+                    </Badge>
+                )
+        }
+    }
+
+    if (loading) {
+        return (
+            <div className="p-4 flex flex-col gap-6">
+                <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon" onClick={() => navigate("/student/assignments")}>
+                        <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <h1 className="text-2xl font-bold">Loading assignment details...</h1>
+                </div>
+                <div className="animate-pulse">
+                    <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-5/6 mb-4"></div>
+                    <div className="h-10 bg-gray-200 rounded w-full mb-6"></div>
+                    <div className="h-64 bg-gray-200 rounded w-full"></div>
+                </div>
+            </div>
+        )
+    }
+
+    if (!assignment) {
+        return (
+            <div className="p-4 flex flex-col gap-6">
+                <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon" onClick={() => navigate("/student/assignments")}>
+                        <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <h1 className="text-2xl font-bold">Assignment not found</h1>
+                </div>
+                <p>The assignment you're looking for doesn't exist or has been removed.</p>
+                <Button onClick={() => navigate("/student/assignments")}>Back to Assignments</Button>
+            </div>
+        )
+    }
+
+    const isPastDue = isPast(new Date(assignment.due_date))
+    const hasSubmitted = assignment.student_submission
+    const canSubmit = assignment.is_active && (!hasSubmitted || hasSubmitted.status === "Not Graded")
+
     return (
-        <div className="p-6 bg-gray-50">
-            <div className="mb-6">
-                <h1 className="text-2xl font-semibold text-gray-800">Assignments</h1>
-                <p className="text-gray-500">View and submit your assignments</p>
-            </div>
+        <div className="p-4 flex flex-col gap-6">
+            <PageHeader
+                title="Assignment Details"
+                breadcrumbs={[
+                    { label: "Dashboard", href: "/" },
+                    { label: "Assignments", href: "/assignment/list" },
+                    { label: "Details", href: `/assignment/detail/${id}` },
+                ]}
+            />
 
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <Card className="bg-white border border-gray-200">
-                    <CardContent className="p-6">
-                        <div className="flex items-start gap-4">
-                            <div className="bg-amber-50 p-3 rounded-full">
-                                <Clock className="h-5 w-5 text-amber-600" />
-                            </div>
-                            <div>
-                                <h3 className="font-medium text-gray-900">Pending</h3>
-                                <p className="text-sm text-gray-500 mt-1">{pendingCount} assignments due</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="bg-white border border-gray-200">
-                    <CardContent className="p-6">
-                        <div className="flex items-start gap-4">
-                            <div className="bg-blue-50 p-3 rounded-full">
-                                <Upload className="h-5 w-5 text-blue-600" />
-                            </div>
-                            <div>
-                                <h3 className="font-medium text-gray-900">Submitted</h3>
-                                <p className="text-sm text-gray-500 mt-1">{submittedCount} assignments submitted</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="bg-white border border-gray-200">
-                    <CardContent className="p-6">
-                        <div className="flex items-start gap-4">
-                            <div className="bg-green-50 p-3 rounded-full">
-                                <CheckCircle className="h-5 w-5 text-green-600" />
-                            </div>
-                            <div>
-                                <h3 className="font-medium text-gray-900">Graded</h3>
-                                <p className="text-sm text-gray-500 mt-1">{gradedCount} assignments graded</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Search Bar */}
-            <div className="mb-6">
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
-                    <Input
-                        placeholder="Search assignments..."
-                        className="pl-10"
-                        value={searchText}
-                        onChange={(e) => setSearchText(e.target.value)}
-                    />
+            <div className="flex items-center gap-2 mb-2">
+                <h1 className="text-2xl font-bold">{assignment.title}</h1>
+                <div className="flex items-center ml-2">
+                    {getStatusIcon(assignment.is_active ? "active" : "inactive")}
+                    <span className="ml-1 text-sm text-muted-foreground capitalize">
+            {assignment.is_active ? "active" : "inactive"}
+          </span>
                 </div>
             </div>
 
-            {/* Assignments Table */}
-            <Card className="bg-white border border-gray-200">
-                <CardContent className="p-0">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Assignment</TableHead>
-                                <TableHead className="hidden md:table-cell">Subject</TableHead>
-                                <TableHead className="hidden lg:table-cell">Assigned Date</TableHead>
-                                <TableHead>Due Date</TableHead>
-                                <TableHead>Status</TableHead>
-                                {
-                                    role == 'admin' ? (
-                                        <TableHead className="text-right">Actions</TableHead>
-                                    ): null
-                                }
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {loading ? (
-                                // Loading skeleton
-                                Array.from({ length: 5 }).map((_, index) => (
-                                    <TableRow key={index}>
-                                        <TableCell>
-                                            <Skeleton className="h-5 w-40" />
-                                        </TableCell>
-                                        <TableCell className="hidden md:table-cell">
-                                            <Skeleton className="h-5 w-24" />
-                                        </TableCell>
-                                        <TableCell className="hidden lg:table-cell">
-                                            <Skeleton className="h-5 w-28" />
-                                        </TableCell>
-                                        <TableCell>
-                                            <Skeleton className="h-5 w-28" />
-                                        </TableCell>
-                                        <TableCell>
-                                            <Skeleton className="h-5 w-20" />
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Skeleton className="h-9 w-20 ml-auto" />
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            ) : filteredAssignments.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                                        No assignments found.
-                                    </TableCell>
-                                </TableRow>
+            <div className="flex flex-wrap gap-2 mb-4">
+                <Badge variant="outline" className="bg-blue-50 text-blue-700 hover:bg-blue-50">
+                    {assignment.subject.name}
+                </Badge>
+                <Badge variant="outline" className="bg-purple-50 text-purple-700 hover:bg-purple-50">
+                    {assignment.school_class.name} {assignment.section?.name}
+                </Badge>
+                <Badge
+                    variant="outline"
+                    className={cn(
+                        isPastDue && assignment.is_active
+                            ? "bg-red-50 text-red-700 hover:bg-red-50"
+                            : "bg-green-50 text-green-700 hover:bg-green-50",
+                    )}
+                >
+                    <Calendar className="h-3 w-3 mr-1" />
+                    Due: {format(new Date(assignment.due_date), "MMM d, yyyy")}
+                    {isPastDue && assignment.is_active && (
+                        <span className="ml-1">(Overdue by {formatDistanceToNow(new Date(assignment.due_date))})</span>
+                    )}
+                </Badge>
+                <Badge variant="outline" className="bg-gray-50 text-gray-700 hover:bg-gray-50">
+                    Max Marks: {assignment.subject.full_marks}
+                </Badge>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-3">
+                {/* Assignment Details */}
+                <div className="lg:col-span-2">
+                    <Card>
+                        <CardHeader>
+                            <h2 className="text-xl font-semibold">Assignment Description</h2>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="prose max-w-none">
+                                <p className="whitespace-pre-line text-gray-700">{assignment.description}</p>
+                            </div>
+                        </CardContent>
+                        <CardFooter className="border-t pt-4">
+                            <div className="text-sm text-muted-foreground">
+                                <div className="flex items-center">
+                                    <Calendar className="h-4 w-4 mr-2" />
+                                    Created: {format(new Date(assignment.created_at), "MMM d, yyyy")}
+                                </div>
+                            </div>
+                        </CardFooter>
+                    </Card>
+                </div>
+
+                {/* Submission Panel */}
+                <div className="lg:col-span-1">
+                    <Card>
+                        <CardHeader>
+                            <h2 className="text-xl font-semibold">Your Submission</h2>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {hasSubmitted ? (
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm font-medium">Status:</span>
+                                        {getSubmissionStatusBadge(hasSubmitted.status)}
+                                    </div>
+
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm font-medium">Submitted:</span>
+                                        <span className="text-sm text-muted-foreground">
+                      {format(new Date(hasSubmitted.submission_date), "MMM d, yyyy h:mm a")}
+                    </span>
+                                    </div>
+
+                                    {hasSubmitted.marks !== null && (
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm font-medium">Grade:</span>
+                                            <span className="text-sm font-semibold text-green-600">
+                        {hasSubmitted.marks}/{assignment.subject.full_marks}
+                      </span>
+                                        </div>
+                                    )}
+
+                                    {hasSubmitted.file && (
+                                        <div className="border rounded-lg p-3">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center">
+                                                    {getFileIcon(hasSubmitted.file)}
+                                                    <span className="ml-2 text-sm truncate">{hasSubmitted.file.split("/").pop()}</span>
+                                                </div>
+                                                <Button variant="ghost" size="sm" asChild>
+                                                    <a href={hasSubmitted.file} download target="_blank" rel="noopener noreferrer">
+                                                        <Download className="h-4 w-4" />
+                                                    </a>
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {canSubmit && (
+                                        <Button onClick={() => setSubmitDialogOpen(true)} className="w-full" variant="outline">
+                                            <Upload className="h-4 w-4 mr-2" />
+                                            Resubmit Assignment
+                                        </Button>
+                                    )}
+                                </div>
                             ) : (
-                                filteredAssignments.map((assignment) => (
-                                    <TableRow key={assignment.id}>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <FileText className="h-4 w-4 text-gray-500" />
-                                                <span className="font-medium">{assignment.title}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="hidden md:table-cell">{assignment.subject}</TableCell>
-                                        <TableCell className="hidden lg:table-cell">
-                                            <div className="flex items-center gap-1">
-                                                <Calendar className="h-3.5 w-3.5 text-gray-500" />
-                                                <span>{formatDate(assignment.assignedDate)}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-1">
-                                                <Clock className="h-3.5 w-3.5 text-gray-500" />
-                                                <span>{formatDate(assignment.dueDate)}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>{getStatusBadge(assignment.status)}</TableCell>
-                                        {
-                                            role == 'admin' ? (
-                                                <TableCell className="text-right">
-                                                    <div className="flex justify-end gap-2">
-                                                        <Button variant="outline" size="sm" onClick={() => openViewDialog(assignment)}>
-                                                            <Eye className="h-4 w-4 mr-1" />
-                                                            View
-                                                        </Button>
-                                                        {assignment.status === "Pending" && (
-                                                            <Button variant="default" size="sm" onClick={() => openSubmitDialog(assignment)}>
-                                                                <Upload className="h-4 w-4 mr-1" />
-                                                                Submit
-                                                            </Button>
-                                                        )}
-                                                    </div>
-                                                </TableCell>
-                                            ): null
-                                        }
-                                    </TableRow>
-                                ))
+                                <div className="text-center space-y-4">
+                                    <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg">
+                                        <CloudUpload className="h-12 w-12 text-gray-400 mb-2" />
+                                        <p className="text-sm text-muted-foreground mb-2">No submission yet</p>
+                                        {canSubmit ? (
+                                            <Button onClick={() => setSubmitDialogOpen(true)}>
+                                                <Upload className="h-4 w-4 mr-2" />
+                                                Submit Assignment
+                                            </Button>
+                                        ) : (
+                                            <p className="text-xs text-red-500">
+                                                {isPastDue ? "Assignment is overdue" : "Assignment is not active"}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
                             )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
 
             {/* Submit Assignment Dialog */}
             <Dialog open={submitDialogOpen} onOpenChange={setSubmitDialogOpen}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Submit Assignment</DialogTitle>
                         <DialogDescription>
-                            {selectedAssignment?.title} - {selectedAssignment?.subject}
+                            Upload your assignment file. Supported formats: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX (Max 10MB)
                         </DialogDescription>
                     </DialogHeader>
-
-                    <div className="grid gap-4 py-4">
-                        <div
-                            className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:bg-gray-50 transition-colors"
-                            onClick={() => fileInputRef.current?.click()}
-                        >
-                            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" multiple />
-                            <Upload className="h-10 w-10 text-gray-400 mx-auto mb-2" />
-                            <p className="text-sm font-medium">Click to browse or drag and drop</p>
-                            <p className="text-xs text-gray-500 mt-1">Upload your assignment files</p>
+                    <div className="py-4 space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="file-upload">Select File</Label>
+                            <Input
+                                id="file-upload"
+                                type="file"
+                                onChange={handleFileSelect}
+                                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                                className="cursor-pointer"
+                            />
                         </div>
 
-                        {selectedFiles.length > 0 && (
-                            <div className="mt-2">
-                                <p className="text-sm font-medium mb-2">Selected Files ({selectedFiles.length})</p>
-                                <div className="max-h-40 overflow-y-auto space-y-2">
-                                    {selectedFiles.map((file, index) => (
-                                        <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded-md">
-                                            <div className="flex items-center space-x-2">
-                                                <FileText className="h-4 w-4 text-gray-500" />
-                                                <div className="truncate max-w-[200px]">
-                                                    <p className="text-sm font-medium truncate">{file.name}</p>
-                                                    <p className="text-xs text-gray-500">{(file.size / 1024).toFixed(1)} KB</p>
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    removeSelectedFile(index)
-                                                }}
-                                                className="text-gray-500 hover:text-red-500"
-                                            >
-                                                <X className="h-4 w-4" />
-                                            </button>
-                                        </div>
-                                    ))}
+                        {selectedFile && (
+                            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div className="flex items-center">
+                                    {getFileIcon(selectedFile.name)}
+                                    <div className="ml-2">
+                                        <p className="text-sm font-medium">{selectedFile.name}</p>
+                                        <p className="text-xs text-muted-foreground">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-
-                        {uploading && (
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-sm">
-                                    <span>Uploading...</span>
-                                    <span>{uploadProgress}%</span>
-                                </div>
-                                <Progress value={uploadProgress} className="h-2" />
-                            </div>
-                        )}
-                    </div>
-
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setSubmitDialogOpen(false)} disabled={uploading}>
-                            Cancel
-                        </Button>
-                        <Button onClick={handleSubmit} disabled={selectedFiles.length === 0 || uploading}>
-                            {uploading ? "Uploading..." : "Submit Assignment"}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* View Assignment Dialog */}
-            <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-                <DialogContent className="sm:max-w-lg">
-                    <DialogHeader>
-                        <DialogTitle>{selectedAssignment?.title}</DialogTitle>
-                        <DialogDescription>
-                            {selectedAssignment?.subject} - Due: {selectedAssignment && formatDate(selectedAssignment.dueDate)}
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="grid gap-4 py-4">
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                            <h3 className="text-sm font-medium mb-2">Description</h3>
-                            <p className="text-sm text-gray-700">{selectedAssignment?.description}</p>
-                        </div>
-
-                        {selectedAssignment?.attachments && selectedAssignment.attachments.length > 0 && (
-                            <div>
-                                <h3 className="text-sm font-medium mb-2">Attachments</h3>
-                                <div className="space-y-2">
-                                    {selectedAssignment.attachments.map((attachment, index) => (
-                                        <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                                            <div className="flex items-center gap-2">
-                                                <FileText className="h-4 w-4 text-gray-500" />
-                                                <span className="text-sm">{attachment.name}</span>
-                                            </div>
-                                            <Button variant="outline" size="sm">
-                                                <Download className="h-4 w-4 mr-1" />
-                                                Download
-                                            </Button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {selectedAssignment?.status === "Graded" && (
-                            <div className="bg-green-50 p-4 rounded-lg">
-                                <div className="flex items-center justify-between mb-2">
-                                    <h3 className="text-sm font-medium">Feedback</h3>
-                                    <Badge className="bg-green-100 text-green-700 border-0">Grade: {selectedAssignment.grade}</Badge>
-                                </div>
-                                <p className="text-sm text-gray-700">{selectedAssignment.feedback}</p>
-                            </div>
-                        )}
-
-                        {selectedAssignment?.status === "Pending" && (
-                            <div className="flex justify-center">
-                                <Button
-                                    onClick={() => {
-                                        setViewDialogOpen(false)
-                                        openSubmitDialog(selectedAssignment)
-                                    }}
-                                >
-                                    <Upload className="h-4 w-4 mr-2" />
-                                    Submit Now
+                                <Button variant="ghost" size="sm" onClick={() => setSelectedFile(null)}>
+                                    <X className="h-4 w-4" />
                                 </Button>
                             </div>
                         )}
                     </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setSubmitDialogOpen(false)
+                                setSelectedFile(null)
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button onClick={handleSubmitAssignment} disabled={!selectedFile || uploading}>
+                            {uploading ? "Uploading..." : "Submit Assignment"}
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>

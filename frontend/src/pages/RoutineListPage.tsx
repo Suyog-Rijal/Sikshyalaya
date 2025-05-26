@@ -7,6 +7,8 @@ import AxiosInstance from "@/auth/AxiosInstance.ts"
 import { toast } from "sonner"
 import RoutineDataTable from "@/components/Table/RoutineDataTable.tsx"
 import {RoutineFormDialog} from "@/components/Table/AddRoutineDialog.tsx";
+import {useAuthStore} from "@/store/AuthStore.ts";
+import StudentRoutineDatatable from "@/views/student/StudentRoutineDatatable.tsx";
 
 export function RoutineListPage() {
     const [open, setOpen] = useState(false)
@@ -36,6 +38,8 @@ export function RoutineListPage() {
             end_time: string
         }[]
     >([])
+
+    const {role} = useAuthStore()
 
     const fetchRoutines = () => {
         setLoading(true)
@@ -72,20 +76,38 @@ export function RoutineListPage() {
 
     return (
         <div className="p-4 flex flex-col gap-4">
-            <PageHeader
-                title="Routine"
-                breadcrumbs={[
-                    { label: "Dashboard", href: "/" },
-                    { label: "Routine", href: "/routine/list/" },
-                ]}
-                primaryAction={{
-                    label: "Add new routine",
-                    onClick: handleOpenAddDialog,
-                    icon: <PlusCircle className="h-4 w-4" />,
-                }}
-            />
+            {
+                role == "admin" ? (
+                    <PageHeader
+                        title="Routine"
+                        breadcrumbs={[
+                            { label: "Dashboard", href: "/" },
+                            { label: "Routine", href: "/routine/list/" },
+                        ]}
+                        primaryAction={{
+                            label: "Add new routine",
+                            onClick: handleOpenAddDialog,
+                            icon: <PlusCircle className="h-4 w-4" />,
+                        }}
+                    />
+                ) : (
+                    <PageHeader
+                        title="Routine"
+                        breadcrumbs={[
+                            { label: "Dashboard", href: "/" },
+                            { label: "Routine", href: "/routine/list/" },
+                        ]}
+                    />
+                )
+            }
 
-            <RoutineDataTable data={apiData} setData={setApiData} openEditDialog={handleOpenEditDialog} loading={loading} />
+            {
+                role == "admin" ? (
+                    <RoutineDataTable data={apiData} setData={setApiData} openEditDialog={handleOpenEditDialog} loading={loading} />
+                ): (
+                    <StudentRoutineDatatable data={apiData} setData={setApiData} openEditDialog={handleOpenEditDialog} loading={loading} />
+                )
+            }
 
             <RoutineFormDialog open={open} onOpenChange={setOpen} editId={editId} onSuccess={handleDialogSuccess} />
         </div>

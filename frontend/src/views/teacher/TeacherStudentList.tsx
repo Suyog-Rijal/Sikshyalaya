@@ -141,8 +141,6 @@ export function TeacherStudentList() {
                         { label: "Student", href: "/student/list/" },
                     ]}
                     onRefresh={fetchStudents}
-                    onPrint={() => console.log("Printing...")}
-                    onExport={() => console.log("Exporting...")}
 
                 />
                 <FilterBar

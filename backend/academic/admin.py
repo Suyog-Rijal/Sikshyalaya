@@ -1,6 +1,7 @@
 from django.contrib import admin
 from academic.models import AcademicYear, SchoolClass, Section, House, Enrollment, Subject, Department, Routine, \
-	AttendanceRecord, AttendanceSession, Assignment, AssignmentAttachment, Submission
+	AttendanceRecord, AttendanceSession, Assignment, AssignmentAttachment, Submission, Exam, Announcement
+from user.models import Leave
 
 
 @admin.register(AcademicYear)
@@ -97,8 +98,8 @@ class AttendanceRecordAdmin(admin.ModelAdmin):
 
 @admin.register(Assignment)
 class AssignmentAdmin(admin.ModelAdmin):
-	list_display = ('id', 'title', 'subject', 'due_date', 'created_at')
-	list_filter = ('subject', 'due_date')
+	list_display = ('id', 'title', 'subject', 'is_active', 'school_class', 'due_date', 'created_at')
+	list_filter = ('school_class',)
 	ordering = ('-due_date',)
 	search_fields = ('title', 'subject__name')
 
@@ -116,3 +117,65 @@ class SubmissionAdmin(admin.ModelAdmin):
 	list_filter = ('assignment', 'status')
 	ordering = ('-submission_date',)
 	search_fields = ('assignment__title', 'student__first_name', 'student__last_name')
+
+
+@admin.register(Exam)
+class ExamAdmin(admin.ModelAdmin):
+	list_display = (
+		'id',
+		'school_class',
+		'subject',
+		'exam_date',
+		'start_time',
+		'end_time',
+		'exam_type',
+	)
+	list_filter = (
+		'academic_year',
+		'school_class',
+		'subject',
+		'exam_type',
+		'exam_date',
+	)
+	ordering = ('-exam_date', '-start_time')
+	search_fields = (
+		'school_class__name',
+		'subject__name',
+		'academic_year__year',
+	)
+	readonly_fields = ('created_at',)
+
+
+@admin.register(Announcement)
+class AnnouncementAdmin(admin.ModelAdmin):
+	list_display = ('title', 'priority', 'public_access', 'is_expired', 'academic_year', 'created_at')
+	list_filter = ('priority', 'public_access', 'is_expired', 'academic_year', 'school_class', 'created_at')
+	search_fields = ('title', 'description')
+	ordering = ('-created_at',)
+
+	fieldsets = (
+		(None, {
+			'fields': ('title', 'description', 'priority', 'public_access', 'is_expired')
+		}),
+		('Relations', {
+			'fields': ('academic_year', 'school_class')
+		}),
+		('Timestamps', {
+			'fields': ('created_at', 'updated_at'),
+			'classes': ('collapse',)
+		}),
+	)
+	readonly_fields = ('created_at', 'updated_at')
+
+
+@admin.register(Leave)
+class LeaveAdmin(admin.ModelAdmin):
+	list_display = ('student', 'leave_reason_short', 'start_date', 'end_date', 'leave_status', 'total_days', 'created_at')
+	list_filter = ('leave_status', 'start_date', 'end_date', 'created_at')
+	search_fields = ('student__first_name', 'student__last_name', 'leave_reason')
+	date_hierarchy = 'start_date'
+	ordering = ('-created_at',)
+
+	def leave_reason_short(self, obj):
+		return (obj.leave_reason[:75] + '...') if len(obj.leave_reason) > 75 else obj.leave_reason
+	leave_reason_short.short_description = 'Leave Reason'

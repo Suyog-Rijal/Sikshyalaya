@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { format, differenceInDays } from "date-fns"
+import { format } from "date-fns"
 import { PageHeader } from "@/components/ListPage/PageHeader.tsx"
 import { FilterBar } from "@/components/ListPage/FilterBar.tsx"
 import { Eye, CheckCircle, XCircle, Calendar, Clock, User } from "lucide-react"
@@ -18,11 +18,19 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
+import axiosInstance from "@/auth/AxiosInstance.ts";
+import {Link} from "react-router-dom";
+
+interface Student {
+    id: string
+    full_name: string
+}
 
 interface LeaveRequest {
     id: string
-    student: string
+    student: Student
     leave_reason: string
+    total_days: number
     start_date: string
     end_date: string
     leave_status: "pending" | "approved" | "rejected"
@@ -59,102 +67,21 @@ export function LeavePage() {
         return format(date, "MMMM dd, yyyy")
     }
 
-    const calculateDays = (startDate: string, endDate: string) => {
-        const start = new Date(startDate)
-        const end = new Date(endDate)
-        return differenceInDays(end, start) + 1 // Include both start and end days
+    const fetchLeaveRequest = () => {
+        axiosInstance.get('/api/auth/leave/')
+            .then((res) => {
+                setLeaveRequests(res.data)
+            })
+            .catch((error) => {
+                console.error("Error fetching leave requests:", error)
+            })
+            .finally(() => {
+                setLoading(false)
+            })
     }
 
     useEffect(() => {
-        // Simulate API call to fetch leave requests
-        setTimeout(() => {
-            const mockLeaveRequests: LeaveRequest[] = [
-                {
-                    id: "1",
-                    student: "John Smith",
-                    leave_reason: "Family emergency - need to travel home for a week",
-                    start_date: "2024-05-15",
-                    end_date: "2024-05-22",
-                    leave_status: "pending",
-                    created_at: "2024-05-10T09:30:00",
-                },
-                {
-                    id: "345",
-                    student: "Test Copeland",
-                    leave_reason: "Test leave",
-                    start_date: "2024-05-01",
-                    end_date: "2024-05-06",
-                    leave_status: "pending",
-                    created_at: "2024-05-10T09:30:00",
-                },
-                {
-                    id: "2",
-                    student: "Emma Johnson",
-                    leave_reason: "Medical appointment and recovery",
-                    start_date: "2024-05-18",
-                    end_date: "2024-05-19",
-                    leave_status: "approved",
-                    created_at: "2024-05-08T14:15:00",
-                },
-                {
-                    id: "3",
-                    student: "Michael Brown",
-                    leave_reason: "Participating in national debate competition",
-                    start_date: "2024-06-01",
-                    end_date: "2024-06-05",
-                    leave_status: "approved",
-                    created_at: "2024-05-12T11:45:00",
-                },
-                {
-                    id: "4",
-                    student: "Sophia Garcia",
-                    leave_reason: "Religious holiday observance",
-                    start_date: "2024-05-25",
-                    end_date: "2024-05-25",
-                    leave_status: "pending",
-                    created_at: "2024-05-11T10:20:00",
-                },
-                {
-                    id: "5",
-                    student: "William Davis",
-                    leave_reason: "Severe flu - doctor recommended rest",
-                    start_date: "2024-05-14",
-                    end_date: "2024-05-17",
-                    leave_status: "rejected",
-                    created_at: "2024-05-13T08:50:00",
-                },
-                {
-                    id: "6",
-                    student: "Olivia Wilson",
-                    leave_reason: "Family wedding",
-                    start_date: "2024-05-28",
-                    end_date: "2024-05-30",
-                    leave_status: "pending",
-                    created_at: "2024-05-09T16:05:00",
-                },
-                {
-                    id: "7",
-                    student: "James Martinez",
-                    leave_reason: "Dental surgery and recovery",
-                    start_date: "2024-05-20",
-                    end_date: "2024-05-21",
-                    leave_status: "approved",
-                    created_at: "2024-05-07T13:40:00",
-                },
-                {
-                    id: "8",
-                    student: "Ava Anderson",
-                    leave_reason: "Representing school in sports tournament",
-                    start_date: "2024-06-10",
-                    end_date: "2024-06-15",
-                    leave_status: "pending",
-                    created_at: "2024-05-14T09:10:00",
-                },
-            ]
-
-            setLeaveRequests(mockLeaveRequests)
-            setLoading(false)
-        }, 1500)
+        fetchLeaveRequest()
     }, [])
 
     const handleViewDetails = (leave: LeaveRequest) => {
@@ -164,20 +91,23 @@ export function LeavePage() {
 
     const handleStatusChange = (status: "approved" | "rejected") => {
         if (!selectedLeave) return
-
-        // In a real app, this would call an API to update the leave status
-        setLeaveRequests((prev) =>
-            prev.map((leave) => (leave.id === selectedLeave.id ? { ...leave, leave_status: status } : leave)),
-        )
-
-        setViewDetailsOpen(false)
-        toast.success(`Leave request ${status === "approved" ? "approved" : "rejected"} successfully`)
+        axiosInstance.put('/api/auth/leave/' + selectedLeave.id + '/', {
+            leave_status: status,
+        })
+            .then(() => {
+                fetchLeaveRequest()
+                setViewDetailsOpen(false)
+                toast.success(`Leave request ${status} successfully`)
+            })
+            .catch((error) => {
+                console.error("Error updating leave request status:", error)
+                toast.error(`Failed to ${status} leave request`)
+            })
     }
 
-    // Filtering logic
     const filteredLeaves = leaveRequests.filter((leave) => {
         const searchMatch =
-            leave.student.toLowerCase().includes(searchText.toLowerCase()) ||
+            leave.student.full_name.toLowerCase().includes(searchText.toLowerCase()) ||
             leave.leave_reason.toLowerCase().includes(searchText.toLowerCase())
 
         let statusMatch = true
@@ -188,14 +118,13 @@ export function LeavePage() {
         return searchMatch && statusMatch
     })
 
-    // Sorting logic
     const sortedLeaves = [...filteredLeaves].sort((a, b) => {
         if (sortOrder === "created_desc") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         if (sortOrder === "created_asc") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         if (sortOrder === "start_asc") return new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
         if (sortOrder === "start_desc") return new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
-        if (sortOrder === "student_asc") return a.student.localeCompare(b.student)
-        if (sortOrder === "student_desc") return b.student.localeCompare(a.student)
+        if (sortOrder === "student_asc") return a.student.full_name.localeCompare(b.student.full_name)
+        if (sortOrder === "student_desc") return b.student.full_name.localeCompare(a.student.full_name)
         return 0
     })
 
@@ -224,7 +153,6 @@ export function LeavePage() {
         }
     }
 
-    // Summary counts
     const pendingCount = leaveRequests.filter((leave) => leave.leave_status === "pending").length
     const approvedCount = leaveRequests.filter((leave) => leave.leave_status === "approved").length
     const rejectedCount = leaveRequests.filter((leave) => leave.leave_status === "rejected").length
@@ -299,7 +227,7 @@ export function LeavePage() {
                             <TableHead className="hidden md:table-cell">Duration</TableHead>
                             <TableHead className="hidden lg:table-cell">Dates</TableHead>
                             <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            <TableHead>Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -337,19 +265,17 @@ export function LeavePage() {
                             sortedLeaves.map((leave) => (
                                 <TableRow key={leave.id}>
                                     <TableCell>
-                                        <div className="flex items-center gap-2">
+                                        <Link to={`/students/detail/${leave.student.id}`} className="flex items-center gap-2 hover:underline underline-offset-4">
                                             <User className="h-4 w-4 text-gray-500" />
-                                            <span className="font-medium">{leave.student}</span>
-                                        </div>
+                                            <span className="font-medium">{leave.student.full_name}</span>
+                                        </Link>
                                     </TableCell>
                                     <TableCell>
                                         <div className="max-w-xs truncate" title={leave.leave_reason}>
                                             {leave.leave_reason}
                                         </div>
                                     </TableCell>
-                                    <TableCell className="hidden md:table-cell">
-                                        {calculateDays(leave.start_date, leave.end_date)} day(s)
-                                    </TableCell>
+                                    <TableCell className="hidden md:table-cell">{leave.total_days} day(s)</TableCell>
                                     <TableCell className="hidden lg:table-cell">
                                         <div className="flex items-center gap-1">
                                             <Calendar className="h-3.5 w-3.5 text-gray-500" />
@@ -391,7 +317,7 @@ export function LeavePage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <h4 className="text-sm font-medium text-gray-500">Student</h4>
-                                    <p className="mt-1">{selectedLeave.student}</p>
+                                    <p className="mt-1">{selectedLeave.student.full_name}</p>
                                 </div>
                                 <div>
                                     <h4 className="text-sm font-medium text-gray-500">Status</h4>
@@ -404,9 +330,7 @@ export function LeavePage() {
                                 <p className="mt-1">
                                     {formatDate(selectedLeave.start_date)}
                                     {selectedLeave.start_date !== selectedLeave.end_date && ` to ${formatDate(selectedLeave.end_date)}`}
-                                    <span className="ml-2 text-gray-500">
-                    ({calculateDays(selectedLeave.start_date, selectedLeave.end_date)} day(s))
-                  </span>
+                                    <span className="ml-2 text-gray-500">({selectedLeave.total_days} day(s))</span>
                                 </p>
                             </div>
 
@@ -424,7 +348,7 @@ export function LeavePage() {
 
                     <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0">
                         {selectedLeave?.leave_status === "pending" && (
-                            <>
+                            <div className={'flex gap-2 items-center justify-center'}>
                                 <Button
                                     variant="outline"
                                     className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
@@ -437,7 +361,7 @@ export function LeavePage() {
                                     <CheckCircle className="h-4 w-4 mr-2" />
                                     Approve Leave
                                 </Button>
-                            </>
+                            </div>
                         )}
                         {selectedLeave?.leave_status !== "pending" && (
                             <Button variant="outline" onClick={() => setViewDetailsOpen(false)}>

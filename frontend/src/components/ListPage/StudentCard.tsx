@@ -18,7 +18,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { EllipsisVertical, Loader2, Trash } from "lucide-react"
+import { EllipsisVertical, Loader2 } from "lucide-react"
 import { CustomStatusBadge } from "@/components/ListPage/CustomStatusBadge.tsx"
 import { useNavigate } from "react-router-dom"
 import {useAuthStore} from "@/store/AuthStore.ts";
@@ -83,7 +83,7 @@ export function StudentCard({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-36">
                             <DropdownMenuGroup>
-                                <DropdownMenuItem onClick={() => navigate("/test/")}>View</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => navigate("/students/detail/" + id)}>View</DropdownMenuItem>
 
                                 {
                                     role === "teacher" ? null : (
@@ -91,9 +91,7 @@ export function StudentCard({
                                             <DropdownMenuItem>Edit</DropdownMenuItem>
                                             <DropdownMenuItem
                                                 className="text-destructive focus:text-destructive"
-                                                onClick={() => setDeleteDialogOpen(true)}
-                                            >
-                                                <Trash className="h-4 w-4 mr-2" />
+                                                onClick={() => setDeleteDialogOpen(true)}>
                                                 Delete
                                             </DropdownMenuItem>
                                         </>

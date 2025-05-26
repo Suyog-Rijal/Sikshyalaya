@@ -24,6 +24,7 @@ import { AlertTriangle, Pencil, Trash, MoreVertical } from "lucide-react"
 import { toast } from "sonner"
 import AxiosInstance from "@/auth/AxiosInstance.ts"
 import { Checkbox } from "@/components/ui/checkbox"
+import {Link} from "react-router-dom";
 
 interface DataTableProps {
     data: Array<{
@@ -255,7 +256,7 @@ class ClassDataTable extends React.Component<DataTableProps, DataTableState> {
                                 <TableHead className="w-[50px] text-center">
                                     <Checkbox checked={allSelected} onCheckedChange={this.handleSelectAll} aria-label="Select all" />
                                 </TableHead>
-                                <TableHead className="font-semibold">ID</TableHead>
+                                {/*<TableHead className="font-semibold">ID</TableHead>*/}
                                 <TableHead className="font-semibold">Class</TableHead>
                                 <TableHead className="font-semibold">Sections</TableHead>
                                 <TableHead className="font-semibold">No of Students</TableHead>
@@ -277,8 +278,12 @@ class ClassDataTable extends React.Component<DataTableProps, DataTableState> {
                                                 aria-label={`Select ${row.name}`}
                                             />
                                         </TableCell>
-                                        <TableCell className="font-medium text-primary">{row.id}</TableCell>
-                                        <TableCell className="font-medium">{row.name}</TableCell>
+                                        {/*<TableCell className="font-medium text-primary">{row.id}</TableCell>*/}
+                                        <TableCell className="font-medium">
+                                            <Link to={"/class/" + row.id} className="text-primary hover:underline underline-offset-4 hover:decoration-2 hover:text-blue-500">
+                                                {row.name}
+                                            </Link>
+                                        </TableCell>
                                         <TableCell>
                                             {Array.isArray(row.section) && row.section.length > 0
                                                 ? row.section.map((sec) => sec.name).join(", ")

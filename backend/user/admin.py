@@ -19,6 +19,7 @@ class StudentAdmin(admin.ModelAdmin):
 @admin.register(Parent)
 class ParentAdmin(admin.ModelAdmin):
 	list_display = [
+		'id',
 		'full_name',
 		'relationship',
 		'created_at',
@@ -62,7 +63,7 @@ class StaffAdmin(admin.ModelAdmin):
 
 class CustomUserAdmin(UserAdmin):
 	model = CustomUser
-	list_display = ('email', 'is_staff', 'is_active')
+	list_display = ('id', 'email', 'is_staff', 'is_active')
 	list_filter = ('is_staff', 'is_active', 'roles')
 	fieldsets = (
 		(None, {'fields': ('email', 'password')}),

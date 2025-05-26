@@ -6,20 +6,14 @@ import {
     MoreHorizontal,
     Calendar,
     Users,
-    Paperclip,
     Eye,
     Pencil,
-    Copy,
     Trash2,
-    FileText,
     ChevronDown,
     ChevronUp,
-    ToggleLeft,
-    ToggleRight,
-    Clock,
     CheckCircle2,
     AlertCircle,
-    File,
+    BookOpen,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -31,11 +25,8 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
     Dialog,
     DialogContent,
@@ -44,7 +35,27 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
-import type { Assignment } from "@/views/teacher/TeacherAssignmentList.tsx"
+
+interface Assignment {
+    id: string
+    title: string
+    description: string
+    due_date: string // ISO 8601 date format
+    subject: {
+        id: string
+        name: string
+    }
+    school_class: {
+        id: string
+        name: string
+    }
+    section: {
+        name: string | null
+    }
+    is_active: boolean
+    total_students: number
+    total_submissions: number
+}
 
 interface AssignmentCardListProps {
     assignments: Assignment[]
@@ -54,16 +65,16 @@ interface AssignmentCardListProps {
     onView: (id: string) => void
     onEdit: (id: string) => void
     onToggleStatus: (id: string) => void
+    role?: string
 }
 
 export function TeacherAssignmentCard({
                                           assignments,
                                           loading,
                                           onDelete,
-                                          onDuplicate,
                                           onView,
                                           onEdit,
-                                          onToggleStatus,
+                                          role,
                                       }: AssignmentCardListProps) {
     const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -92,31 +103,19 @@ export function TeacherAssignmentCard({
         }
     }
 
-    const getStatusIcon = (status: string) => {
-        switch (status) {
-            case "active":
-                return <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-            case "inactive":
-                return <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
-            case "draft":
-                return <Clock className="h-3.5 w-3.5 text-blue-500" />
-            default:
-                return null
+    const getStatusIcon = (isActive: boolean, isPastDue: boolean) => {
+        if (!isActive) {
+            return <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
         }
+        if (isPastDue) {
+            return <AlertCircle className="h-3.5 w-3.5 text-red-500" />
+        }
+        return <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
     }
 
-    const getFileIcon = (fileType: string) => {
-        if (fileType.includes("pdf")) {
-            return <FileText className="h-3.5 w-3.5 text-red-500" />
-        } else if (fileType.includes("word") || fileType.includes("document")) {
-            return <FileText className="h-3.5 w-3.5 text-blue-500" />
-        } else if (fileType.includes("sheet") || fileType.includes("excel")) {
-            return <FileText className="h-3.5 w-3.5 text-green-500" />
-        } else if (fileType.includes("presentation") || fileType.includes("powerpoint")) {
-            return <FileText className="h-3.5 w-3.5 text-orange-500" />
-        } else {
-            return <File className="h-3.5 w-3.5 text-gray-500" />
-        }
+    const getSubmissionProgress = (assignment: Assignment) => {
+        if (assignment.total_students === 0) return 0
+        return Math.round((assignment.total_submissions / assignment.total_students) * 100)
     }
 
     if (loading) {
@@ -154,11 +153,11 @@ export function TeacherAssignmentCard({
     if (assignments.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg border border-gray-200 min-h-[320px]">
+                <BookOpen className="h-12 w-12 text-gray-400 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No assignments found</h3>
                 <p className="text-gray-500 mb-4 text-center">
                     There are no assignments matching your current filters. Try adjusting your search or create a new assignment.
                 </p>
-                <Button>Create New Assignment</Button>
             </div>
         )
     }
@@ -168,16 +167,15 @@ export function TeacherAssignmentCard({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {assignments.map((assignment) => {
                     const isExpanded = expandedCards.has(assignment.id)
-                    const isPastDue = isPast(new Date(assignment.dueDate))
-                    const isActive = assignment.status === "active"
+                    const isPastDue = isPast(new Date(assignment.due_date))
+                    const submissionProgress = getSubmissionProgress(assignment)
 
                     return (
                         <Card
                             key={assignment.id}
                             className={cn(
                                 "overflow-hidden hover:shadow-md transition-shadow flex flex-col min-h-[320px]",
-                                assignment.status === "inactive" && "bg-gray-50 border-gray-200",
-                                assignment.status === "draft" && "bg-blue-50 border-blue-200",
+                                !assignment.is_active && "bg-gray-50 border-gray-200",
                             )}
                         >
                             <CardHeader className="pb-2">
@@ -196,40 +194,27 @@ export function TeacherAssignmentCard({
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
-                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                             <DropdownMenuItem onClick={() => onView(assignment.id)}>
                                                 <Eye className="mr-2 h-4 w-4" />
-                                                View Details
+                                                View
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => onEdit(assignment.id)}>
-                                                <Pencil className="mr-2 h-4 w-4" />
-                                                Edit Assignment
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => onDuplicate(assignment.id)}>
-                                                <Copy className="mr-2 h-4 w-4" />
-                                                Duplicate
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => onToggleStatus(assignment.id)}>
-                                                {isActive ? (
+                                            {
+                                                role == "teacher" ? (
                                                     <>
-                                                        <ToggleLeft className="mr-2 h-4 w-4" />
-                                                        Deactivate
+                                                        <DropdownMenuItem onClick={() => onEdit(assignment.id)}>
+                                                            <Pencil className="mr-2 h-4 w-4" />
+                                                            Edit
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            onClick={() => confirmDelete(assignment.id)}
+                                                            className="text-red-600 focus:text-red-600"
+                                                        >
+                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                            Delete
+                                                        </DropdownMenuItem>
                                                     </>
-                                                ) : (
-                                                    <>
-                                                        <ToggleRight className="mr-2 h-4 w-4" />
-                                                        Activate
-                                                    </>
-                                                )}
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem
-                                                onClick={() => confirmDelete(assignment.id)}
-                                                className="text-red-600 focus:text-red-600"
-                                            >
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                Delete
-                                            </DropdownMenuItem>
+                                                ) : null
+                                            }
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </div>
@@ -238,7 +223,8 @@ export function TeacherAssignmentCard({
                                         {assignment.subject.name}
                                     </Badge>
                                     <Badge variant="outline" className="bg-purple-50 text-purple-700 hover:bg-purple-50">
-                                        {assignment.class.name} {assignment.section?.name}
+                                        {assignment.school_class.name}
+                                        {assignment.section?.name ? ` - ${assignment.section.name}` : ""}
                                     </Badge>
                                 </div>
                             </CardHeader>
@@ -270,15 +256,12 @@ export function TeacherAssignmentCard({
                                     <div className="flex items-center text-sm">
                                         <Calendar className="h-3.5 w-3.5 mr-2 text-gray-500" />
                                         <span
-                                            className={cn(
-                                                "text-gray-600",
-                                                isPastDue && assignment.status === "active" && "text-red-600 font-medium",
-                                            )}
+                                            className={cn("text-gray-600", isPastDue && assignment.is_active && "text-red-600 font-medium")}
                                         >
-                      Due: {format(new Date(assignment.dueDate), "MMM d, yyyy")}
-                                            {isPastDue && assignment.status === "active" && (
+                      Due: {format(new Date(assignment.due_date), "MMM d, yyyy")}
+                                            {isPastDue && assignment.is_active && (
                                                 <span className="ml-1 text-xs text-red-600">
-                          (Overdue by {formatDistanceToNow(new Date(assignment.dueDate))})
+                          (Overdue by {formatDistanceToNow(new Date(assignment.due_date))})
                         </span>
                                             )}
                     </span>
@@ -286,54 +269,24 @@ export function TeacherAssignmentCard({
                                     <div className="flex items-center text-sm">
                                         <Users className="h-3.5 w-3.5 mr-2 text-gray-500" />
                                         <span className="text-gray-600">
-                      Submissions: {assignment.submissionCount}/{assignment.totalStudents}
+                      Submissions: {assignment.total_submissions}/{assignment.total_students} ({submissionProgress}%)
                     </span>
                                     </div>
-                                    {assignment.attachments.length > 0 && (
-                                        <div className="flex flex-col text-sm mt-1">
-                                            <div className="flex items-center">
-                                                <Paperclip className="h-3.5 w-3.5 mr-2 text-gray-500" />
-                                                <span className="text-gray-600">
-                          {assignment.attachments.length} attachment{assignment.attachments.length !== 1 ? "s" : ""}
-                        </span>
-                                            </div>
-                                            {isExpanded && (
-                                                <div className="ml-6 mt-1">
-                                                    {assignment.attachments.map((attachment) => (
-                                                        <TooltipProvider key={attachment.id}>
-                                                            <Tooltip>
-                                                                <TooltipTrigger asChild>
-                                                                    <a
-                                                                        href={attachment.url}
-                                                                        className="flex items-center text-xs text-blue-600 hover:underline mb-1"
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                    >
-                                                                        {getFileIcon(attachment.type)}
-                                                                        <span className="ml-1 truncate max-w-[200px]">{attachment.name}</span>
-                                                                    </a>
-                                                                </TooltipTrigger>
-                                                                <TooltipContent>
-                                                                    <p>{attachment.name}</p>
-                                                                </TooltipContent>
-                                                            </Tooltip>
-                                                        </TooltipProvider>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
                                 </div>
                             </CardContent>
                             <CardFooter className="flex justify-between pt-2 border-t">
                                 <div className="flex items-center text-xs text-gray-500">
-                                    {getStatusIcon(assignment.status)}
-                                    <span className="ml-1">Created: {format(new Date(assignment.createdAt), "MMM d, yyyy")}</span>
+                                    {getStatusIcon(assignment.is_active, isPastDue)}
+                                    <span className="ml-1">{assignment.is_active ? (isPastDue ? "Overdue" : "Active") : "Inactive"}</span>
                                 </div>
                                 <div className="flex gap-2">
-                                    <Button size="sm" variant="ghost" onClick={() => onEdit(assignment.id)} className="h-8">
-                                        <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
-                                    </Button>
+                                    {
+                                        role == "teacher" ? (
+                                            <Button size="sm" variant="ghost" onClick={() => onEdit(assignment.id)} className="h-8">
+                                                <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
+                                            </Button>
+                                        ) : null
+                                    }
                                     <Button variant={"outline"} size="sm" onClick={() => onView(assignment.id)} className="h-8">
                                         <Eye className="h-3.5 w-3.5 mr-1" /> View
                                     </Button>

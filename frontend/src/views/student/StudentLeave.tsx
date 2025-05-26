@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Calendar, CheckCircle, XCircle, Clock, PlusCircle, CalendarDays } from "lucide-react"
+import { CheckCircle, XCircle, Clock, PlusCircle, MoreHorizontal } from "lucide-react"
 import { format, differenceInDays, addDays } from "date-fns"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -18,30 +18,30 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import axiosInstance from "@/auth/AxiosInstance.ts"
 
 interface LeaveRequest {
     id: string
-    startDate: string
-    endDate: string
-    days: number
-    reason: string
-    status: "Pending" | "Approved" | "Rejected"
-    appliedOn: string
-    responseDate?: string
-    responseComment?: string
+    start_date: string
+    end_date: string
+    leave_reason: string
+    leave_status: "Pending" | "Approved" | "Rejected"
+    created_at: string
 }
 
 export function StudentLeave() {
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([])
     const [loading, setLoading] = useState(true)
     const [requestDialogOpen, setRequestDialogOpen] = useState(false)
+    const [viewDialogOpen, setViewDialogOpen] = useState(false)
+    const [selectedLeave, setSelectedLeave] = useState<LeaveRequest | null>(null)
 
-    // Define the form schema
     const leaveFormSchema = z
         .object({
             startDate: z.string({
@@ -89,139 +89,120 @@ export function StudentLeave() {
         return format(date, "MMMM dd, yyyy")
     }
 
+    const calculateDays = (startDate: string, endDate: string) => {
+        const start = new Date(startDate)
+        const end = new Date(endDate)
+        return differenceInDays(end, start) + 1
+    }
+
+    const fetchLeaves = () => {
+        axiosInstance
+            .get("/api/auth/leave-me/")
+            .then((res) => {
+                setLeaveRequests(res.data)
+            })
+            .catch((err) => {
+                console.error("Error fetching leave requests:", err)
+            })
+            .finally(() => {
+                setLoading(false)
+            })
+    }
+
     useEffect(() => {
-        // Simulate API call to fetch leave requests
-        setTimeout(() => {
-            const mockLeaveRequests: LeaveRequest[] = [
-                {
-                    id: "1",
-                    startDate: "2024-04-10",
-                    endDate: "2024-04-12",
-                    days: 3,
-                    reason: "Family function",
-                    status: "Approved",
-                    appliedOn: "2024-04-05",
-                    responseDate: "2024-04-07",
-                    responseComment: "Approved as requested",
-                },
-                {
-                    id: "2",
-                    startDate: "2024-03-15",
-                    endDate: "2024-03-16",
-                    days: 2,
-                    reason: "Medical appointment",
-                    status: "Approved",
-                    appliedOn: "2024-03-10",
-                    responseDate: "2024-03-12",
-                },
-                {
-                    id: "3",
-                    startDate: "2024-02-20",
-                    endDate: "2024-02-22",
-                    days: 3,
-                    reason: "Personal emergency",
-                    status: "Rejected",
-                    appliedOn: "2024-02-18",
-                    responseDate: "2024-02-19",
-                    responseComment: "Insufficient notice period",
-                },
-                {
-                    id: "4",
-                    startDate: "2024-05-25",
-                    endDate: "2024-05-27",
-                    days: 3,
-                    reason: "Family trip",
-                    status: "Pending",
-                    appliedOn: "2024-05-15",
-                },
-                {
-                    id: "4",
-                    startDate: "2024-05-01",
-                    endDate: "2024-05-06",
-                    days: 3,
-                    reason: "Test leave",
-                    status: "Approved",
-                    appliedOn: "2024-04-30",
-                    responseDate: "2024-04-30",
-
-                },
-            ]
-
-            setLeaveRequests(mockLeaveRequests)
-            setLoading(false)
-        }, 1500)
+        fetchLeaves()
     }, [])
 
     const handleRequestLeave = (values: LeaveFormValues) => {
-        const startDate = new Date(values.startDate)
-        const endDate = new Date(values.endDate)
-        const days = differenceInDays(endDate, startDate) + 1
-
-        // Create new leave request
-        const newLeaveRequest: LeaveRequest = {
-            id: `new-${Date.now()}`,
-            startDate: values.startDate,
-            endDate: values.endDate,
-            days,
-            reason: values.reason,
-            status: "Pending",
-            appliedOn: format(new Date(), "yyyy-MM-dd"),
+        const requestData = {
+            start_date: values.startDate,
+            end_date: values.endDate,
+            leave_reason: values.reason,
         }
 
-        // Add to leave requests
-        setLeaveRequests((prev) => [newLeaveRequest, ...prev])
-        setRequestDialogOpen(false)
-        form.reset({
-            startDate: format(new Date(), "yyyy-MM-dd"),
-            endDate: format(addDays(new Date(), 1), "yyyy-MM-dd"),
-            reason: "",
-        })
-        toast.success("Leave request submitted successfully")
+        axiosInstance
+            .post("/api/auth/leave-me/", requestData)
+            .then(() => {
+                fetchLeaves()
+                setRequestDialogOpen(false)
+                form.reset({
+                    startDate: format(new Date(), "yyyy-MM-dd"),
+                    endDate: format(addDays(new Date(), 1), "yyyy-MM-dd"),
+                    reason: "",
+                })
+                toast.success("Leave request submitted successfully")
+            })
+            .catch((err) => {
+                console.error("Error submitting leave request:", err)
+                toast.error("Failed to submit leave request")
+            })
     }
 
-    // Calculate leave statistics
-    const totalLeaves = leaveRequests.reduce((total, leave) => total + leave.days, 0)
-    const approvedLeaves = leaveRequests
-        .filter((leave) => leave.status === "Approved")
-        .reduce((total, leave) => total + leave.days, 0)
-    const rejectedLeaves = leaveRequests
-        .filter((leave) => leave.status === "Rejected")
-        .reduce((total, leave) => total + leave.days, 0)
-    const pendingLeaves = leaveRequests
-        .filter((leave) => leave.status === "Pending")
-        .reduce((total, leave) => total + leave.days, 0)
+    const handleView = (id: string) => {
+        const leave = leaveRequests.find((req) => req.id === id)
+        if (leave) {
+            setSelectedLeave(leave)
+            setViewDialogOpen(true)
+        }
+    }
 
-    // Assuming a student has 15 leave days per year
-    const totalAllowedLeaves = 15
-    const remainingLeaves = totalAllowedLeaves - approvedLeaves - pendingLeaves
+    const handleCancel = (id: string) => {
+        axiosInstance
+            .delete(`/api/auth/leave-me/${id}/`)
+            .then(() => {
+                fetchLeaves()
+                toast.success("Leave request cancelled successfully")
+            })
+            .catch((err) => {
+                console.error("Error cancelling leave request:", err)
+                toast.error("Failed to cancel leave request")
+            })
+    }
+
+    const approvedLeaves = leaveRequests
+        .filter((leave) => leave.leave_status?.toLowerCase() === "approved")
+        .reduce((total, leave) => total + calculateDays(leave.start_date, leave.end_date), 0)
+    const rejectedLeaves = leaveRequests
+        .filter((leave) => leave.leave_status?.toLowerCase() === "rejected")
+        .reduce((total, leave) => total + calculateDays(leave.start_date, leave.end_date), 0)
+    const pendingRequests = leaveRequests.filter((leave) => leave.leave_status?.toLowerCase() === "pending").length
 
     const getStatusBadge = (status: string) => {
-        switch (status) {
-            case "Pending":
+        const normalizedStatus = status?.toLowerCase().trim()
+
+        switch (normalizedStatus) {
+            case "pending":
                 return (
                     <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                        <Clock className="h-3 w-3 mr-1" />
                         Pending
                     </Badge>
                 )
-            case "Approved":
+            case "approved":
                 return (
                     <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                        <CheckCircle className="h-3 w-3 mr-1" />
                         Approved
                     </Badge>
                 )
-            case "Rejected":
+            case "rejected":
                 return (
                     <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                        <XCircle className="h-3 w-3 mr-1" />
                         Rejected
                     </Badge>
                 )
             default:
-                return null
+                return (
+                    <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
+                        {status || "Unknown"}
+                    </Badge>
+                )
         }
     }
 
     return (
-        <div className="p-6 bg-gray-50">
+        <div className="p-4 bg-gray-50">
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h1 className="text-2xl font-semibold text-gray-800">Leave Management</h1>
@@ -234,63 +215,42 @@ export function StudentLeave() {
             </div>
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-                <Card className="bg-white border border-gray-200">
-                    <CardContent className="p-6">
-                        <div className="flex items-start gap-4">
-                            <div className="bg-blue-50 p-3 rounded-full">
-                                <Calendar className="h-5 w-5 text-blue-600" />
-                            </div>
-                            <div>
-                                <h3 className="font-medium text-gray-900">Total Leaves</h3>
-                                <p className="text-2xl font-semibold text-gray-800 mt-1">{totalLeaves} days</p>
-                            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="bg-white p-4 rounded-md shadow-sm border border-gray-100">
+                    <div className="flex items-start gap-3">
+                        <div className="bg-yellow-50 p-2 rounded-md">
+                            <Clock className="h-5 w-5 text-yellow-600" />
                         </div>
-                    </CardContent>
-                </Card>
+                        <div>
+                            <h3 className="font-medium text-gray-900">Pending Requests</h3>
+                            <p className="text-sm text-gray-500 mt-1">{pendingRequests} requests awaiting review</p>
+                        </div>
+                    </div>
+                </div>
 
-                <Card className="bg-white border border-gray-200">
-                    <CardContent className="p-6">
-                        <div className="flex items-start gap-4">
-                            <div className="bg-green-50 p-3 rounded-full">
-                                <CheckCircle className="h-5 w-5 text-green-600" />
-                            </div>
-                            <div>
-                                <h3 className="font-medium text-gray-900">Approved</h3>
-                                <p className="text-2xl font-semibold text-gray-800 mt-1">{approvedLeaves} days</p>
-                            </div>
+                <div className="bg-white p-4 rounded-md shadow-sm border border-gray-100">
+                    <div className="flex items-start gap-3">
+                        <div className="bg-green-50 p-2 rounded-md">
+                            <CheckCircle className="h-5 w-5 text-green-600" />
                         </div>
-                    </CardContent>
-                </Card>
+                        <div>
+                            <h3 className="font-medium text-gray-900">Approved Days</h3>
+                            <p className="text-sm text-gray-500 mt-1">{approvedLeaves} days approved</p>
+                        </div>
+                    </div>
+                </div>
 
-                <Card className="bg-white border border-gray-200">
-                    <CardContent className="p-6">
-                        <div className="flex items-start gap-4">
-                            <div className="bg-red-50 p-3 rounded-full">
-                                <XCircle className="h-5 w-5 text-red-600" />
-                            </div>
-                            <div>
-                                <h3 className="font-medium text-gray-900">Rejected</h3>
-                                <p className="text-2xl font-semibold text-gray-800 mt-1">{rejectedLeaves} days</p>
-                            </div>
+                <div className="bg-white p-4 rounded-md shadow-sm border border-gray-100">
+                    <div className="flex items-start gap-3">
+                        <div className="bg-red-50 p-2 rounded-md">
+                            <XCircle className="h-5 w-5 text-red-600" />
                         </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="bg-white border border-gray-200">
-                    <CardContent className="p-6">
-                        <div className="flex items-start gap-4">
-                            <div className="bg-purple-50 p-3 rounded-full">
-                                <CalendarDays className="h-5 w-5 text-purple-600" />
-                            </div>
-                            <div>
-                                <h3 className="font-medium text-gray-900">Remaining</h3>
-                                <p className="text-2xl font-semibold text-gray-800 mt-1">{remainingLeaves} days</p>
-                                <p className="text-xs text-gray-500">of {totalAllowedLeaves} days</p>
-                            </div>
+                        <div>
+                            <h3 className="font-medium text-gray-900">Rejected Days</h3>
+                            <p className="text-sm text-gray-500 mt-1">{rejectedLeaves} days rejected</p>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
 
             {/* Leave History Table */}
@@ -305,7 +265,7 @@ export function StudentLeave() {
                                 <TableHead>Days</TableHead>
                                 <TableHead className="hidden md:table-cell">Reason</TableHead>
                                 <TableHead>Status</TableHead>
-                                <TableHead className="hidden lg:table-cell">Response</TableHead>
+                                <TableHead>Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -331,8 +291,8 @@ export function StudentLeave() {
                                         <TableCell>
                                             <Skeleton className="h-5 w-20" />
                                         </TableCell>
-                                        <TableCell className="hidden lg:table-cell">
-                                            <Skeleton className="h-5 w-28" />
+                                        <TableCell>
+                                            <Skeleton className="h-5 w-10" />
                                         </TableCell>
                                     </TableRow>
                                 ))
@@ -348,18 +308,33 @@ export function StudentLeave() {
                                         <TableCell>
                                             <div className="flex items-center gap-1">
                                                 <Clock className="h-3.5 w-3.5 text-gray-500" />
-                                                <span>{formatDate(leave.appliedOn)}</span>
+                                                <span>{formatDate(leave.created_at)}</span>
                                             </div>
                                         </TableCell>
-                                        <TableCell>{formatDate(leave.startDate)}</TableCell>
-                                        <TableCell>{formatDate(leave.endDate)}</TableCell>
-                                        <TableCell>{leave.days} days</TableCell>
-                                        <TableCell className="hidden md:table-cell max-w-[200px] truncate" title={leave.reason}>
-                                            {leave.reason}
+                                        <TableCell>{formatDate(leave.start_date)}</TableCell>
+                                        <TableCell>{formatDate(leave.end_date)}</TableCell>
+                                        <TableCell>{calculateDays(leave.start_date, leave.end_date)} days</TableCell>
+                                        <TableCell className="hidden md:table-cell max-w-[200px] truncate" title={leave.leave_reason}>
+                                            {leave.leave_reason}
                                         </TableCell>
-                                        <TableCell>{getStatusBadge(leave.status)}</TableCell>
-                                        <TableCell className="hidden lg:table-cell text-sm text-gray-500">
-                                            {leave.responseDate ? formatDate(leave.responseDate) : "-"}
+                                        <TableCell>{getStatusBadge(leave.leave_status)}</TableCell>
+                                        <TableCell>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => handleView(leave.id)}>View</DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        onClick={() => handleCancel(leave.id)}
+                                                        disabled={leave.leave_status !== "Pending"}
+                                                    >
+                                                        Cancel
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </TableCell>
                                     </TableRow>
                                 ))
@@ -438,6 +413,59 @@ export function StudentLeave() {
                             </DialogFooter>
                         </form>
                     </Form>
+                </DialogContent>
+            </Dialog>
+
+            {/* View Leave Dialog */}
+            <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Leave Request Details</DialogTitle>
+                        <DialogDescription>View the details of your leave request</DialogDescription>
+                    </DialogHeader>
+
+                    {selectedLeave && (
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-sm font-medium text-gray-700">Start Date</label>
+                                    <p className="text-sm text-gray-900 mt-1">{formatDate(selectedLeave.start_date)}</p>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-700">End Date</label>
+                                    <p className="text-sm text-gray-900 mt-1">{formatDate(selectedLeave.end_date)}</p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Duration</label>
+                                <p className="text-sm text-gray-900 mt-1">
+                                    {calculateDays(selectedLeave.start_date, selectedLeave.end_date)} days
+                                </p>
+                            </div>
+
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Status</label>
+                                <div className="mt-1">{getStatusBadge(selectedLeave.leave_status)}</div>
+                            </div>
+
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Applied On</label>
+                                <p className="text-sm text-gray-900 mt-1">{formatDate(selectedLeave.created_at)}</p>
+                            </div>
+
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Reason</label>
+                                <p className="text-sm text-gray-900 mt-1 p-3 bg-gray-50 rounded-md">{selectedLeave.leave_reason}</p>
+                            </div>
+                        </div>
+                    )}
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
+                            Close
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>

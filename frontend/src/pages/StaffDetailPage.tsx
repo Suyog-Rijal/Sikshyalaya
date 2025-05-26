@@ -427,11 +427,6 @@ export function StaffDetailPage() {
                         { label: "Staff", href: "/staff/list/" },
                         { label: "Staff Detail", href: `/staff/detail/${params.id}` },
                     ]}
-                    primaryAction={{
-                        label: "Edit Detail",
-                        onClick: () => navigate(`/staff/edit/${params.id}`),
-                        icon: <Pencil className="h-4 w-4" />,
-                    }}
                 />
 
                 <Dialog open={showLoginDetails} onOpenChange={setShowLoginDetails}>

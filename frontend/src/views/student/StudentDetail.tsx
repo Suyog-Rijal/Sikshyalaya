@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {useAuthStore} from "@/store/AuthStore.ts";
 
 const TagCard = ({ value }: { value: string }) => {
     return (
@@ -96,6 +97,7 @@ export function StudentDetailPage() {
     const params = useParams()
     const [loading, setLoading] = useState(true)
     const [student, setStudent] = useState<Student | null>(null)
+    const {role} = useAuthStore();
 
     useEffect(() => {
         setLoading(true)
@@ -495,7 +497,7 @@ export function StudentDetailPage() {
                     <p className="text-gray-500 mb-4">
                         The student you're looking for doesn't exist or you don't have permission to view it.
                     </p>
-                    <Button onClick={() => navigate("/students/list/")}>Back to Students List</Button>
+                    <Button onClick={() => navigate("/student/list/")}>Back to Students List</Button>
                 </div>
             </div>
         )
@@ -504,19 +506,28 @@ export function StudentDetailPage() {
     return (
         <div className="p-4 flex flex-col gap-2 bg-slate-100">
             <div>
-                <PageHeader
-                    title="Student Details"
-                    breadcrumbs={[
-                        { label: "Dashboard", href: "/" },
-                        { label: "Students", href: "/students/list/" },
-                        { label: "Student Detail", href: `/students/detail/${params.id}` },
-                    ]}
-                    primaryAction={{
-                        label: "Edit Detail",
-                        onClick: () => navigate(`/students/edit/${student.id}`),
-                        icon: <Pencil className="h-4 w-4" />,
-                    }}
-                />
+                {
+                    role == "teacher" ? (
+                        <PageHeader
+                            title="Student Details"
+                            breadcrumbs={[
+                                { label: "Dashboard", href: "/" },
+                                { label: "Students", href: "/student/list/" },
+                                { label: "Student Detail", href: `/students/detail/${params.id}` },
+                            ]}
+                        />
+                    ) : (
+                        <PageHeader
+                            title="Student Details"
+                            breadcrumbs={[
+                                { label: "Dashboard", href: "/" },
+                                { label: "Students", href: "/student/list/" },
+                                { label: "Student Detail", href: `/students/detail/${params.id}` },
+                            ]}
+
+                        />
+                    )
+                }
             </div>
 
             <div className="grid grid-cols-10 gap-4">

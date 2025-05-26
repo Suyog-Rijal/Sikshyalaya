@@ -2,7 +2,7 @@ import uuid
 
 from django.db import transaction
 from django.core.exceptions import ValidationError
-from django.db.models import Prefetch, Q
+from django.db.models import Prefetch, Q, Count
 from django.utils import timezone
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -10,19 +10,23 @@ from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
 from academic.models import SchoolClass, Department, Section, Subject, Routine, AttendanceSession, AttendanceRecord, \
-	Enrollment, Assignment
+	Enrollment, Assignment, Exam, Announcement, AssignmentAttachment, Submission
 from academic.serializer import EnrollmentPostSerializer, EnrollmentGetSchoolClassSerializer, AddStaffGetSerializer, \
 	SimpleDepartmentSerializer, AddStaffSerializer, SimpleTeacherSerializer, SimpleManagementStaffSerializer, \
 	SchoolClassGetSerializer, SchoolClassPostSerializer, SubjectListSerializer, RoutineSerializer, \
 	SimpleSchoolClassSerializer, SimpleSubjectSerializer, SimpleStaffSerializer, RoutineSchoolClassGetSerializer, \
 	RoutineTeacherGetSerializer, RoutinePostSerializer, AttendanceRecordPostSerializer, \
-	AttendanceRecordGetSerializer, AssignmentSerializer, AssignmentFormGetSerializer
+	AttendanceRecordGetSerializer, AssignmentFormGetSerializer, SchoolClassRetrieveSerializer, \
+	ClassTeacherApiSerializer, ExamSerializer, ExamPostSerializer, ExamFormSerializer, AnnouncementSerializer, \
+	AnnouncementPostSerializer, TeacherAssignmentGetSerializer, AssignmentPostSerializer, \
+	TeacherAssignmentDetailSerializer, AssignmentUpdateSerializer, SubmissionSerializer
 from student.serializer import ListStudentSerializer
-from user.serializer import StudentSerializer, ParentSerializer
-from user.models import Parent, Teacher, Staff, CustomUser, Student
+from user.serializer import StudentSerializer, ParentSerializer, ParentDetailSerializer
+from user.models import Parent, Teacher, Staff, CustomUser, Student, ManagementStaff
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from rest_framework import filters
+from rest_framework.response import Response
 
 
 class EnrollmentApiView(APIView):
@@ -276,7 +280,7 @@ class DeleteStaffApiView(APIView):
 
 
 class SchoolClassViewSet(ModelViewSet):
-	permission_classes = [IsAuthenticated]
+	permission_classes = [AllowAny]
 	http_method_names = ['get', 'post', 'delete', 'put']
 	queryset = SchoolClass.objects.all()
 
@@ -287,6 +291,8 @@ class SchoolClassViewSet(ModelViewSet):
 			return SchoolClassPostSerializer
 		if self.action == 'update':
 			return SchoolClassPostSerializer
+		if self.action == 'retrieve':
+			return SchoolClassRetrieveSerializer
 
 	def update(self, request, *args, **kwargs):
 		school_id = kwargs.get('pk')
@@ -313,6 +319,97 @@ class SchoolClassViewSet(ModelViewSet):
 				section.delete()
 
 		return Response({'message': 'Classes updated successfully'}, status=status.HTTP_200_OK)
+
+
+@extend_schema(tags=["Class"])
+class SchoolClassTeacherApiView(APIView):
+	permission_classes = [AllowAny]
+
+	def get(self, request, class_id=None):
+		if not request.user.has_role('admin'):
+			return Response(
+				{'detail': 'You do not have permission to view teachers.'},
+				status=status.HTTP_403_FORBIDDEN
+			)
+
+		try:
+			school_class = SchoolClass.objects.get(id=class_id)
+			teachers = school_class.teachers.all().prefetch_related('staff')
+			teachers = [teacher for teacher in teachers if not teacher.sections.exists()]
+
+			serializer = ClassTeacherApiSerializer(teachers, many=True)
+			return Response(serializer.data, status=status.HTTP_200_OK)
+		except Exception as e:
+			print(e)
+			return Response(
+				{'detail': 'An error occurred while retrieving teachers.'},
+				status=status.HTTP_400_BAD_REQUEST
+			)
+
+	def post(self, request, class_id=None):
+		if not request.user.has_role('admin'):
+			return Response(
+				{'detail': 'You do not have permission to add teachers.'},
+				status=status.HTTP_403_FORBIDDEN
+			)
+
+		try:
+			teacher_id = request.data.get('teacher_id')
+			teacher = Teacher.objects.get(id=teacher_id)
+
+			section_id = request.data.get('section_id')
+			section = Section.objects.get(id=section_id)
+
+			school_class = SchoolClass.objects.get(id=class_id)
+			teachers = school_class.teachers.all().prefetch_related('staff')
+			teachers = [teacher for teacher in teachers if not teacher.sections.exists()]
+			if teacher not in teachers:
+				return Response(
+					{'message': 'Teacher already assigned to another section.'},
+					status=status.HTTP_400_BAD_REQUEST
+				)
+
+			section.class_teacher = teacher
+			section.save()
+			return Response(
+				{'message': 'Teacher assigned successfully.'},
+				status=status.HTTP_200_OK
+			)
+
+		except Exception as e:
+			print(e)
+			return Response(
+				{'detail': 'An error occurred while adding teachers.'},
+				status=status.HTTP_400_BAD_REQUEST
+			)
+
+	def delete(self, request, class_id=None):
+		# if not request.user.has_role('admin'):
+		# 	return Response(
+		# 		{'detail': 'You do not have permission to delete teachers.'},
+		# 		status=status.HTTP_403_FORBIDDEN
+		# 	)
+
+		try:
+			print('data', request.data)
+
+			section_id = request.data.get('section_id')
+			section = Section.objects.get(id=section_id)
+
+			section.class_teacher = None
+			section.save()
+
+			return Response(
+				{'message': 'Teacher unassigned successfully.'},
+				status=status.HTTP_200_OK
+			)
+
+		except Exception as e:
+			print(e)
+			return Response(
+				{'detail': 'An error occurred while deleting teachers.'},
+				status=status.HTTP_400_BAD_REQUEST
+			)
 
 
 class SubjectApiView(APIView):
@@ -378,6 +475,20 @@ class RoutineViewSet(ModelViewSet):
 		if self.action == 'update':
 			return RoutinePostSerializer
 		return RoutineSerializer
+
+	def get_queryset(self):
+		if self.request.user.has_role('admin'):
+			return Routine.objects.all().order_by('created_at')
+		elif self.request.user.has_role('teacher'):
+			teacher = Teacher.objects.get(staff__email=self.request.user.email)
+			return Routine.objects.filter(teacher=teacher).order_by('created_at')
+		elif self.request.user.has_role('student'):
+			student = Student.objects.get(email=self.request.user.email)
+			enrollment = Enrollment.objects.filter(student=student).first()
+			if enrollment:
+				return Routine.objects.filter(school_class=enrollment.school_class,
+				                              section=enrollment.section).order_by('created_at')
+			return Routine.objects.none()
 
 	def update(self, request, *args, **kwargs):
 		try:
@@ -626,22 +737,36 @@ class TeacherStudentAttendanceView(APIView):
 	permission_classes = [IsAuthenticated]
 
 	def get(self, request):
-		if not request.user.has_role('teacher'):
-			return Response(
-				{'detail': 'You do not have permission to view attendance records.'},
-				status=status.HTTP_403_FORBIDDEN
-			)
-
+		user = request.user
 		try:
-			selected_date = self.request.query_params.get('selected_date')
-			staff = Staff.objects.get(email=request.user.email)
-			teacher = Teacher.objects.get(staff=staff)
-			teacher_class = SchoolClass.objects.filter(section__class_teacher=teacher).distinct()
-			attendanceSession = AttendanceSession.objects.filter(date=selected_date,
-			                                                     school_class__in=teacher_class).distinct()
-			attendance_records = AttendanceRecord.objects.filter(session__in=attendanceSession).distinct()
-			serializer = AttendanceRecordGetSerializer(attendance_records, many=True)
-			return Response(serializer.data, status=status.HTTP_200_OK)
+			if user.has_role("teacher"):
+				selected_date = self.request.query_params.get('selected_date')
+				staff = Staff.objects.get(email=request.user.email)
+				teacher = Teacher.objects.get(staff=staff)
+				teacher_class = SchoolClass.objects.filter(section__class_teacher=teacher).distinct()
+				attendanceSession = AttendanceSession.objects.filter(date=selected_date,
+				                                                     school_class__in=teacher_class).distinct()
+				attendance_records = AttendanceRecord.objects.filter(session__in=attendanceSession).distinct()
+				serializer = AttendanceRecordGetSerializer(attendance_records, many=True)
+				return Response(serializer.data, status=status.HTTP_200_OK)
+			elif user.has_role("student"):
+				student = Student.objects.get(email=request.user.email)
+				enrollment = Enrollment.objects.filter(student=student).first()
+				if not enrollment:
+					return Response(
+						{'detail': 'No enrollment found for this student.'},
+						status=status.HTTP_404_NOT_FOUND
+					)
+				selected_date = self.request.query_params.get('selected_date')
+				attendanceSession = AttendanceSession.objects.filter(
+					date=selected_date,
+					school_class=enrollment.school_class,
+					section=enrollment.section
+				).distinct()
+				attendance_records = AttendanceRecord.objects.filter(session__in=attendanceSession,
+				                                                     student__email=student.email).distinct()
+				serializer = AttendanceRecordGetSerializer(attendance_records, many=True)
+				return Response(serializer.data, status=status.HTTP_200_OK)
 		except Exception as e:
 			print(e)
 			return Response(
@@ -679,10 +804,138 @@ class TeacherStudentList(APIView):
 
 @extend_schema(tags=['Assignment'])
 class AssignmentViewSet(ModelViewSet):
-	http_method_names = ['get', 'post']
+	http_method_names = ['get', 'post', 'delete', 'put']
 	permission_classes = [AllowAny]
 	queryset = Assignment.objects.all()
-	serializer_class = AssignmentSerializer
+
+	def get_serializer_class(self):
+		if self.action == 'create':
+			return AssignmentPostSerializer
+		elif self.action == 'retrieve':
+			return TeacherAssignmentDetailSerializer
+		elif self.action == 'update':
+			return AssignmentUpdateSerializer
+		return TeacherAssignmentGetSerializer
+
+	def get_queryset(self):
+		if self.request.user.has_role('admin'):
+			return Assignment.objects.all().order_by('created_at')
+		elif self.request.user.has_role('teacher'):
+			teacher = Teacher.objects.get(staff__email=self.request.user.email)
+			return Assignment.objects.filter(teacher=teacher).order_by('created_at')
+		elif self.request.user.has_role('student'):
+			student = Student.objects.get(email=self.request.user.email)
+			enrollment = Enrollment.objects.filter(student=student).first()
+			if enrollment:
+				return Assignment.objects.filter(school_class=enrollment.school_class,
+				                                 section=enrollment.section).order_by('created_at')
+			return Assignment.objects.none()
+
+	def create(self, request, *args, **kwargs):
+		try:
+			with transaction.atomic():
+				serializer = self.get_serializer(data=request.data, partial=True)
+				serializer.is_valid(raise_exception=True)
+				assignment = serializer.save()
+
+				file = request.FILES.get('file')
+				if file:
+					AssignmentAttachment.objects.create(
+						assignment=assignment,
+						file=file
+					)
+
+				return Response(serializer.data, status=status.HTTP_201_CREATED)
+		except Exception as e:
+			return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+	def update(self, request, *args, **kwargs):
+		try:
+			with transaction.atomic():
+				instance = self.get_object()
+				serializer = self.get_serializer(instance=instance, data=request.data, partial=True)
+				serializer.is_valid(raise_exception=True)
+				assignment = serializer.save()
+
+				file = request.FILES.get('file')
+				if file:
+					attachment = AssignmentAttachment.objects.filter(assignment=assignment).first()
+					if attachment:
+						attachment.file = file
+						attachment.save()
+					else:
+						AssignmentAttachment.objects.create(
+							assignment=assignment,
+							file=file
+						)
+				else:
+					attachment = AssignmentAttachment.objects.filter(assignment=assignment).first()
+					if attachment:
+						attachment.delete()
+
+				return Response(serializer.data, status=status.HTTP_200_OK)
+		except Exception as e:
+			print(e)
+			return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(tags=['Assignment'])
+class GradeAssignmentApiView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	@extend_schema(
+		description="Grade an assignment submission. Only accessible by users with the 'teacher' role.",
+		request=None,
+		parameters=[
+			OpenApiParameter(
+				name='submission_id',
+				required=True,
+				type=uuid.UUID,
+			),
+			OpenApiParameter(
+				name='marks',
+				required=True,
+				type=int,
+			)
+		],
+		responses={
+			200: OpenApiResponse(
+				response={'detail': 'Assignment graded successfully.'},
+				description='Successful grading of the assignment.'
+			),
+			403: OpenApiResponse(
+				response={'detail': 'You do not have permission to grade assignments.'},
+				description='Forbidden access for non-teachers.'
+			),
+			400: OpenApiResponse(
+				response={'detail': 'An error occurred while grading the assignment.'},
+				description='Bad request due to validation errors or other issues.'
+			)
+		}
+	)
+	def put(self, request):
+		if not request.user.has_role('teacher'):
+			return Response(
+				{'detail': 'You do not have permission to grade assignments.'},
+				status=status.HTTP_403_FORBIDDEN
+			)
+
+		try:
+			submission_id = request.data.get('submission_id')
+			marks = request.data.get('marks')
+
+			submission = Submission.objects.get(id=submission_id)
+			submission.marks = marks
+			submission.status = 'g'
+			submission.save()
+
+			return Response({'detail': 'Assignment graded successfully.'}, status=status.HTTP_200_OK)
+		except Exception as e:
+			print(e)
+			return Response(
+				{'detail': 'An error occurred while grading the assignment.'},
+				status=status.HTTP_400_BAD_REQUEST
+			)
 
 
 @extend_schema(tags=['Assignment'])
@@ -703,3 +956,190 @@ class AssignmentFormGetApiView(APIView):
 				{'detail': 'An error occurred while retrieving assignment form data.'},
 				status=status.HTTP_400_BAD_REQUEST
 			)
+
+
+@extend_schema(tags=['Parent'])
+class ParentDetailView(APIView):
+	permission_classes = [AllowAny]
+
+	def get(self, request, parent_id: None):
+		try:
+			print('parent_id', parent_id)
+			parent = Parent.objects.get(id=parent_id)
+			student = Student.objects.filter(
+				Q(father=parent) | Q(mother=parent) | Q(guardian=parent)
+			).distinct().prefetch_related('enrollments')
+			serializer = ParentDetailSerializer(parent, context={'request': request})
+			return Response(serializer.data, status=status.HTTP_200_OK)
+		except Exception as e:
+			print(e)
+			return Response(
+				{'detail': 'An error occurred while retrieving parent details.'},
+				status=status.HTTP_400_BAD_REQUEST
+			)
+
+
+@extend_schema(tags=['Exam'])
+class ExamViewSet(ModelViewSet):
+	http_method_names = ['get', 'post', 'delete', 'put']
+	permission_classes = [AllowAny]
+	queryset = Exam.objects.all().order_by('created_at')
+	serializer_class = ExamSerializer
+	lookup_field = 'id'
+
+	def get_serializer_class(self):
+		if self.action == 'create' or self.action == 'update':
+			return ExamPostSerializer
+		return ExamSerializer
+
+	def get_queryset(self):
+		if self.request.user.has_role('admin'):
+			return Exam.objects.all()
+		elif self.request.user.has_role('student'):
+			student = Student.objects.get(email=self.request.user.email)
+			return Exam.objects.filter(
+				school_class__in=student.enrollments.values_list('school_class', flat=True)).distinct()
+		elif self.request.user.has_role('teacher'):
+			staff = Staff.objects.get(email=self.request.user.email)
+			teacher = Teacher.objects.get(staff=staff)
+			return Exam.objects.filter(school_class__in=teacher.school_class.all()).distinct()
+		elif self.request.user.has_role('parent'):
+			parent = Parent.objects.get(email=self.request.user.email)
+			student = Student.objects.filter(
+				Q(father=parent) | Q(mother=parent) | Q(guardian=parent)
+			).distinct().prefetch_related('enrollments')
+			return Exam.objects.filter(
+				school_class__in=student.values_list('enrollments__school_class', flat=True)).distinct()
+
+
+@extend_schema(tags=['Exam'])
+class ExamFormViewSet(ModelViewSet):
+	permission_classes = [AllowAny]
+	http_method_names = ['get']
+	queryset = SchoolClass.objects.all()
+	serializer_class = ExamFormSerializer
+
+
+@extend_schema(tags=['Announcement'])
+class AnnouncementViewSet(ModelViewSet):
+	permission_classes = [AllowAny]
+	http_method_names = ['get', 'post', 'delete', 'put']
+	queryset = Announcement.objects.all()
+	serializer_class = AnnouncementSerializer
+
+	def get_serializer_class(self):
+		if self.action == 'create' or self.action == 'update':
+			return AnnouncementPostSerializer
+		return AnnouncementSerializer
+
+
+class AdminDashboard(APIView):
+	permission_classes = [AllowAny]
+
+	def get(self, request):
+		try:
+			total_student_active = Student.objects.filter(account_status="A").count()
+			total_student_inactive = Student.objects.filter(account_status="I").count()
+			total_teacher_active = Teacher.objects.filter(staff__account_status="A").count()
+			total_teacher_inactive = Teacher.objects.filter(staff__account_status="I").count()
+			total_parent_active = Parent.objects.count()
+			total_parent_inactive = 0  # You may update this if needed
+
+			total_staff_active = ManagementStaff.objects.filter(staff__account_status="A").count()
+			total_staff_inactive = ManagementStaff.objects.filter(staff__account_status="I").count()
+			total_student = Student.objects.count()
+			total_boys = Student.objects.filter(gender='M').count()
+			total_girls = Student.objects.filter(gender='F').count()
+
+			classes = SchoolClass.objects.all()
+			average_weekly_attendance = {}
+
+			for school_class in classes:
+				attendance_records = AttendanceRecord.objects.filter(
+					session__school_class=school_class
+				)
+				total_attendance = attendance_records.count()
+
+				total_sessions = AttendanceSession.objects.filter(school_class=school_class).count()
+				total_students = school_class.enrollments.count()
+
+				expected_attendance = total_sessions * total_students
+				if expected_attendance > 0:
+					attendance_percentage = (total_attendance / expected_attendance) * 100
+				else:
+					attendance_percentage = 0
+
+				average_weekly_attendance[school_class.name] = round(attendance_percentage, 2)
+
+			return Response({
+				'total_student_active': total_student_active,
+				'total_student_inactive': total_student_inactive,
+				'total_teacher_active': total_teacher_active,
+				'total_teacher_inactive': total_teacher_inactive,
+				'total_parent_active': total_parent_active,
+				'total_parent_inactive': total_parent_inactive,
+				'total_staff_active': total_staff_active,
+				'total_staff_inactive': total_staff_inactive,
+				'total_student': total_student,
+				'total_boys': total_boys,
+				'total_girls': total_girls,
+				'average_weekly_attendance': average_weekly_attendance
+			}, status=status.HTTP_200_OK)
+
+		except Exception as e:
+			print(e)
+			return Response(
+				{'detail': 'An error occurred while retrieving dashboard data.'},
+				status=status.HTTP_400_BAD_REQUEST
+			)
+
+
+@extend_schema(tags=['Attendance'])
+class ParentChildAttendance(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def get(self, request):
+		print("Here")
+		user = request.user
+		parent = Parent.objects.filter(email=user.email).first()
+		if not parent:
+			print("Parent not found.")
+			return Response(
+				{'detail': 'Parent not found.'},
+				status=status.HTTP_404_NOT_FOUND
+			)
+		child = Student.objects.filter(guardian=parent).first()
+		if not child:
+			print("No child found for this parent.")
+			return Response(
+				{'detail': 'No child found for this parent.'},
+				status=status.HTTP_404_NOT_FOUND
+			)
+		print("Here")
+
+		try:
+			selected_date = self.request.query_params.get('selected_date')
+			attendanceSession = AttendanceSession.objects.filter(
+				date=selected_date,
+				school_class__in=child.enrollments.values_list('school_class', flat=True),
+				section__in=child.enrollments.values_list('section', flat=True)
+			).distinct()
+			attendance_records = AttendanceRecord.objects.filter(session__in=attendanceSession,
+			                                                     student__email=child.email).distinct()
+			serializer = AttendanceRecordGetSerializer(attendance_records, many=True)
+			return Response(serializer.data, status=status.HTTP_200_OK)
+		except Exception as e:
+			print(e)
+			return Response(
+				{'detail': 'An error occurred while retrieving attendance records.'},
+				status=status.HTTP_400_BAD_REQUEST
+			)
+
+
+@extend_schema(tags=['Submissions'])
+class SubmissionsView(ModelViewSet):
+	permission_classes = [AllowAny]
+	http_method_names = ['post']
+	queryset = Submission.objects.all()
+	serializer_class = SubmissionSerializer
+

@@ -22,7 +22,7 @@ const menuItems: Menu[] = [
                 icon: "/home.png",
                 label: "Home",
                 href: "/",
-                visible: ["admin", "teacher", "staff", "student", "parent"],
+                visible: ["admin"],
             },
             {
                 icon: "/teacher.png",
@@ -40,7 +40,7 @@ const menuItems: Menu[] = [
                 icon: "/parent.png",
                 label: "Parents",
                 href: "/parent/list",
-                visible: ["admin", "teacher"],
+                visible: ["admin"],
             },
             {
                 icon: "/class.png",
@@ -58,7 +58,7 @@ const menuItems: Menu[] = [
                 icon: "/lesson.png",
                 label: "Routine",
                 href: "/routine/list/",
-                visible: ["admin", "teacher"],
+                visible: ["admin", "teacher", "student"],
             },
             {
                 icon: "/exam.png",
@@ -70,13 +70,13 @@ const menuItems: Menu[] = [
                 icon: "/assignment.png",
                 label: "Assignments",
                 href: "/assignment/list",
-                visible: ["admin", "teacher", "student", "parent"],
+                visible: ["admin", "teacher", "student"],
             },
             {
                 icon: "/result.png",
                 label: "Leave",
                 href: "/leave",
-                visible: ["admin", "teacher", "student", "parent"],
+                visible: ["admin", "teacher", "student"],
             },
             {
                 icon: "/attendance.png",
@@ -100,7 +100,7 @@ const menuItems: Menu[] = [
                 icon: "/class.png",
                 label: "Fees",
                 href: "/fees/",
-                visible: ["admin", "staff", "parent"],
+                visible: [],
             },
         ],
     },
@@ -111,7 +111,7 @@ const menuItems: Menu[] = [
                 icon: "/profile.png",
                 label: "Profile",
                 href: "/profile",
-                visible: ["admin", "teacher", "student", "parent", "staff"],
+                visible: [],
             },
             {
                 icon: "/logout.png",

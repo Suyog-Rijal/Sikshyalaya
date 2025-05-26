@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from academic.models import Enrollment, AcademicYear, SchoolClass, Section, House, Subject, Department, Routine, \
-	AttendanceSession, AttendanceRecord, Assignment
+	AttendanceSession, AttendanceRecord, Assignment, Exam, Announcement, Submission, AssignmentAttachment
 from user.models import Staff, Teacher, ManagementStaff, Student
 
 
@@ -149,6 +149,66 @@ class SchoolClassGetSerializer(serializers.ModelSerializer):
 
 	def get_no_of_subjects(self, obj):
 		return obj.subjects.count()
+
+
+class SchoolClassRetrieveSerializer(serializers.ModelSerializer):
+	class InlineSectionSerializer(serializers.ModelSerializer):
+		class InlineHouseSerializer(serializers.ModelSerializer):
+			class Meta:
+				model = House
+				fields = [
+					'id',
+					'color',
+				]
+
+		class InlineClassTeacherSerializer(serializers.ModelSerializer):
+			profile_picture = serializers.SerializerMethodField()
+			full_name = serializers.StringRelatedField(source='staff.get_full_name')
+			email = serializers.StringRelatedField(source='staff.email')
+			phone = serializers.StringRelatedField(source='staff.phone_number')
+
+			class Meta:
+				model = Teacher
+				fields = [
+					'id',
+					'profile_picture',
+					'full_name',
+					'email',
+					'phone',
+				]
+
+			def get_profile_picture(self, obj):
+				context = self.context
+				if obj.staff.profile_picture:
+					return f"{context['request'].build_absolute_uri(obj.staff.profile_picture.url)}"
+				return None
+
+		house = InlineHouseSerializer(many=True)
+		class_teacher = InlineClassTeacherSerializer()
+		student_count = serializers.SerializerMethodField()
+
+		class Meta:
+			model = Section
+			fields = [
+				'id',
+				'name',
+				'class_teacher',
+				'student_count',
+				'house',
+			]
+
+		def get_student_count(self, obj):
+			return obj.enrollments.count()
+
+	section = InlineSectionSerializer(many=True)
+
+	class Meta:
+		model = SchoolClass
+		fields = [
+			'id',
+			'name',
+			'section',
+		]
 
 
 class SchoolClassPostSerializer(serializers.ModelSerializer):
@@ -398,15 +458,214 @@ class AttendanceSessionDetailViewUpdateSerializer(serializers.ModelSerializer):
 		return instance
 
 
-class AssignmentSerializer(serializers.ModelSerializer):
+class TeacherAssignmentGetSerializer(serializers.ModelSerializer):
+	subject = SimpleSubjectSerializer()
+	school_class = SimpleSchoolClassSerializer()
+	section = SimpleSectionSerializer()
+	total_students = serializers.SerializerMethodField()
+	total_submissions = serializers.SerializerMethodField()
+
 	class Meta:
 		model = Assignment
 		fields = [
 			'id',
+			'title',
+			'description',
+			'due_date',
+			'subject',
+			'school_class',
+			'section',
+			'is_active',
+
+			'total_students',
+			'total_submissions',
+		]
+
+	def get_total_students(self, obj):
+		return obj.school_class.enrollments.count() if hasattr(obj, 'school_class') else 0
+
+	def get_total_submissions(self, obj):
+		return obj.submissions.count() if hasattr(obj, 'submissions') else 0
+
+
+class SimpleStudentSerializer(serializers.ModelSerializer):
+	full_name = serializers.SerializerMethodField()
+
+	class Meta:
+		model = Student
+		fields = [
+			'id',
+			'full_name'
+		]
+
+	def get_full_name(self, obj):
+		return f"{obj.first_name} {obj.last_name}"
+
+
+class TeacherAssignmentDetailSerializer(serializers.ModelSerializer):
+	class InlineSubmissionSerializer(serializers.ModelSerializer):
+		student = SimpleStudentSerializer()
+		status = serializers.StringRelatedField(source='get_status_display')
+
+		class Meta:
+			model = Submission
+			fields = [
+				'id',
+				'student',
+				'submission_date',
+				'file',
+				'status',
+				'marks',
+			]
+
+	class InlineSubjectSerializer(serializers.ModelSerializer):
+		class Meta:
+			model = Subject
+			fields = [
+				'id',
+				'name',
+				'full_marks',
+				'pass_marks',
+			]
+
+	class InlineAttachmentSerializer(serializers.ModelSerializer):
+		class Meta:
+			model = AssignmentAttachment
+			fields = [
+				'id',
+				'file',
+			]
+
+	subject = InlineSubjectSerializer()
+	school_class = SimpleSchoolClassSerializer()
+	section = SimpleSectionSerializer()
+	total_students = serializers.SerializerMethodField()
+	total_submissions = serializers.SerializerMethodField()
+	submissions = InlineSubmissionSerializer(many=True)
+	attachments = InlineAttachmentSerializer(many=True, required=False)
+
+	class Meta:
+		model = Assignment
+		fields = [
+			'id',
+			'title',
+			'description',
+			'due_date',
+			'subject',
+			'school_class',
+			'section',
+			'attachments',
+			'is_active',
+
+			'total_students',
+			'total_submissions',
+
+			'submissions',
+			'created_at',
+		]
+
+	def get_total_students(self, obj):
+		return obj.school_class.enrollments.count() if hasattr(obj, 'school_class') else 0
+
+	def get_total_submissions(self, obj):
+		return obj.submissions.count() if hasattr(obj, 'submissions') else 0
+
+
+class AssignmentUpdateSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Assignment
+		fields = [
+			'title',
+			'description',
+			'is_active',
 		]
 
 
 class AssignmentFormGetSerializer(serializers.ModelSerializer):
+	section = SimpleSectionSerializer(many=True)
+	subjects = SimpleSubjectSerializer(many=True)
+
+	class Meta:
+		model = SchoolClass
+		fields = [
+			'id',
+			'name',
+			'section',
+			'subjects',
+		]
+
+
+class AssignmentPostSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Assignment
+		fields = [
+			'title',
+			'description',
+			'due_date',
+
+			'school_class',
+			'section',
+			'subject',
+			'is_active',
+		]
+
+	def create(self, validated_data):
+		user = self.context['request'].user
+		staff = Staff.objects.get(email=user.email)
+		teacher = Teacher.objects.get(staff=staff)
+		validated_data['teacher'] = teacher
+		return super().create(validated_data)
+
+
+class ClassTeacherApiSerializer(serializers.ModelSerializer):
+	full_name = serializers.SerializerMethodField()
+	subject = serializers.StringRelatedField(source='subject.name')
+
+	class Meta:
+		model = Teacher
+		fields = [
+			'id',
+			'full_name',
+			'subject'
+		]
+
+	def get_full_name(self, obj):
+		return obj.staff.get_fullname()
+
+
+class ExamSerializer(serializers.ModelSerializer):
+	subject = serializers.StringRelatedField(source='subject.name')
+	school_class = serializers.StringRelatedField(source='school_class.name')
+
+	class Meta:
+		model = Exam
+		fields = [
+			'id',
+			'exam_date',
+			'start_time',
+			'end_time',
+			'subject',
+			'school_class',
+			'exam_type',
+			'created_at'
+		]
+
+
+class ExamPostSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Exam
+		fields = [
+			'exam_date',
+			'start_time',
+			'end_time',
+			'subject',
+			'school_class',
+			'exam_type',
+		]
+
+
+class ExamFormSerializer(serializers.ModelSerializer):
+	subjects = SimpleSubjectSerializer(many=True)
 	section = SimpleSectionSerializer(many=True)
 
 	class Meta:
@@ -415,4 +674,40 @@ class AssignmentFormGetSerializer(serializers.ModelSerializer):
 			'id',
 			'name',
 			'section',
+			'subjects',
 		]
+
+
+class AnnouncementSerializer(serializers.ModelSerializer):
+	school_class = SimpleSchoolClassSerializer()
+
+	class Meta:
+		model = Announcement
+		fields = "__all__"
+
+
+class AnnouncementPostSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Announcement
+		fields = [
+			'title',
+			'description',
+			'school_class',
+			'public_access',
+			'priority',
+		]
+
+
+class SubmissionSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Submission
+		fields = [
+			'assignment',
+			'file',
+		]
+
+	def save(self, **kwargs):
+		user = self.context['request'].user
+		student = Student.objects.get(email=user.email)
+		self.validated_data['student'] = student
+		return super().save(**kwargs)

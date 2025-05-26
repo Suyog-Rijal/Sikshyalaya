@@ -42,6 +42,26 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 	def get_roles(self):
 		return [role.strip() for role in self.roles.split(',') if role.strip()]
 
+	def get_fullname(self):
+		if self.roles == 'admin':
+			return "Administrator"
+		elif self.roles == 'teacher' or self.roles == 'staff':
+			return Staff.objects.filter(email=self.email).first().get_fullname()
+		elif self.roles == 'student':
+			return Student.objects.filter(email=self.email).first().get_fullname()
+		elif self.roles == 'parent':
+			return Parent.objects.filter(email=self.email).first().get_fullname()
+
+	def get_profile_pic(self):
+		if self.roles == 'admin':
+			return "/static/admin.png"
+		elif self.roles == 'teacher' or self.roles == 'staff':
+			return Staff.objects.filter(email=self.email).first().profile_picture
+		elif self.roles == 'student':
+			return Student.objects.filter(email=self.email).first().profile_picture
+		elif self.roles == 'parent':
+			return Parent.objects.filter(email=self.email).first().profile_picture
+
 	def has_role(self, role):
 		return role in self.get_roles()
 
@@ -193,6 +213,9 @@ class Parent(models.Model):
 			if not self.address:
 				raise ValidationError({'address': "Address is required for guardians."})
 
+	def get_fullname(self):
+		return self.full_name
+
 	def save(self, *args, **kwargs):
 		self.full_clean()
 		super().save(*args, **kwargs)
@@ -308,7 +331,7 @@ class Staff(models.Model):
 			self.email = unique_email
 
 		if not self.password:
-			raw_password = uuid.uuid4().hex[:8]
+			raw_password = "H4582ed"
 			self.password = raw_password
 		else:
 			if not self.password.startswith('pbkdf2_'):
@@ -331,7 +354,8 @@ class Teacher(models.Model):
 	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 	staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='teacher')
 	school_class = models.ManyToManyField('academic.SchoolClass', related_name='teachers', blank=True)
-	subject = models.ForeignKey('academic.Subject', related_name='teachers', on_delete=models.CASCADE, default=None, blank=True, null=True)
+	subject = models.ForeignKey('academic.Subject', related_name='teachers', on_delete=models.CASCADE, default=None,
+	                            blank=True, null=True)
 
 	def __str__(self):
 		return self.staff.get_fullname()
@@ -345,3 +369,24 @@ class ManagementStaff(models.Model):
 
 	def __str__(self):
 		return self.staff.get_fullname()
+
+
+class Leave(models.Model):
+	LEAVE_STATUS_CHOICES = [
+		('pending', 'Pending'),
+		('approved', 'Approved'),
+		('rejected', 'Rejected'),
+		('cancelled', 'Cancelled'),
+	]
+	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+	student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='leaves')
+	leave_reason = models.TextField()
+	total_days = models.PositiveSmallIntegerField(default=0)
+	start_date = models.DateField()
+	end_date = models.DateField()
+	leave_status = models.CharField(max_length=20, choices=LEAVE_STATUS_CHOICES, default='pending')
+
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	def __str__(self):
+		return f"{self.student.get_fullname()}"

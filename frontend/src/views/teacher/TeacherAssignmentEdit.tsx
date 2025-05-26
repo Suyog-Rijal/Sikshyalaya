@@ -1,119 +1,78 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { format } from "date-fns"
 import { toast } from "sonner"
-import { ArrowLeft, Calendar, Clock, Paperclip, Trash2, Upload, Save, AlertCircle, FileText, File } from "lucide-react"
+import { ArrowLeft, Paperclip, Trash2, Upload, Save, Clock, FileText, Image } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Card, CardHeader, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { PageHeader } from "@/components/ListPage/PageHeader"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import {Assignment} from "@/views/teacher/TeacherAssignmentList.tsx";
+import axiosInstance from "@/auth/AxiosInstance.ts"
 
-// Dummy data for a single assignment
-const dummyAssignment: Assignment = {
-    id: "1",
-    title: "Mathematics Problem Set: Algebra Fundamentals",
-    description:
-        "Complete problems 1-20 in Chapter 3. Show all work and explain your reasoning for each step. This assignment is designed to reinforce your understanding of algebraic concepts including equations, inequalities, and functions. Pay special attention to the word problems at the end of the chapter, which require you to translate real-world scenarios into mathematical expressions.",
-    subject: {
-        id: "math-101",
-        name: "Mathematics",
-    },
-    class: {
-        id: "class-10a",
-        name: "Class 10",
-    },
-    section: {
-        id: "section-a",
-        name: "Section A",
-    },
-    dueDate: "2025-05-10T23:59:59Z",
-    status: "active",
-    submissionCount: 18,
-    totalStudents: 25,
-    createdAt: "2025-05-01T10:30:00Z",
-    attachments: [
-        {
-            id: "att-1",
-            name: "algebra_worksheet.pdf",
-            type: "application/pdf",
-            url: "#",
-        },
-        {
-            id: "att-2",
-            name: "formula_sheet.docx",
-            type: "application/msword",
-            url: "#",
-        },
-    ],
+interface Student {
+    id: string
+    full_name: string
 }
 
-// Dummy data for subjects, classes, and sections
-const subjects = [
-    { id: "math-101", name: "Mathematics" },
-    { id: "sci-102", name: "Science" },
-    { id: "eng-103", name: "English" },
-    { id: "hist-104", name: "History" },
-    { id: "cs-105", name: "Computer Science" },
-    { id: "geo-106", name: "Geography" },
-    { id: "phys-107", name: "Physics" },
-]
+interface Submission {
+    id: string
+    student: Student
+    submission_date: string
+    file: string
+    status: string
+    marks: string
+}
 
-const classes = [
-    { id: "class-9a", name: "Class 9" },
-    { id: "class-9b", name: "Class 9" },
-    { id: "class-10a", name: "Class 10" },
-    { id: "class-10b", name: "Class 10" },
-    { id: "class-11a", name: "Class 11" },
-    { id: "class-11b", name: "Class 11" },
-    { id: "class-12a", name: "Class 12" },
-    { id: "class-12b", name: "Class 12" },
-]
+interface Subject {
+    id: string
+    name: string
+    full_marks: number
+    pass_marks: number
+}
 
-const sections = [
-    { id: "section-a", name: "Section A" },
-    { id: "section-b", name: "Section B" },
-    { id: "section-c", name: "Section C" },
-    { id: "section-d", name: "Section D" },
-]
+interface SchoolClass {
+    id: string
+    name: string
+}
+
+interface Section {
+    name: string | null
+}
+
+interface Attachment {
+    id: string
+    file: string
+}
+
+interface Assignment {
+    id: string
+    title: string
+    description: string
+    due_date: string
+    subject: Subject
+    school_class: SchoolClass
+    section: Section
+    attachments: Attachment[]
+    is_active: boolean
+    total_students: number
+    total_submissions: number
+    submissions: Submission[]
+    created_at: string
+}
 
 interface FormData {
     title: string
     description: string
-    subjectId: string
-    classId: string
-    sectionId: string
-    dueDate: Date
-    status: "active" | "inactive" | "draft"
-    attachments: {
-        id: string
-        name: string
-        type: string
-        url: string
-        isNew?: boolean
-        file?: File
-    }[]
+    status: string
+    attachments: { id: string; name: string; type: string; isNew: boolean; file?: File; markedForDeletion?: boolean }[]
 }
 
 export default function TeacherAssignmentEdit() {
@@ -121,49 +80,62 @@ export default function TeacherAssignmentEdit() {
     const navigate = useNavigate()
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
-    const [formData, setFormData] = useState<FormData>({
-        title: "",
-        description: "",
-        subjectId: "",
-        classId: "",
-        sectionId: "",
-        dueDate: new Date(),
-        status: "active",
-        attachments: [],
-    })
     const [errors, setErrors] = useState<Record<string, string>>({})
     const [discardDialogOpen, setDiscardDialogOpen] = useState(false)
     const [deleteAttachmentId, setDeleteAttachmentId] = useState<string | null>(null)
+    const [assignment, setAssignment] = useState<Assignment | null>(null)
+    const [formData, setFormData] = useState<FormData>({
+        title: "",
+        description: "",
+        status: "inactive",
+        attachments: []
+    })
 
     useEffect(() => {
         fetchAssignmentDetails()
     }, [id])
 
+    const getFileTypeFromUrl = (url: string) => {
+        const extension = url.split(".").pop()?.toLowerCase()
+        switch (extension) {
+            case "pdf":
+                return "application/pdf"
+            case "jpg":
+            case "jpeg":
+                return "image/jpeg"
+            case "png":
+                return "image/png"
+            case "doc":
+            case "docx":
+                return "application/msword"
+            default:
+                return "application/octet-stream"
+        }
+    }
+
     const fetchAssignmentDetails = async () => {
         setLoading(true)
         try {
-            // In a real application, you would fetch from your API
-            // const response = await AxiosInstance.get(`/api/academic/assignments/${id}/`)
-            // const assignment = response.data
-
-            // Using dummy data for now
-            setTimeout(() => {
-                const assignment = dummyAssignment
-                setFormData({
-                    title: assignment.title,
-                    description: assignment.description,
-                    subjectId: assignment.subject.id,
-                    classId: assignment.class.id,
-                    sectionId: assignment.section?.id || "",
-                    dueDate: new Date(assignment.dueDate),
-                    status: assignment.status,
-                    attachments: assignment.attachments,
-                })
-                setLoading(false)
-            }, 800)
+            const res = await axiosInstance.get(`/api/academic/assignment/${id}/`)
+            const assignmentData = res.data
+            setAssignment(assignmentData)
+            setFormData({
+                title: assignmentData.title,
+                description: assignmentData.description,
+                status: assignmentData.is_active ? "active" : "inactive",
+                attachments: Array.isArray(assignmentData.attachments)
+                    ? assignmentData.attachments.map((attachment: Attachment) => ({
+                        id: attachment.id,
+                        name: attachment.file.split("/").pop() || "Unknown File",
+                        type: getFileTypeFromUrl(attachment.file),
+                        isNew: false
+                    }))
+                    : []
+            })
         } catch (error) {
             console.error("Error fetching assignment details:", error)
-            toast.error("Failed to load assignment details. Please try again.")
+            toast.error("Failed to load assignment details")
+        } finally {
             setLoading(false)
         }
     }
@@ -171,66 +143,31 @@ export default function TeacherAssignmentEdit() {
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target
         setFormData((prev) => ({ ...prev, [name]: value }))
-
-        // Clear error when field is edited
-        if (errors[name]) {
-            setErrors((prev) => {
-                const newErrors = { ...prev }
-                delete newErrors[name]
-                return newErrors
-            })
-        }
-    }
-
-    const handleSelectChange = (name: string, value: string) => {
-        setFormData((prev) => ({ ...prev, [name]: value }))
-
-        // Clear error when field is edited
-        if (errors[name]) {
-            setErrors((prev) => {
-                const newErrors = { ...prev }
-                delete newErrors[name]
-                return newErrors
-            })
-        }
-    }
-
-    const handleDateChange = (date: Date | undefined) => {
-        if (date) {
-            setFormData((prev) => ({ ...prev, dueDate: date }))
-
-            // Clear error when field is edited
-            if (errors.dueDate) {
-                setErrors((prev) => {
-                    const newErrors = { ...prev }
-                    delete newErrors.dueDate
-                    return newErrors
-                })
-            }
-        }
+        setErrors((prev) => ({ ...prev, [name]: "" }))
     }
 
     const handleStatusChange = (value: string) => {
-        setFormData((prev) => ({ ...prev, status: value as "active" | "inactive" | "draft" }))
+        setFormData((prev) => ({ ...prev, status: value }))
     }
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files
-        if (!files || files.length === 0) return
-
-        const newAttachments = Array.from(files).map((file) => ({
-            id: `new-${Date.now()}-${file.name}`,
-            name: file.name,
-            type: file.type,
-            url: URL.createObjectURL(file),
-            isNew: true,
-            file,
-        }))
-
-        setFormData((prev) => ({
-            ...prev,
-            attachments: [...prev.attachments, ...newAttachments],
-        }))
+        const file = e.target.files?.[0]
+        if (file) {
+            const newAttachment = {
+                id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                name: file.name,
+                type: file.type,
+                isNew: true,
+                file
+            }
+            setFormData((prev) => ({
+                ...prev,
+                attachments: [
+                    ...prev.attachments.filter((att) => !att.isNew), // Keep existing attachments
+                    newAttachment
+                ]
+            }))
+        }
     }
 
     const handleDeleteAttachment = (attachmentId: string) => {
@@ -238,110 +175,70 @@ export default function TeacherAssignmentEdit() {
     }
 
     const confirmDeleteAttachment = () => {
-        if (deleteAttachmentId) {
-            setFormData((prev) => ({
-                ...prev,
-                attachments: prev.attachments.filter((att) => att.id !== deleteAttachmentId),
-            }))
-            setDeleteAttachmentId(null)
-        }
+        setFormData((prev) => ({
+            ...prev,
+            attachments: prev.attachments.map((attachment) =>
+                attachment.id === deleteAttachmentId
+                    ? { ...attachment, markedForDeletion: true }
+                    : attachment
+            ).filter((attachment) => !attachment.markedForDeletion || (attachment.isNew && !attachment.markedForDeletion))
+        }))
+        setDeleteAttachmentId(null)
     }
 
-    const validateForm = (): boolean => {
+    const validateForm = () => {
         const newErrors: Record<string, string> = {}
-
-        if (!formData.title.trim()) {
-            newErrors.title = "Title is required"
-        }
-
-        if (!formData.description.trim()) {
-            newErrors.description = "Description is required"
-        }
-
-        if (!formData.subjectId) {
-            newErrors.subjectId = "Subject is required"
-        }
-
-        if (!formData.classId) {
-            newErrors.classId = "Class is required"
-        }
-
-        if (!formData.dueDate) {
-            newErrors.dueDate = "Due date is required"
-        }
-
-        setErrors(newErrors)
-        return Object.keys(newErrors).length === 0
+        if (!formData.title.trim()) newErrors.title = "Title is required"
+        if (!formData.description.trim()) newErrors.description = "Description is required"
+        return newErrors
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-
-        if (!validateForm()) {
-            toast.error("Please fix the errors in the form")
+        const validationErrors = validateForm()
+        if (Object.keys(validationErrors).length > 0) {
+            setErrors(validationErrors)
             return
         }
 
         setSaving(true)
         try {
-            // In a real application, you would call your API
-            // For file uploads, you might need to use FormData
-            // const formDataToSend = new FormData()
-            // formDataToSend.append('title', formData.title)
-            // ...
-            // formData.attachments.forEach(att => {
-            //   if (att.isNew && att.file) {
-            //     formDataToSend.append('new_attachments', att.file)
-            //   } else {
-            //     formDataToSend.append('existing_attachments', att.id)
-            //   }
-            // })
-            // await AxiosInstance.put(`/api/academic/assignments/${id}/`, formDataToSend)
+            const formDataToSend = new FormData()
+            formDataToSend.append("title", formData.title)
+            formDataToSend.append("description", formData.description)
+            formDataToSend.append("is_active", formData.status === "active" ? "true" : "false")
 
-            // Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 1000))
+            const attachmentsToDelete = formData.attachments
+                .filter((attachment) => attachment.markedForDeletion && !attachment.isNew)
+                .map((attachment) => attachment.id)
+            formDataToSend.append("delete_attachments", JSON.stringify(attachmentsToDelete))
 
+            const newAttachment = formData.attachments.find((attachment) => attachment.isNew && !attachment.markedForDeletion)
+            if (newAttachment?.file) {
+                formDataToSend.append("file", newAttachment.file)
+            }
+
+            await axiosInstance.put(`/api/academic/assignment/${id}/`, formDataToSend, {
+                headers: { "Content-Type": "multipart/form-data" }
+            })
             toast.success("Assignment updated successfully")
             navigate(`/assignment/detail/${id}`)
         } catch (error) {
             console.error("Error updating assignment:", error)
-            toast.error("Failed to update assignment. Please try again.")
         } finally {
             setSaving(false)
         }
     }
 
     const handleCancel = () => {
-        // Check if form has been modified
-        const hasChanges =
-            formData.title !== dummyAssignment.title ||
-            formData.description !== dummyAssignment.description ||
-            formData.subjectId !== dummyAssignment.subject.id ||
-            formData.classId !== dummyAssignment.class.id ||
-            formData.sectionId !== (dummyAssignment.section?.id || "") ||
-            formData.status !== dummyAssignment.status ||
-            formData.attachments.length !== dummyAssignment.attachments.length ||
-            formData.attachments.some((att) => att.isNew)
-
-        if (hasChanges) {
-            setDiscardDialogOpen(true)
-        } else {
-            navigate(`/assignment/detail/${id}`)
-        }
+        setDiscardDialogOpen(true)
     }
 
-    const getFileIcon = (fileType: string) => {
-        if (fileType.includes("pdf")) {
-            return <FileText className="h-4 w-4 text-red-500" />
-        } else if (fileType.includes("word") || fileType.includes("document")) {
-            return <FileText className="h-4 w-4 text-blue-500" />
-        } else if (fileType.includes("sheet") || fileType.includes("excel")) {
-            return <FileText className="h-4 w-4 text-green-500" />
-        } else if (fileType.includes("presentation") || fileType.includes("powerpoint")) {
-            return <FileText className="h-4 w-4 text-orange-500" />
-        } else {
-            return <File className="h-4 w-4 text-gray-500" />
-        }
+    const getFileIcon = (type: string) => {
+        if (type.includes("pdf")) return <FileText className="h-4 w-4" />
+        if (type.includes("image")) return <Image className="h-4 w-4" />
+        if (type.includes("msword")) return <FileText className="h-4 w-4" />
+        return <Paperclip className="h-4 w-4" />
     }
 
     if (loading) {
@@ -372,12 +269,11 @@ export default function TeacherAssignmentEdit() {
                 breadcrumbs={[
                     { label: "Dashboard", href: "/" },
                     { label: "Assignments", href: "/assignment/list" },
-                    { label: "edit", href: `/assignment/edit/${id}` },
+                    { label: "edit", href: `/assignment/edit/${id}` }
                 ]}
             />
 
             <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Basic Information */}
                 <Card>
                     <CardHeader>
                         <h2 className="text-xl font-semibold">Basic Information</h2>
@@ -414,134 +310,41 @@ export default function TeacherAssignmentEdit() {
                             {errors.description && <p className="text-sm text-red-500">{errors.description}</p>}
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="subject">
-                                    Subject <span className="text-red-500">*</span>
-                                </Label>
-                                <Select value={formData.subjectId} onValueChange={(value) => handleSelectChange("subjectId", value)}>
-                                    <SelectTrigger id="subject" className={cn(errors.subjectId && "border-red-500")}>
-                                        <SelectValue placeholder="Select subject" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {subjects.map((subject) => (
-                                            <SelectItem key={subject.id} value={subject.id}>
-                                                {subject.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {errors.subjectId && <p className="text-sm text-red-500">{errors.subjectId}</p>}
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="class">
-                                    Class <span className="text-red-500">*</span>
-                                </Label>
-                                <Select value={formData.classId} onValueChange={(value) => handleSelectChange("classId", value)}>
-                                    <SelectTrigger id="class" className={cn(errors.classId && "border-red-500")}>
-                                        <SelectValue placeholder="Select class" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {classes.map((cls) => (
-                                            <SelectItem key={cls.id} value={cls.id}>
-                                                {cls.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {errors.classId && <p className="text-sm text-red-500">{errors.classId}</p>}
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="section">Section</Label>
-                                <Select value={formData.sectionId} onValueChange={(value) => handleSelectChange("sectionId", value)}>
-                                    <SelectTrigger id="section">
-                                        <SelectValue placeholder="Select section" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">None</SelectItem>
-                                        {sections.map((section) => (
-                                            <SelectItem key={section.id} value={section.id}>
-                                                {section.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="dueDate">
-                                    Due Date <span className="text-red-500">*</span>
-                                </Label>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className={cn("w-full justify-start text-left font-normal", errors.dueDate && "border-red-500")}
-                                        >
-                                            <Calendar className="mr-2 h-4 w-4" />
-                                            {formData.dueDate ? format(formData.dueDate, "PPP") : <span>Pick a date</span>}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0">
-                                        <CalendarComponent
-                                            mode="single"
-                                            selected={formData.dueDate}
-                                            onSelect={handleDateChange}
-                                            initialFocus
-                                            disabled={(date) => date < new Date()}
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                                {errors.dueDate && <p className="text-sm text-red-500">{errors.dueDate}</p>}
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="status">Assignment Status</Label>
-                                <RadioGroup value={formData.status} onValueChange={handleStatusChange} className="flex space-x-4">
-                                    <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="active" id="active" />
-                                        <Label htmlFor="active" className="cursor-pointer">
-                                            Active
-                                        </Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="inactive" id="inactive" />
-                                        <Label htmlFor="inactive" className="cursor-pointer">
-                                            Inactive
-                                        </Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="draft" id="draft" />
-                                        <Label htmlFor="draft" className="cursor-pointer">
-                                            Draft
-                                        </Label>
-                                    </div>
-                                </RadioGroup>
-                            </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="status">Assignment Status</Label>
+                            <RadioGroup value={formData.status} onValueChange={handleStatusChange} className="flex space-x-4">
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="active" id="active" />
+                                    <Label htmlFor="active" className="cursor-pointer">
+                                        Active
+                                    </Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="inactive" id="inactive" />
+                                    <Label htmlFor="inactive" className="cursor-pointer">
+                                        Inactive
+                                    </Label>
+                                </div>
+                            </RadioGroup>
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* Attachments */}
                 <Card>
                     <CardHeader>
-                        <h2 className="text-xl font-semibold">Attachments</h2>
+                        <h2 className="text-xl font-semibold">Attachment</h2>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <Label htmlFor="attachments">Upload Files</Label>
+                            <Label htmlFor="attachment">Upload File</Label>
                             <div className="flex items-center">
-                                <Input id="attachments" type="file" multiple onChange={handleFileUpload} className="hidden" />
+                                <Input id="attachment" type="file" onChange={handleFileUpload} className="hidden" />
                                 <Label
-                                    htmlFor="attachments"
+                                    htmlFor="attachment"
                                     className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md cursor-pointer hover:bg-primary/90"
                                 >
                                     <Upload className="h-4 w-4 mr-2" />
-                                    Upload Files
+                                    Upload File
                                 </Label>
                             </div>
                         </div>
@@ -549,56 +352,40 @@ export default function TeacherAssignmentEdit() {
                         {formData.attachments.length > 0 ? (
                             <div className="space-y-2">
                                 {formData.attachments.map((attachment) => (
-                                    <div
-                                        key={attachment.id}
-                                        className="flex items-center justify-between p-3 border rounded-md hover:bg-muted/50"
-                                    >
-                                        <div className="flex items-center">
-                                            {getFileIcon(attachment.type)}
-                                            <span className="ml-2">{attachment.name}</span>
-                                            {attachment.isNew && (
-                                                <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">New</span>
-                                            )}
-                                        </div>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => handleDeleteAttachment(attachment.id)}
-                                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                    !attachment.markedForDeletion && (
+                                        <div
+                                            key={attachment.id}
+                                            className="flex items-center justify-between p-3 border rounded-md hover:bg-muted/50"
                                         >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
+                                            <div className="flex items-center">
+                                                {getFileIcon(attachment.type)}
+                                                <span className="ml-2">{attachment.name}</span>
+                                                {attachment.isNew && (
+                                                    <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">New</span>
+                                                )}
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleDeleteAttachment(attachment.id)}
+                                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    )
                                 ))}
                             </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg border border-gray-200">
                                 <Paperclip className="h-8 w-8 text-gray-400 mb-2" />
-                                <p className="text-gray-500 mb-2">No attachments yet</p>
-                                <p className="text-sm text-gray-400">Upload files for students to download (PDF, Word, Excel, etc.)</p>
+                                <p className="text-gray-500 mb-2">No attachment yet</p>
+                                <p className="text-sm text-gray-400">Upload a file for students to download (PDF, Word, Excel, etc.)</p>
                             </div>
                         )}
                     </CardContent>
                 </Card>
 
-                {/* Submission Status */}
-                <Card>
-                    <CardHeader>
-                        <h2 className="text-xl font-semibold">Submission Status</h2>
-                    </CardHeader>
-                    <CardContent>
-                        <Alert>
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Important</AlertTitle>
-                            <AlertDescription>
-                                This assignment has {dummyAssignment.submissionCount} submissions out of {dummyAssignment.totalStudents}{" "}
-                                students. Editing this assignment will not affect existing submissions.
-                            </AlertDescription>
-                        </Alert>
-                    </CardContent>
-                </Card>
-
-                {/* Form Actions */}
                 <div className="flex justify-end gap-4">
                     <Button type="button" variant="outline" onClick={handleCancel}>
                         Cancel
@@ -619,7 +406,6 @@ export default function TeacherAssignmentEdit() {
                 </div>
             </form>
 
-            {/* Discard Changes Dialog */}
             <Dialog open={discardDialogOpen} onOpenChange={setDiscardDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
@@ -643,7 +429,6 @@ export default function TeacherAssignmentEdit() {
                 </DialogContent>
             </Dialog>
 
-            {/* Delete Attachment Dialog */}
             <Dialog open={!!deleteAttachmentId} onOpenChange={() => setDeleteAttachmentId(null)}>
                 <DialogContent>
                     <DialogHeader>

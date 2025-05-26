@@ -23,7 +23,6 @@ import {DatePicker} from "@/components/ui/date-picker.tsx";
 import {toast} from "sonner"
 import {useEffect, useState} from "react";
 
-
 const PersonalInfo = () => {
     const form = useFormContext();
 

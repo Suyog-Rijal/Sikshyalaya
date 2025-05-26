@@ -16,7 +16,6 @@ import {
     AlertCircle,
     Users,
     Globe,
-    Paperclip,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -45,252 +44,77 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
+import axiosInstance from "@/auth/AxiosInstance.ts"
+import {useAuthStore} from "@/store/AuthStore.ts";
 
-// Announcement interface
-interface Announcement {
+interface SchoolClass {
     id: string
-    title: string
-    description: string
-    createdAt: string
-    publishedAt: string
-    expiresAt?: string
-    status: "published" | "draft" | "expired"
-    isPublic: boolean
-    class?: {
-        id: string
-        name: string
-    }
-    section?: {
-        id: string
-        name: string
-    }
-    createdBy: {
-        id: string
-        name: string
-        role: string
-    }
-    priority: "normal" | "important" | "urgent"
-    attachments?: {
-        id: string
-        name: string
-        type: string
-        url: string
-    }[]
+    name: string
 }
 
-// Dummy data for classes and sections
-const classes = [
-    { id: "class-all", name: "All Classes" },
-    { id: "class-9", name: "Class 9" },
-    { id: "class-10", name: "Class 10" },
-    { id: "class-11", name: "Class 11" },
-    { id: "class-12", name: "Class 12" },
-]
-
-const sections = [
-    { id: "section-all", name: "All Sections" },
-    { id: "section-a", name: "Section A" },
-    { id: "section-b", name: "Section B" },
-    { id: "section-c", name: "Section C" },
-    { id: "section-d", name: "Section D" },
-]
-
-// Dummy data for announcements
-const dummyAnnouncements: Announcement[] = [
-    {
-        "id": "ann-1",
-        "title": "Annual Sports Meet and Cultural Day Celebration",
-        "description": "We are thrilled to invite all students and their families to our upcoming Annual Sports Meet and Cultural Day Celebration, which will be held on December 15th. This year’s event promises to be a vibrant showcase of athletic skills, creative performances, and school spirit. All students are expected to participate in both the sports competitions and cultural performances, with rehearsals taking place in the weeks leading up to the event. The festivities will begin promptly at 5:00 PM in the school auditorium, followed by the sports meet on the school grounds. Parents, guardians, and friends of the school community are warmly invited to join us for this memorable evening. Come celebrate our students' hard work and achievements!",
-        "createdAt": "2025-05-01T10:30:00Z",
-        "publishedAt": "2025-05-01T12:00:00Z",
-        "status": "published",
-        "isPublic": true,
-        "createdBy": {
-            "id": "user-1",
-            "name": "Ms. Admin Admin",
-            "role": "Admin"
-        },
-        "priority": "important",
-
-    },
-    {
-        "id": "ann-2",
-        "title": "Inter-School Drawing Competition",
-        "description": "We are excited to announce the upcoming Inter-School Drawing Competition, which will be held on June 10th at 9:00 AM in the school’s art hall. This competition provides a wonderful opportunity for our talented students to showcase their creativity and artistic skills. Students from various grades are invited to participate, and the theme for this year’s competition is 'Nature's Wonders'. Participants will have two hours to complete their artwork, with all necessary materials provided by the school. The winners will be awarded prizes and their artwork will be displayed at the school's annual exhibition. Parents and guardians are invited to attend the event and support their children’s efforts. Registration for the competition is open until June 5th, so be sure to sign up soon!",
-        "createdAt": "2025-05-01T14:00:00Z",
-        "publishedAt": "2025-05-01T16:00:00Z",
-        "status": "published",
-        "isPublic": true,
-        "createdBy": {
-            "id": "user-2",
-            "name": "Ms. Admin Admin",
-            "role": "Admin"
-        },
-        "priority": "normal",
-    }
-
-    // {
-    //     id: "ann-3",
-    //     title: "Parent-Teacher Meeting",
-    //     description:
-    //         "The Parent-Teacher Meeting for this semester will be held on May 20th from 9:00 AM to 2:00 PM. Parents are requested to book their slots in advance through the school portal.",
-    //     createdAt: "2025-05-05T14:20:00Z",
-    //     publishedAt: "2025-05-05T16:00:00Z",
-    //     status: "published",
-    //     isPublic: true,
-    //     createdBy: {
-    //         id: "user-3",
-    //         name: "Admin Office",
-    //         role: "Administration",
-    //     },
-    //     priority: "important",
-    //     attachments: [
-    //         {
-    //             id: "att-2",
-    //             name: "ptm_schedule.pdf",
-    //             type: "application/pdf",
-    //             url: "#",
-    //         },
-    //     ],
-    // },
-    // {
-    //     id: "ann-4",
-    //     title: "Science Project Submission Deadline",
-    //     description:
-    //         "This is a reminder that the Science Project submissions for Class 10 are due on May 25th. Please ensure that all project reports are submitted in both digital and physical formats as per the guidelines shared earlier.",
-    //     createdAt: "2025-05-10T11:30:00Z",
-    //     publishedAt: "2025-05-10T13:00:00Z",
-    //     status: "published",
-    //     isPublic: false,
-    //     class: {
-    //         id: "class-10",
-    //         name: "Class 10",
-    //     },
-    //     createdBy: {
-    //         id: "user-4",
-    //         name: "Dr. Roberts",
-    //         role: "Science Department Head",
-    //     },
-    //     priority: "urgent",
-    // },
-    // {
-    //     id: "ann-5",
-    //     title: "Holiday Notice: Founder's Day",
-    //     description:
-    //         "The school will remain closed on May 30th on account of Founder's Day. Special assembly and celebrations will be held on May 29th, and all students are expected to attend in formal uniform.",
-    //     createdAt: "2025-05-15T08:45:00Z",
-    //     publishedAt: "2025-05-15T10:00:00Z",
-    //     status: "published",
-    //     isPublic: true,
-    //     createdBy: {
-    //         id: "user-1",
-    //         name: "Principal Johnson",
-    //         role: "Principal",
-    //     },
-    //     priority: "normal",
-    // },
-    // {
-    //     id: "ann-6",
-    //     title: "Sports Day Tryouts",
-    //     description:
-    //         "Tryouts for the Annual Sports Day will begin next week. Students interested in participating should register with their Physical Education teachers by Friday.",
-    //     createdAt: "2025-05-18T13:10:00Z",
-    //     publishedAt: "",
-    //     status: "draft",
-    //     isPublic: true,
-    //     createdBy: {
-    //         id: "user-5",
-    //         name: "Mr. Thompson",
-    //         role: "Physical Education Head",
-    //     },
-    //     priority: "normal",
-    // },
-    // {
-    //     id: "ann-7",
-    //     title: "Class 12 Pre-Board Examination Schedule",
-    //     description:
-    //         "The Pre-Board Examinations for Class 12 will commence from June 5th. The detailed schedule has been attached. Students are advised to prepare accordingly and ensure they have completed all their practical submissions.",
-    //     createdAt: "2025-05-20T09:30:00Z",
-    //     publishedAt: "2025-05-20T11:00:00Z",
-    //     status: "published",
-    //     isPublic: false,
-    //     class: {
-    //         id: "class-12",
-    //         name: "Class 12",
-    //     },
-    //     createdBy: {
-    //         id: "user-6",
-    //         name: "Mrs. Davis",
-    //         role: "Examination Coordinator",
-    //     },
-    //     priority: "urgent",
-    //     attachments: [
-    //         {
-    //             id: "att-3",
-    //             name: "pre_board_schedule.pdf",
-    //             type: "application/pdf",
-    //             url: "#",
-    //         },
-    //     ],
-    // },
-    // {
-    //     id: "ann-8",
-    //     title: "Library Book Return Notice",
-    //     description:
-    //         "All students are requested to return their library books before the end of the term. Any unreturned books will result in fines and may affect the issuance of report cards.",
-    //     createdAt: "2025-05-22T15:45:00Z",
-    //     publishedAt: "2025-05-22T16:30:00Z",
-    //     expiresAt: "2025-05-01T00:00:00Z",
-    //     status: "expired",
-    //     isPublic: true,
-    //     createdBy: {
-    //         id: "user-7",
-    //         name: "Ms. Clark",
-    //         role: "Librarian",
-    //     },
-    //     priority: "important",
-    // },
-]
+interface Announcement {
+    id: string
+    school_class: SchoolClass | null
+    public_access: boolean
+    priority: "important" | "normal" | "urgent"
+    is_expired: boolean
+    title: string
+    description: string
+    created_at: string
+    updated_at: string
+    academic_year: string
+}
 
 export default function AdminAnnouncementPage() {
     const [announcements, setAnnouncements] = useState<Announcement[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
-    const [classFilter, setClassFilter] = useState<string>("class-all")
-    const [sectionFilter, setSectionFilter] = useState<string>("section-all")
+    const [classFilter, setClassFilter] = useState<string>("all")
+    const [sectionFilter] = useState<string>("section-all")
     const [statusFilter, setStatusFilter] = useState<string>("all")
     const [priorityFilter, setPriorityFilter] = useState<string>("all")
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [announcementToDelete, setAnnouncementToDelete] = useState<string | null>(null)
+    const [classes, setClasses] = useState<SchoolClass[]>([{ id: "all", name: "All Classes" }])
 
-    // Add these state variables after the other useState declarations
+    // State variables for dialogs
     const [createDialogOpen, setCreateDialogOpen] = useState(false)
+    const [viewDialogOpen, setViewDialogOpen] = useState(false)
+    const [editDialogOpen, setEditDialogOpen] = useState(false)
+    const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null)
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+
+    const {role} = useAuthStore()
+
+    // Form data for new announcement
     const [newAnnouncement, setNewAnnouncement] = useState({
         title: "",
         description: "",
-        isPublic: true,
-        classId: "",
-        sectionId: "",
-        priority: "normal",
+        public_access: true,
+        school_class_id: "",
+        priority: "normal" as "normal" | "important" | "urgent",
     })
-    const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+
+    // Form data for editing announcement
+    const [editFormData, setEditFormData] = useState({
+        title: "",
+        description: "",
+        public_access: true,
+        school_class_id: "",
+        priority: "normal" as "normal" | "important" | "urgent",
+    })
 
     useEffect(() => {
         fetchAnnouncements()
+        fetchClasses()
     }, [])
 
     const fetchAnnouncements = async () => {
         setLoading(true)
         try {
-            // In a real application, you would fetch from your API
-            // const response = await AxiosInstance.get('/api/admin/announcements/')
-            // setAnnouncements(response.data)
-
-            // Using dummy data for now
-            setTimeout(() => {
-                setAnnouncements(dummyAnnouncements)
-                setLoading(false)
-            }, 800)
+            const response = await axiosInstance.get("/api/academic/announcement/")
+            setAnnouncements(response.data)
+            setLoading(false)
         } catch (error) {
             console.error("Error fetching announcements:", error)
             toast.error("Failed to load announcements. Please try again.")
@@ -298,27 +122,35 @@ export default function AdminAnnouncementPage() {
         }
     }
 
+    const fetchClasses = async () => {
+        try {
+            const response = await axiosInstance.get("/api/academic/class-list/")
+            // Add the "All Classes" option to the beginning of the array
+            setClasses([{ id: "all", name: "All Classes" }, ...response.data])
+        } catch (error) {
+            console.error("Error fetching classes:", error)
+            toast.error("Failed to load classes. Please try again.")
+        }
+    }
+
     // Filter announcements based on search query and filters
     const filteredAnnouncements = announcements.filter((announcement) => {
         const matchesSearch =
             announcement.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            announcement.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            announcement.createdBy.name.toLowerCase().includes(searchQuery.toLowerCase())
+            announcement.description.toLowerCase().includes(searchQuery.toLowerCase())
 
         const matchesClass =
-            classFilter === "class-all" ||
-            (announcement.isPublic && classFilter === "class-all") ||
-            (announcement.class && announcement.class.id === classFilter)
+            classFilter === "all" ||
+            (announcement.public_access && classFilter === "all") ||
+            (announcement.school_class && announcement.school_class.id === classFilter)
 
-        const matchesSection =
-            sectionFilter === "section-all" ||
-            (announcement.isPublic && sectionFilter === "section-all") ||
-            (announcement.section && announcement.section.id === sectionFilter)
+        const matchesSection = sectionFilter === "section-all"
 
         const matchesStatus =
             statusFilter === "all" ||
-            (statusFilter === "public" && announcement.isPublic) ||
-            announcement.status === statusFilter
+            (statusFilter === "public" && announcement.public_access) ||
+            (statusFilter === "expired" && announcement.is_expired) ||
+            (statusFilter === "active" && !announcement.is_expired)
 
         const matchesPriority = priorityFilter === "all" || announcement.priority === priorityFilter
 
@@ -334,11 +166,8 @@ export default function AdminAnnouncementPage() {
         if (!announcementToDelete) return
 
         try {
-            // In a real application, you would call your API
-            // await AxiosInstance.delete(`/api/admin/announcements/${announcementToDelete}/`)
-
-            // Update local state
-            setAnnouncements(announcements.filter((announcement) => announcement.id !== announcementToDelete))
+            await axiosInstance.delete(`/api/academic/announcement/${announcementToDelete}/`)
+            fetchAnnouncements()
             toast.success("Announcement deleted successfully")
             setDeleteDialogOpen(false)
             setAnnouncementToDelete(null)
@@ -347,12 +176,6 @@ export default function AdminAnnouncementPage() {
             toast.error("Failed to delete announcement")
         }
     }
-
-    // Stats for dashboard cards
-    // const publishedAnnouncements = announcements.filter((a) => a.status === "published").length
-    // const draftAnnouncements = announcements.filter((a) => a.status === "draft").length
-    // const expiredAnnouncements = announcements.filter((a) => a.status === "expired").length
-    // const publicAnnouncements = announcements.filter((a) => a.isPublic).length
 
     // Get priority badge
     const getPriorityBadge = (priority: string) => {
@@ -380,61 +203,46 @@ export default function AdminAnnouncementPage() {
         }
     }
 
-    // @ts-expect-error: Unused variable
-    const getStatusBadge = (status: string, isPublic: boolean) => {
-        if (status === "published") {
-            return (
-                <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">
-                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                    Published
-                </Badge>
-            )
-        } else if (status === "draft") {
-            return (
-                <Badge variant="outline" className="bg-gray-50 text-gray-700 hover:bg-gray-50">
-                    <AlertCircle className="h-3.5 w-3.5 mr-1" />
-                    Draft
-                </Badge>
-            )
-        } else if (status === "expired") {
+    // Get status badge
+    const getStatusBadge = (isExpired: boolean) => {
+        if (isExpired) {
             return (
                 <Badge variant="outline" className="bg-red-50 text-red-700 hover:bg-red-50">
                     <AlertCircle className="h-3.5 w-3.5 mr-1" />
                     Expired
                 </Badge>
             )
+        } else {
+            return (
+                <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">
+                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                    Active
+                </Badge>
+            )
         }
-        return null
     }
 
     // Get audience badge
     const getAudienceBadge = (announcement: Announcement) => {
-        if (announcement.isPublic) {
+        if (announcement.public_access) {
             return (
                 <Badge variant="outline" className="bg-purple-50 text-purple-700 hover:bg-purple-50">
                     <Globe className="h-3.5 w-3.5 mr-1" />
                     Public
                 </Badge>
             )
-        } else if (announcement.class && announcement.section) {
+        } else if (announcement.school_class) {
             return (
                 <Badge variant="outline" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-50">
                     <Users className="h-3.5 w-3.5 mr-1" />
-                    {announcement.class.name} {announcement.section.name}
-                </Badge>
-            )
-        } else if (announcement.class) {
-            return (
-                <Badge variant="outline" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-50">
-                    <Users className="h-3.5 w-3.5 mr-1" />
-                    {announcement.class.name}
+                    {announcement.school_class.name}
                 </Badge>
             )
         }
         return null
     }
 
-    // Add this function before the return statement
+    // Function to handle creating a new announcement
     const handleCreateAnnouncement = async () => {
         // Validate form
         const errors: Record<string, string> = {}
@@ -444,8 +252,8 @@ export default function AdminAnnouncementPage() {
         if (!newAnnouncement.description.trim()) {
             errors.description = "Description is required"
         }
-        if (!newAnnouncement.isPublic && !newAnnouncement.classId) {
-            errors.classId = "Class is required for non-public announcements"
+        if (!newAnnouncement.public_access && !newAnnouncement.school_class_id) {
+            errors.school_class_id = "Class is required for non-public announcements"
         }
 
         if (Object.keys(errors).length > 0) {
@@ -454,52 +262,16 @@ export default function AdminAnnouncementPage() {
         }
 
         try {
-            // In a real application, you would call your API
-            // const response = await AxiosInstance.post('/api/admin/announcements/', newAnnouncement)
-
-            // Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 800))
-
-            // Create a new dummy announcement
-            const newId = `ann-${Date.now()}`
-            const createdAnnouncement: Announcement = {
-                id: newId,
+            const payload = {
                 title: newAnnouncement.title,
                 description: newAnnouncement.description,
-                createdAt: new Date().toISOString(),
-                publishedAt: new Date().toISOString(),
-                status: "published",
-                isPublic: newAnnouncement.isPublic,
-                createdBy: {
-                    id: "user-1",
-                    name: "Current User",
-                    role: "Administrator",
-                },
-                priority: newAnnouncement.priority as "normal" | "important" | "urgent",
-                ...(newAnnouncement.isPublic
-                    ? {}
-                    : {
-                        class: classes.find((c) => c.id === newAnnouncement.classId),
-                        ...(newAnnouncement.sectionId
-                            ? {
-                                section: sections.find((s) => s.id === newAnnouncement.sectionId),
-                            }
-                            : {}),
-                    }),
+                public_access: newAnnouncement.public_access,
+                priority: newAnnouncement.priority,
+                school_class: newAnnouncement.public_access ? null : newAnnouncement.school_class_id,
             }
 
-            // Update the announcements list
-            setAnnouncements([createdAnnouncement, ...announcements])
-
-            // Reset form and close dialog
-            setNewAnnouncement({
-                title: "",
-                description: "",
-                isPublic: true,
-                classId: "",
-                sectionId: "",
-                priority: "normal",
-            })
+            await axiosInstance.post("/api/academic/announcement/", payload)
+            fetchAnnouncements()
             setFormErrors({})
             setCreateDialogOpen(false)
             toast.success("Announcement created successfully")
@@ -509,40 +281,23 @@ export default function AdminAnnouncementPage() {
         }
     }
 
-    // State variables for view and edit dialogs
-    const [viewDialogOpen, setViewDialogOpen] = useState(false)
-    const [editDialogOpen, setEditDialogOpen] = useState(false)
-    const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null)
-    const [editFormData, setEditFormData] = useState({
-        title: "",
-        description: "",
-        isPublic: true,
-        classId: "",
-        sectionId: "",
-        priority: "normal",
-    })
-
-    // Function to handle viewing an announcement
     const handleViewAnnouncement = (announcement: Announcement) => {
         setSelectedAnnouncement(announcement)
         setViewDialogOpen(true)
     }
 
-    // Function to handle editing an announcement
     const handleEditAnnouncement = (announcement: Announcement) => {
         setSelectedAnnouncement(announcement)
         setEditFormData({
             title: announcement.title,
             description: announcement.description,
-            isPublic: announcement.isPublic,
-            classId: announcement.class?.id || "",
-            sectionId: announcement.section?.id || "",
+            public_access: announcement.public_access,
+            school_class_id: announcement.school_class?.id || "",
             priority: announcement.priority,
         })
         setEditDialogOpen(true)
     }
 
-    // Function to handle saving the edited announcement
     const handleSaveEdit = async () => {
         // Validate form
         const errors: Record<string, string> = {}
@@ -552,8 +307,8 @@ export default function AdminAnnouncementPage() {
         if (!editFormData.description.trim()) {
             errors.description = "Description is required"
         }
-        if (!editFormData.isPublic && !editFormData.classId) {
-            errors.classId = "Class is required for non-public announcements"
+        if (!editFormData.public_access && !editFormData.school_class_id) {
+            errors.school_class_id = "Class is required for non-public announcements"
         }
 
         if (Object.keys(errors).length > 0) {
@@ -564,30 +319,16 @@ export default function AdminAnnouncementPage() {
         if (!selectedAnnouncement) return
 
         try {
-            // In a real application, you would call your API to update the announcement
-            // await AxiosInstance.put(`/api/admin/announcements/${selectedAnnouncement.id}`, editFormData)
+            const payload = {
+                title: editFormData.title,
+                description: editFormData.description,
+                public_access: editFormData.public_access,
+                priority: editFormData.priority,
+                school_class: editFormData.public_access ? null : editFormData.school_class_id,
+            }
 
-            // Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 800))
-
-            // Update local state
-            setAnnouncements(
-                announcements.map((announcement) =>
-                    announcement.id === selectedAnnouncement.id
-                        ? {
-                            ...announcement,
-                            title: editFormData.title,
-                            description: editFormData.description,
-                            isPublic: editFormData.isPublic,
-                            class: editFormData.isPublic ? undefined : classes.find((c) => c.id === editFormData.classId),
-                            section: editFormData.isPublic ? undefined : sections.find((s) => s.id === editFormData.sectionId),
-                            priority: editFormData.priority as "normal" | "important" | "urgent",
-                        }
-                        : announcement,
-                ),
-            )
-
-            // Reset form and close dialog
+            await axiosInstance.put(`/api/academic/announcement/${selectedAnnouncement.id}/`, payload)
+            fetchAnnouncements()
             setEditDialogOpen(false)
             setFormErrors({})
             toast.success("Announcement updated successfully")
@@ -599,22 +340,32 @@ export default function AdminAnnouncementPage() {
 
     return (
         <div className="p-4 flex flex-col gap-6">
-            <PageHeader
-                title="Announcements"
-                breadcrumbs={[
-                    { label: "Dashboard", href: "/" },
-                    { label: "Admin", href: "/admin" },
-                    { label: "Announcements", href: "/admin/announcements" },
-                ]}
-                onRefresh={fetchAnnouncements}
-                onPrint={() => console.log("Printing...")}
-                onExport={() => console.log("Exporting...")}
-                primaryAction={{
-                    label: "Create Announcement",
-                    onClick: () => setCreateDialogOpen(true),
-                    icon: <PlusCircle className="h-4 w-4" />,
-                }}
-            />
+            {
+                role == "student" || role == "parent" ? (
+                    <PageHeader
+                        title="Announcements"
+                        breadcrumbs={[
+                            { label: "Dashboard", href: "/" },
+                            { label: "Announcements", href: "/announcement/list" },
+                        ]}
+                        onRefresh={fetchAnnouncements}
+                    />
+                ): (
+                    <PageHeader
+                        title="Announcements"
+                        breadcrumbs={[
+                            { label: "Dashboard", href: "/" },
+                            { label: "Announcements", href: "/announcement/list" },
+                        ]}
+                        onRefresh={fetchAnnouncements}
+                        primaryAction={{
+                            label: "Create Announcement",
+                            onClick: () => setCreateDialogOpen(true),
+                            icon: <PlusCircle className="h-4 w-4" />,
+                        }}
+                    />
+                )
+            }
 
             <div className="mb-6">
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4">
@@ -641,40 +392,29 @@ export default function AdminAnnouncementPage() {
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
-                                <SelectItem value="published">Published</SelectItem>
-                                <SelectItem value="draft">Draft</SelectItem>
+                                <SelectItem value="active">Active</SelectItem>
                                 <SelectItem value="expired">Expired</SelectItem>
                                 <SelectItem value="public">Public Only</SelectItem>
                             </SelectContent>
                         </Select>
 
                         {/* Class Filter */}
-                        <Select value={classFilter} onValueChange={setClassFilter}>
-                            <SelectTrigger className="w-[140px]">
-                                <SelectValue placeholder="Class" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {classes.map((cls) => (
-                                    <SelectItem key={cls.id} value={cls.id}>
-                                        {cls.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-
-                        {/* Section Filter */}
-                        <Select value={sectionFilter} onValueChange={setSectionFilter}>
-                            <SelectTrigger className="w-[140px]">
-                                <SelectValue placeholder="Section" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {sections.map((section) => (
-                                    <SelectItem key={section.id} value={section.id}>
-                                        {section.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        {
+                            role == "student" || role == "parent" ? null : (
+                                <Select value={classFilter} onValueChange={setClassFilter}>
+                                    <SelectTrigger className="w-[140px]">
+                                        <SelectValue placeholder="Class" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {classes.map((cls) => (
+                                            <SelectItem key={cls.id} value={cls.id}>
+                                                {cls.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )
+                        }
 
                         {/* Priority Filter */}
                         <Select value={priorityFilter} onValueChange={setPriorityFilter}>
@@ -718,8 +458,6 @@ export default function AdminAnnouncementPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Add this dialog component at the end of the component, before the final closing braces */}
-            {/* Add this right after the Delete Confirmation Dialog */}
             {/* Create Announcement Dialog */}
             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
                 <DialogContent className="sm:max-w-[550px]">
@@ -760,73 +498,52 @@ export default function AdminAnnouncementPage() {
                         </div>
 
                         <div className="flex items-center justify-between">
-                            <Label htmlFor="isPublic">Public Announcement</Label>
+                            <Label htmlFor="public_access">Public Announcement</Label>
                             <Switch
-                                id="isPublic"
-                                checked={newAnnouncement.isPublic}
+                                id="public_access"
+                                checked={newAnnouncement.public_access}
                                 onCheckedChange={(checked) => {
                                     setNewAnnouncement({
                                         ...newAnnouncement,
-                                        isPublic: checked,
-                                        // Clear class and section if public
-                                        ...(checked ? { classId: "", sectionId: "" } : {}),
+                                        public_access: checked,
+                                        // Clear class if public
+                                        ...(checked ? { school_class_id: "" } : {}),
                                     })
                                 }}
                             />
                         </div>
                         <p className="text-sm text-muted-foreground -mt-3">
-                            {newAnnouncement.isPublic
+                            {newAnnouncement.public_access
                                 ? "This announcement will be visible to everyone"
-                                : "This announcement will only be visible to selected classes/sections"}
+                                : "This announcement will only be visible to selected class"}
                         </p>
 
-                        {!newAnnouncement.isPublic && (
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="classId">
-                                        Class <span className="text-red-500">*</span>
-                                    </Label>
-                                    <Select
-                                        value={newAnnouncement.classId}
-                                        onValueChange={(value) => setNewAnnouncement({ ...newAnnouncement, classId: value })}
+                        {!newAnnouncement.public_access && (
+                            <div className="grid gap-2">
+                                <Label htmlFor="school_class_id">
+                                    Class <span className="text-red-500">*</span>
+                                </Label>
+                                <Select
+                                    value={newAnnouncement.school_class_id}
+                                    onValueChange={(value) => setNewAnnouncement({ ...newAnnouncement, school_class_id: value })}
+                                >
+                                    <SelectTrigger
+                                        id="school_class_id"
+                                        className={"w-full" + cn(formErrors.school_class_id && "border-red-500")}
                                     >
-                                        <SelectTrigger id="classId" className={cn(formErrors.classId && "border-red-500")}>
-                                            <SelectValue placeholder="Select class" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {classes
-                                                .filter((c) => c.id !== "class-all")
-                                                .map((cls) => (
-                                                    <SelectItem key={cls.id} value={cls.id}>
-                                                        {cls.name}
-                                                    </SelectItem>
-                                                ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {formErrors.classId && <p className="text-sm text-red-500">{formErrors.classId}</p>}
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <Label htmlFor="sectionId">Section (Optional)</Label>
-                                    <Select
-                                        value={newAnnouncement.sectionId}
-                                        onValueChange={(value) => setNewAnnouncement({ ...newAnnouncement, sectionId: value })}
-                                    >
-                                        <SelectTrigger id="sectionId">
-                                            <SelectValue placeholder="Select section" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="section-all">All Sections</SelectItem>
-                                            {sections
-                                                .filter((s) => s.id !== "section-all")
-                                                .map((section) => (
-                                                    <SelectItem key={section.id} value={section.id}>
-                                                        {section.name}
-                                                    </SelectItem>
-                                                ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                                        <SelectValue placeholder="Select class" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {classes
+                                            .filter((c) => c.id !== "all")
+                                            .map((cls) => (
+                                                <SelectItem key={cls.id} value={cls.id}>
+                                                    {cls.name}
+                                                </SelectItem>
+                                            ))}
+                                    </SelectContent>
+                                </Select>
+                                {formErrors.school_class_id && <p className="text-sm text-red-500">{formErrors.school_class_id}</p>}
                             </div>
                         )}
 
@@ -834,9 +551,11 @@ export default function AdminAnnouncementPage() {
                             <Label htmlFor="priority">Priority</Label>
                             <Select
                                 value={newAnnouncement.priority}
-                                onValueChange={(value) => setNewAnnouncement({ ...newAnnouncement, priority: value })}
+                                onValueChange={(value: "normal" | "important" | "urgent") =>
+                                    setNewAnnouncement({ ...newAnnouncement, priority: value })
+                                }
                             >
-                                <SelectTrigger id="priority">
+                                <SelectTrigger id="priority" className={"w-full"}>
                                     <SelectValue placeholder="Select priority" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -855,9 +574,8 @@ export default function AdminAnnouncementPage() {
                                 setNewAnnouncement({
                                     title: "",
                                     description: "",
-                                    isPublic: true,
-                                    classId: "",
-                                    sectionId: "",
+                                    public_access: true,
+                                    school_class_id: "",
                                     priority: "normal",
                                 })
                                 setFormErrors({})
@@ -870,8 +588,6 @@ export default function AdminAnnouncementPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Add these dialog components at the end of the component, after the Create Announcement Dialog */}
-
             {/* View Announcement Dialog */}
             <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
                 <DialogContent className="sm:max-w-[650px]">
@@ -880,7 +596,8 @@ export default function AdminAnnouncementPage() {
                         <div className="flex flex-wrap gap-2 mt-2">
                             {selectedAnnouncement && (
                                 <>
-                                    {getStatusBadge(selectedAnnouncement.status, selectedAnnouncement.isPublic)}
+                                    {/*@ts-expect-error: type error*/}
+                                    {getStatusBadge(selectedAnnouncement.is_expired, selectedAnnouncement?.public_access)}
                                     {getAudienceBadge(selectedAnnouncement)}
                                     {getPriorityBadge(selectedAnnouncement.priority)}
                                 </>
@@ -892,62 +609,31 @@ export default function AdminAnnouncementPage() {
                             <p>{selectedAnnouncement?.description}</p>
                         </div>
 
-                        {selectedAnnouncement?.attachments && selectedAnnouncement.attachments.length > 0 && (
-                            <div className="mt-4 border-t pt-4">
-                                <h4 className="text-sm font-medium mb-2">Attachments</h4>
-                                <ul className="space-y-2">
-                                    {selectedAnnouncement.attachments.map((attachment) => (
-                                        <li key={attachment.id} className="flex items-center text-sm">
-                                            <Paperclip className="h-4 w-4 mr-2 text-gray-500" />
-                                            <a href={attachment.url} className="text-blue-600 hover:underline">
-                                                {attachment.name}
-                                            </a>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-
                         <div className="mt-4 border-t pt-4 grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                                <p className="text-muted-foreground">Created by</p>
-                                <p className="font-medium">{selectedAnnouncement?.createdBy.name}</p>
-                                <p className="text-xs text-muted-foreground">{selectedAnnouncement?.createdBy.role}</p>
-                            </div>
                             <div>
                                 <p className="text-muted-foreground">Created at</p>
                                 <p className="font-medium">
-                                    {selectedAnnouncement && format(new Date(selectedAnnouncement.createdAt), "PPP")}
+                                    {selectedAnnouncement && format(new Date(selectedAnnouncement.created_at), "PPP")}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                    {selectedAnnouncement && format(new Date(selectedAnnouncement.createdAt), "p")}
+                                    {selectedAnnouncement && format(new Date(selectedAnnouncement.created_at), "p")}
                                 </p>
                             </div>
-                            {selectedAnnouncement?.publishedAt && (
-                                <div>
-                                    <p className="text-muted-foreground">Published at</p>
-                                    <p className="font-medium">{format(new Date(selectedAnnouncement.publishedAt), "PPP")}</p>
-                                    <p className="text-xs text-muted-foreground">
-                                        {format(new Date(selectedAnnouncement.publishedAt), "p")}
-                                    </p>
-                                </div>
-                            )}
-                            {selectedAnnouncement?.expiresAt && (
-                                <div>
-                                    <p className="text-muted-foreground">Expires at</p>
-                                    <p className="font-medium">{format(new Date(selectedAnnouncement.expiresAt), "PPP")}</p>
-                                    <p className="text-xs text-muted-foreground">
-                                        {format(new Date(selectedAnnouncement.expiresAt), "p")}
-                                    </p>
-                                </div>
-                            )}
+                            <div>
+                                <p className="text-muted-foreground">Updated at</p>
+                                <p className="font-medium">
+                                    {selectedAnnouncement && format(new Date(selectedAnnouncement.updated_at), "PPP")}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    {selectedAnnouncement && format(new Date(selectedAnnouncement.updated_at), "p")}
+                                </p>
+                            </div>
                         </div>
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
                             Close
                         </Button>
-
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -992,73 +678,52 @@ export default function AdminAnnouncementPage() {
                         </div>
 
                         <div className="flex items-center justify-between">
-                            <Label htmlFor="edit-isPublic">Public Announcement</Label>
+                            <Label htmlFor="edit-public_access">Public Announcement</Label>
                             <Switch
-                                id="edit-isPublic"
-                                checked={editFormData.isPublic}
+                                id="edit-public_access"
+                                checked={editFormData.public_access}
                                 onCheckedChange={(checked) => {
                                     setEditFormData({
                                         ...editFormData,
-                                        isPublic: checked,
-                                        // Clear class and section if public
-                                        ...(checked ? { classId: "", sectionId: "" } : {}),
+                                        public_access: checked,
+                                        // Clear class if public
+                                        ...(checked ? { school_class_id: "" } : {}),
                                     })
                                 }}
                             />
                         </div>
                         <p className="text-sm text-muted-foreground -mt-3">
-                            {editFormData.isPublic
+                            {editFormData.public_access
                                 ? "This announcement will be visible to everyone"
-                                : "This announcement will only be visible to selected classes/sections"}
+                                : "This announcement will only be visible to selected class"}
                         </p>
 
-                        {!editFormData.isPublic && (
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="edit-classId">
-                                        Class <span className="text-red-500">*</span>
-                                    </Label>
-                                    <Select
-                                        value={editFormData.classId}
-                                        onValueChange={(value) => setEditFormData({ ...editFormData, classId: value })}
+                        {!editFormData.public_access && (
+                            <div className="grid gap-2">
+                                <Label htmlFor="edit-school_class_id">
+                                    Class <span className="text-red-500">*</span>
+                                </Label>
+                                <Select
+                                    value={editFormData.school_class_id}
+                                    onValueChange={(value) => setEditFormData({ ...editFormData, school_class_id: value })}
+                                >
+                                    <SelectTrigger
+                                        id="edit-school_class_id"
+                                        className={"w-full" + cn(formErrors.school_class_id && "border-red-500")}
                                     >
-                                        <SelectTrigger id="edit-classId" className={cn(formErrors.classId && "border-red-500")}>
-                                            <SelectValue placeholder="Select class" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {classes
-                                                .filter((c) => c.id !== "class-all")
-                                                .map((cls) => (
-                                                    <SelectItem key={cls.id} value={cls.id}>
-                                                        {cls.name}
-                                                    </SelectItem>
-                                                ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {formErrors.classId && <p className="text-sm text-red-500">{formErrors.classId}</p>}
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <Label htmlFor="edit-sectionId">Section (Optional)</Label>
-                                    <Select
-                                        value={editFormData.sectionId}
-                                        onValueChange={(value) => setEditFormData({ ...editFormData, sectionId: value })}
-                                    >
-                                        <SelectTrigger id="edit-sectionId">
-                                            <SelectValue placeholder="Select section" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="section-all">All Sections</SelectItem>
-                                            {sections
-                                                .filter((s) => s.id !== "section-all")
-                                                .map((section) => (
-                                                    <SelectItem key={section.id} value={section.id}>
-                                                        {section.name}
-                                                    </SelectItem>
-                                                ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                                        <SelectValue placeholder="Select class" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {classes
+                                            .filter((c) => c.id !== "all")
+                                            .map((cls) => (
+                                                <SelectItem key={cls.id} value={cls.id}>
+                                                    {cls.name}
+                                                </SelectItem>
+                                            ))}
+                                    </SelectContent>
+                                </Select>
+                                {formErrors.school_class_id && <p className="text-sm text-red-500">{formErrors.school_class_id}</p>}
                             </div>
                         )}
 
@@ -1066,9 +731,11 @@ export default function AdminAnnouncementPage() {
                             <Label htmlFor="edit-priority">Priority</Label>
                             <Select
                                 value={editFormData.priority}
-                                onValueChange={(value) => setEditFormData({ ...editFormData, priority: value })}
+                                onValueChange={(value: "normal" | "important" | "urgent") =>
+                                    setEditFormData({ ...editFormData, priority: value })
+                                }
                             >
-                                <SelectTrigger id="edit-priority">
+                                <SelectTrigger id="edit-priority" className={'w-full'}>
                                     <SelectValue placeholder="Select priority" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1126,13 +793,12 @@ export default function AdminAnnouncementPage() {
 
         if (filteredAnnouncements.length === 0) {
             return (
-                <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg border border-gray-200 min-h-[320px]">
+                <div className="flex flex-col items-center justify-center p-8 rounded-lg min-h-[320px]">
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No announcements found</h3>
                     <p className="text-gray-500 mb-4 text-center">
                         There are no announcements matching your current filters. Try adjusting your search or create a new
                         announcement.
                     </p>
-                    <Button onClick={() => setCreateDialogOpen(true)}>Create New Announcement</Button>
                 </div>
             )
         }
@@ -1144,8 +810,7 @@ export default function AdminAnnouncementPage() {
                         key={announcement.id}
                         className={cn(
                             "overflow-hidden hover:shadow-md transition-shadow flex flex-col min-h-[320px]",
-                            announcement.status === "draft" && "bg-gray-50 border-gray-200",
-                            announcement.status === "expired" && "bg-red-50 border-red-200",
+                            announcement.is_expired && "bg-red-50 border-red-200",
                         )}
                     >
                         <CardHeader className="pb-2">
@@ -1163,53 +828,47 @@ export default function AdminAnnouncementPage() {
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuItem onClick={() => handleViewAnnouncement(announcement)}>
                                             <Eye className="mr-2 h-4 w-4" />
-                                            View Details
+                                            View
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleEditAnnouncement(announcement)}>
-                                            <Pencil className="mr-2 h-4 w-4" />
-                                            Edit Announcement
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem
-                                            onClick={() => confirmDelete(announcement.id)}
-                                            className="text-red-600 focus:text-red-600"
-                                        >
-                                            <Trash2 className="mr-2 h-4 w-4" />
-                                            Delete
-                                        </DropdownMenuItem>
+                                        {
+                                            role == "student" || role == "parent" ? null : (
+                                                <>
+                                                    <DropdownMenuItem onClick={() => handleEditAnnouncement(announcement)}>
+                                                        <Pencil className="mr-2 h-4 w-4" />
+                                                        Edit
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem
+                                                        onClick={() => confirmDelete(announcement.id)}
+                                                        className="text-red-600 focus:text-red-600"
+                                                    >
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                </>
+                                            )
+                                        }
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </div>
                             <div className="flex flex-wrap gap-2 mt-1">
-                                {getStatusBadge(announcement.status, announcement.isPublic)}
+                                {/*@ts-expect-error: type error*/}
+                                {getStatusBadge(announcement.is_expired, announcement?.public_access)}
                                 {getAudienceBadge(announcement)}
                                 {getPriorityBadge(announcement.priority)}
                             </div>
                         </CardHeader>
                         <CardContent className="pb-2 flex-grow">
                             <p className="text-gray-600 text-sm line-clamp-4">{announcement.description}</p>
-
-                            {announcement.attachments && announcement.attachments.length > 0 && (
-                                <div className="mt-3">
-                                    <div className="flex items-center text-sm">
-                                        <Paperclip className="h-3.5 w-3.5 mr-2 text-gray-500" />
-                                        <span className="text-gray-600">
-                      {announcement.attachments.length} attachment{announcement.attachments.length !== 1 ? "s" : ""}
-                    </span>
-                                    </div>
-                                </div>
-                            )}
                         </CardContent>
                         <CardFooter className="flex justify-between pt-2 border-t">
                             <div className="flex items-center text-xs text-gray-500">
                                 <Calendar className="h-3.5 w-3.5 mr-1" />
-                                <span>
-                  {announcement.status === "published"
-                      ? `Published: ${format(new Date(announcement.publishedAt), "MMM d, yyyy")}`
-                      : `Created: ${format(new Date(announcement.createdAt), "MMM d, yyyy")}`}
-                </span>
+                                <span>{format(new Date(announcement.created_at), "MMM d, yyyy")}</span>
                             </div>
-                            <div className="text-xs text-gray-500">By: {announcement.createdBy.name}</div>
+                            <div className="text-xs text-gray-500">
+                                Last updated: {format(new Date(announcement.updated_at), "MMM d, yyyy")}
+                            </div>
                         </CardFooter>
                     </Card>
                 ))}

@@ -27,131 +27,30 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
+import { Skeleton } from "@/components/ui/skeleton"
+import axiosInstance from "@/auth/AxiosInstance.ts"
+import {useAuthStore} from "@/store/AuthStore.ts";
 
-// Assignment interface
-export interface Assignment {
+interface Assignment {
     id: string
     title: string
     description: string
+    due_date: string // ISO 8601 date format
     subject: {
         id: string
         name: string
     }
-    class: {
+    school_class: {
         id: string
         name: string
     }
-    section?: {
-        id: string
-        name: string
+    section: {
+        name: string | null
     }
-    dueDate: string
-    status: "active" | "inactive" | "draft"
-    submissionCount: number
-    totalStudents: number
-    createdAt: string
-    attachments: {
-        id: string
-        name: string
-        type: string
-        url: string
-    }[]
+    is_active: boolean
+    total_students: number
+    total_submissions: number
 }
-
-// Dummy data for assignments
-const dummyAssignments: Assignment[] = [
-    // Existing assignments...
-
-    {
-        id: "8",
-        title: "Coloring Fun: Fruits and Vegetables",
-        description:
-            "Color the pictures of fruits and vegetables in your activity book (Pages 5-8). Use bright colors and stay within the lines!",
-        subject: {
-            id: "art-201",
-            name: "Art",
-        },
-        class: {
-            id: "class-1",
-            name: "Class 1",
-        },
-        section: {
-            id: "section-a",
-            name: "Section A",
-        },
-        dueDate: "2025-05-07T23:59:59Z",
-        status: "active",
-        submissionCount: 10,
-        totalStudents: 20,
-        createdAt: "2025-05-01T08:00:00Z",
-        attachments: [
-            {
-                id: "att-11",
-                name: "fruit_veggie_coloring_pages.pdf",
-                type: "application/pdf",
-                url: "#",
-            },
-        ],
-    },
-    {
-        id: "9",
-        title: "Counting Practice: Numbers 1 to 50",
-        description:
-            "Write numbers from 1 to 50 in your math notebook. Draw 5 things you can count in your home and write how many there are.",
-        subject: {
-            id: "math-202",
-            name: "Mathematics",
-        },
-        class: {
-            id: "class-2",
-            name: "Class 2",
-        },
-        section: {
-            id: "section-a",
-            name: "Section A",
-        },
-        dueDate: "2025-05-08T23:59:59Z",
-        status: "active",
-        submissionCount: 12,
-        totalStudents: 22,
-        createdAt: "2025-05-01T09:00:00Z",
-        attachments: [
-            {
-                id: "att-12",
-                name: "counting_practice_sheet.pdf",
-                type: "application/pdf",
-                url: "#",
-            },
-        ],
-    },
-];
-
-// Dummy data for subjects, classes, and sections
-const allSubjects = [
-    { id: "math-101", name: "Mathematics" },
-    { id: "sci-102", name: "Science" },
-    { id: "eng-103", name: "English" },
-    { id: "hist-104", name: "History" },
-    { id: "cs-105", name: "Computer Science" },
-    { id: "geo-106", name: "Geography" },
-    { id: "phys-107", name: "Physics" },
-]
-
-const allClasses = [
-    { id: "class-9b", name: "Class 1" },
-    { id: "class-10a", name: "Class 10" },
-    { id: "class-10b", name: "Class 10" },
-    { id: "class-11a", name: "Class 11" },
-    { id: "class-11c", name: "Class 11" },
-    { id: "class-12a", name: "Class 12" },
-    { id: "class-12b", name: "Class 12" },
-]
-
-const allSections = [
-    { id: "section-a", name: "Section A" },
-    { id: "section-b", name: "Section B" },
-    { id: "section-c", name: "Section C" },
-]
 
 export default function TeacherAssignmentPage() {
     const [assignments, setAssignments] = useState<Assignment[]>([])
@@ -163,8 +62,8 @@ export default function TeacherAssignmentPage() {
     const [sectionFilter, setSectionFilter] = useState<string>("all")
     const [activeTab, setActiveTab] = useState("all")
     const navigate = useNavigate()
+    const {role} = useAuthStore()
 
-    // Add Assignment Dialog State
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
     const [newAssignment, setNewAssignment] = useState({
         title: "",
@@ -177,30 +76,34 @@ export default function TeacherAssignmentPage() {
     })
     const [attachments, setAttachments] = useState<File[]>([])
 
+    const [formData, setFormData] = useState<{
+        classes: Array<{ id: string; name: string }>
+        sections: Array<{ id: string; name: string }>
+        subjects: Array<{ id: string; name: string }>
+    }>({ classes: [], sections: [], subjects: [] })
+    const [formLoading, setFormLoading] = useState(false)
+
     useEffect(() => {
         fetchAssignments()
     }, [])
 
     const fetchAssignments = async () => {
         setLoading(true)
-        try {
-            // In a real application, you would fetch from your API
-            // const response = await AxiosInstance.get('/api/academic/assignments/')
-            // setAssignments(response.data)
-
-            // Using dummy data for now
-            setTimeout(() => {
-                setAssignments(dummyAssignments)
+        axiosInstance
+            .get("/api/academic/assignment/")
+            .then((response) => {
+                const data = response.data
+                setAssignments(data)
+            })
+            .catch((error) => {
+                console.error("Error fetching assignments:", error)
+                toast.error("Failed to fetch assignments")
+            })
+            .finally(() => {
                 setLoading(false)
-            }, 800)
-        } catch (error) {
-            console.error("Error fetching assignments:", error)
-            toast.error("Failed to load assignments. Please try again.")
-            setLoading(false)
-        }
+            })
     }
 
-    // Filter assignments based on search query and filters
     const filteredAssignments = assignments.filter((assignment) => {
         const matchesSearch =
             assignment.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -208,49 +111,49 @@ export default function TeacherAssignmentPage() {
 
         const matchesStatus =
             statusFilter === "all" ||
-            (statusFilter === "expired" && isPast(new Date(assignment.dueDate)) && assignment.status === "active") ||
-            (statusFilter !== "expired" && assignment.status === statusFilter)
+            (statusFilter === "expired" && isPast(new Date(assignment.due_date)) && assignment.is_active) ||
+            (statusFilter === "active" && assignment.is_active) ||
+            (statusFilter === "inactive" && !assignment.is_active)
 
         const matchesSubject = subjectFilter === "all" || assignment.subject.id === subjectFilter
 
-        const matchesClass = classFilter === "all" || assignment.class.id === classFilter
+        const matchesClass = classFilter === "all" || assignment.school_class.id === classFilter
 
-        const matchesSection = sectionFilter === "all" || assignment.section?.id === sectionFilter
+        const matchesSection = sectionFilter === "all" || assignment.section?.name === sectionFilter
 
         const matchesTab =
             activeTab === "all" ||
-            (activeTab === "active" && assignment.status === "active") ||
-            (activeTab === "inactive" && assignment.status === "inactive") ||
-            (activeTab === "draft" && assignment.status === "draft")
+            (activeTab === "active" && assignment.is_active) ||
+            (activeTab === "inactive" && !assignment.is_active) ||
+            (activeTab === "draft" && !assignment.is_active) // Assuming draft means inactive
 
         return matchesSearch && matchesStatus && matchesSubject && matchesClass && matchesSection && matchesTab
     })
 
     // Get unique subjects, classes, and sections for filters
     const subjects = [...new Map(assignments.map((item) => [item.subject.id, item.subject])).values()]
-    const classes = [...new Map(assignments.map((item) => [item.class.id, item.class])).values()]
+    const classes = [...new Map(assignments.map((item) => [item.school_class.id, item.school_class])).values()]
     const sections = [
-        ...new Map(assignments.filter((item) => item.section).map((item) => [item.section?.id, item.section])).values(),
+        ...new Map(
+            assignments.filter((item) => item.section?.name).map((item) => [item.section?.name, item.section]),
+        ).values(),
     ]
 
     // Stats for dashboard cards
-    const activeAssignments = assignments.filter((a) => a.status === "active").length
-    const inactiveAssignments = assignments.filter((a) => a.status === "inactive").length
-    const draftAssignments = assignments.filter((a) => a.status === "draft").length
+    const activeAssignments = assignments.filter((a) => a.is_active).length
+    const inactiveAssignments = assignments.filter((a) => !a.is_active).length
+    const draftAssignments = 0 // Since the interface doesn't have a draft status, set to 0 or remove
     const totalAssignments = assignments.length
 
     const handleDeleteAssignment = async (id: string) => {
-        try {
-            // In a real application, you would call your API
-            // await AxiosInstance.delete(`/api/academic/assignments/${id}/`)
-
-            // Update local state
-            setAssignments(assignments.filter((assignment) => assignment.id !== id))
-            toast.success("Assignment deleted successfully")
-        } catch (error) {
-            console.error("Error deleting assignment:", error)
-            toast.error("Failed to delete assignment")
-        }
+        axiosInstance.delete(`/api/academic/assignment/${id}/`)
+            .then(() => {
+                setAssignments(assignments.filter((assignment) => assignment.id !== id))
+                toast.success("Assignment deleted successfully")
+            })
+            .catch((error) => {
+                console.error("Error deleting assignment:", error)
+            })
     }
 
     const handleDuplicateAssignment = async (id: string) => {
@@ -266,11 +169,6 @@ export default function TeacherAssignmentPage() {
                     submissionCount: 0,
                 }
 
-                // In a real application, you would call your API
-                // const response = await AxiosInstance.post('/api/academic/assignments/', newAssignment)
-                // const createdAssignment = response.data
-
-                // Update local state
                 setAssignments([newAssignment, ...assignments])
                 toast.success("Assignment duplicated successfully")
             }
@@ -284,19 +182,16 @@ export default function TeacherAssignmentPage() {
         try {
             const assignmentToUpdate = assignments.find((assignment) => assignment.id === id)
             if (assignmentToUpdate) {
-                const newStatus = assignmentToUpdate.status === "active" ? "inactive" : "active"
+                const newStatus = !assignmentToUpdate.is_active
 
-                // In a real application, you would call your API
-                // await AxiosInstance.patch(`/api/academic/assignments/${id}/`, { status: newStatus })
 
-                // Update local state
                 setAssignments(
                     assignments.map((assignment) =>
-                        assignment.id === id ? { ...assignment, status: newStatus as "active" | "inactive" | "draft" } : assignment,
+                        assignment.id === id ? { ...assignment, is_active: newStatus } : assignment,
                     ),
                 )
 
-                toast.success(`Assignment ${newStatus === "active" ? "activated" : "deactivated"} successfully`)
+                toast.success(`Assignment ${newStatus ? "activated" : "deactivated"} successfully`)
             }
         } catch (error) {
             console.error("Error updating assignment status:", error)
@@ -330,57 +225,82 @@ export default function TeacherAssignmentPage() {
         }
     }
 
-    // Handle form submission
+    const fetchFormData = async () => {
+        setFormLoading(true)
+        axiosInstance
+            .get("/api/academic/assignment-form-get/")
+            .then((response) => {
+                const data = response.data
+
+                const classes = data.map((item: any) => ({
+                    id: item.id,
+                    name: item.name,
+                }))
+
+                const sections = data.reduce((acc: any[], item: any) => {
+                    return acc.concat(item.section || [])
+                }, [])
+
+                const subjects = data.reduce((acc: any[], item: any) => {
+                    return acc.concat(item.subjects || [])
+                }, [])
+
+                const uniqueSections = sections.filter(
+                    (section, index, self) => index === self.findIndex((s) => s.id === section.id),
+                )
+
+                const uniqueSubjects = subjects.filter(
+                    (subject, index, self) => index === self.findIndex((s) => s.id === subject.id),
+                )
+
+                setFormData({
+                    classes,
+                    sections: uniqueSections,
+                    subjects: uniqueSubjects,
+                })
+            })
+            .catch((error) => {
+                console.error("Error fetching form data:", error)
+            })
+            .finally(() => {
+                setFormLoading(false)
+            })
+    }
+
     const handleSubmitAssignment = async () => {
         try {
-            // Validate form
-            if (!newAssignment.title || !newAssignment.description || !newAssignment.subjectId || !newAssignment.classId) {
+            if (
+                !newAssignment.title ||
+                !newAssignment.description ||
+                !newAssignment.subjectId ||
+                !newAssignment.classId ||
+                !newAssignment.sectionId
+            ) {
                 toast.error("Please fill in all required fields")
                 return
             }
 
-            // Create assignment object
-            const subject = allSubjects.find((s) => s.id === newAssignment.subjectId)
-            const classObj = allClasses.find((c) => c.id === newAssignment.classId)
-            const section = allSections.find((s) => s.id === newAssignment.sectionId)
+            const formData = new FormData()
+            formData.append("title", newAssignment.title)
+            formData.append("description", newAssignment.description)
+            formData.append("due_date", newAssignment.dueDate.toISOString().split("T")[0]) // Format as YYYY-MM-DD
+            formData.append("school_class", newAssignment.classId)
+            formData.append("subject", newAssignment.subjectId)
+            formData.append("is_active", newAssignment.status === "active" ? "true" : "false")
+            formData.append("section", newAssignment.sectionId)
 
-            if (!subject || !classObj) {
-                toast.error("Invalid subject or class selected")
-                return
+            if (attachments.length > 0) {
+                formData.append("file", attachments[0])
             }
 
-            const createdAssignment: Assignment = {
-                id: `new-${Date.now()}`,
-                title: newAssignment.title,
-                description: newAssignment.description,
-                subject: subject,
-                class: classObj,
-                section: section,
-                dueDate: newAssignment.dueDate.toISOString(),
-                status: newAssignment.status,
-                submissionCount: 0,
-                totalStudents: 0,
-                createdAt: new Date().toISOString(),
-                attachments: attachments.map((file, index) => ({
-                    id: `new-att-${index}`,
-                    name: file.name,
-                    type: file.type,
-                    url: "#", // In a real app, this would be the uploaded file URL
-                })),
-            }
+            await axiosInstance.post("/api/academic/assignment/", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            })
 
-            // In a real application, you would upload files and create the assignment via API
-            // const formData = new FormData()
-            // formData.append('title', newAssignment.title)
-            // ...other fields
-            // attachments.forEach(file => formData.append('attachments', file))
-            // const response = await AxiosInstance.post('/api/academic/assignments/', formData)
-            // const createdAssignment = response.data
-
-            // Update local state
-            setAssignments([createdAssignment, ...assignments])
-
-            // Reset form and close dialog
+            fetchAssignments();
+            setIsAddDialogOpen(false);
             setNewAssignment({
                 title: "",
                 description: "",
@@ -388,11 +308,8 @@ export default function TeacherAssignmentPage() {
                 classId: "",
                 sectionId: "",
                 dueDate: new Date(),
-                status: "draft",
+                status: "active",
             })
-            setAttachments([])
-            setIsAddDialogOpen(false)
-
             toast.success("Assignment created successfully")
         } catch (error) {
             console.error("Error creating assignment:", error)
@@ -402,21 +319,35 @@ export default function TeacherAssignmentPage() {
 
     return (
         <div className="p-4 flex flex-col gap-6">
-            <PageHeader
-                title="Assignments"
-                breadcrumbs={[
-                    { label: "Dashboard", href: "/" },
-                    { label: "Assignments", href: "/assignment/list" },
-                ]}
-                onRefresh={fetchAssignments}
-                onPrint={() => console.log("Printing...")}
-                onExport={() => console.log("Exporting...")}
-                primaryAction={{
-                    label: "Create Assignment",
-                    onClick: () => setIsAddDialogOpen(true),
-                    icon: <PlusCircle className="h-4 w-4" />,
-                }}
-            />
+            {
+                role == "teacher" ? (
+                    <PageHeader
+                        title="Assignments"
+                        breadcrumbs={[
+                            { label: "Dashboard", href: "/" },
+                            { label: "Assignments", href: "/assignment/list" },
+                        ]}
+                        onRefresh={fetchAssignments}
+                        primaryAction={{
+                            label: "Create Assignment",
+                            onClick: () => {
+                                setIsAddDialogOpen(true)
+                                fetchFormData()
+                            },
+                            icon: <PlusCircle className="h-4 w-4" />,
+                        }}
+                    />
+                ) : (
+                    <PageHeader
+                        title="Assignments"
+                        breadcrumbs={[
+                            { label: "Dashboard", href: "/" },
+                            { label: "Assignments", href: "/assignment/list" },
+                        ]}
+                        onRefresh={fetchAssignments}
+                    />
+                )
+            }
 
             {/* Dashboard Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -452,12 +383,12 @@ export default function TeacherAssignmentPage() {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Draft Assignments</CardTitle>
-                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-sm font-medium">Submissions</CardTitle>
+                        <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{draftAssignments}</div>
-                        <p className="text-xs text-muted-foreground">Work in progress</p>
+                        <div className="text-2xl font-bold">{assignments.reduce((sum, a) => sum + a.total_submissions, 0)}</div>
+                        <p className="text-xs text-muted-foreground">Total submissions received</p>
                     </CardContent>
                 </Card>
             </div>
@@ -468,7 +399,6 @@ export default function TeacherAssignmentPage() {
                         <TabsTrigger value="all">All</TabsTrigger>
                         <TabsTrigger value="active">Active</TabsTrigger>
                         <TabsTrigger value="inactive">Inactive</TabsTrigger>
-                        <TabsTrigger value="draft">Drafts</TabsTrigger>
                     </TabsList>
 
                     {/* Search on the right */}
@@ -485,81 +415,15 @@ export default function TeacherAssignmentPage() {
                 </div>
 
                 {/* Right side filters: Status, Class, Section, Subject */}
-                <div className="flex flex-wrap items-center gap-2 mb-4 justify-end">
-                    {/* Status Filter */}
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger className="w-[140px]">
-                            <SelectValue placeholder="Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Statuses</SelectItem>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="inactive">Inactive</SelectItem>
-                            <SelectItem value="draft">Draft</SelectItem>
-                            <SelectItem value="expired">Expired</SelectItem>
-                        </SelectContent>
-                    </Select>
-
-                    {/* Class Filter */}
-                    <Select value={classFilter} onValueChange={setClassFilter}>
-                        <SelectTrigger className="w-[140px]">
-                            <SelectValue placeholder="Class" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Classes</SelectItem>
-                            {classes.map((cls) => (
-                                <SelectItem key={cls.id} value={cls.id}>
-                                    {cls.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-
-                    {/* Section Filter */}
-                    <Select value={sectionFilter} onValueChange={setSectionFilter}>
-                        <SelectTrigger className="w-[140px]">
-                            <SelectValue placeholder="Section" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Sections</SelectItem>
-                            {sections.map((section) => (
-                                // @ts-expect-error: dsfaf
-                                <SelectItem key={section?.id} value={section?.id}>
-                                    {section?.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-
-                    {/* Subject Filter */}
-                    <Select value={subjectFilter} onValueChange={setSubjectFilter}>
-                        <SelectTrigger className="w-[140px]">
-                            <SelectValue placeholder="Subject" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Subjects</SelectItem>
-                            {subjects.map((subject) => (
-                                <SelectItem key={subject.id} value={subject.id}>
-                                    {subject.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-
-                    <Button variant="outline" size="icon" className="h-10 w-10">
-                        <Filter className="h-4 w-4" />
-                    </Button>
-                </div>
 
                 <TabsContent value="all" className="mt-0">
                     <TeacherAssignmentCard
                         assignments={filteredAssignments}
                         loading={loading}
                         onDelete={handleDeleteAssignment}
-                        onDuplicate={handleDuplicateAssignment}
                         onView={(id) => navigate(`/assignment/detail/${id}`)}
                         onEdit={(id) => navigate(`/assignment/edit/${id}`)}
-                        onToggleStatus={handleToggleStatus}
+                        role={`${role}`}
                     />
                 </TabsContent>
                 <TabsContent value="active" className="mt-0">
@@ -584,17 +448,6 @@ export default function TeacherAssignmentPage() {
                         onToggleStatus={handleToggleStatus}
                     />
                 </TabsContent>
-                <TabsContent value="draft" className="mt-0">
-                    <TeacherAssignmentCard
-                        assignments={filteredAssignments}
-                        loading={loading}
-                        onDelete={handleDeleteAssignment}
-                        onDuplicate={handleDuplicateAssignment}
-                        onView={(id) => navigate(`/assignment/detail/${id}`)}
-                        onEdit={(id) => navigate(`/assignments/${id}/edit`)}
-                        onToggleStatus={handleToggleStatus}
-                    />
-                </TabsContent>
             </Tabs>
 
             {/* Add Assignment Dialog */}
@@ -606,195 +459,247 @@ export default function TeacherAssignmentPage() {
                             Fill in the details below to create a new assignment. Click save when you're done.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        {/* Title */}
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="title" className="text-right">
-                                Title <span className="text-red-500">*</span>
-                            </Label>
-                            <Input
-                                id="title"
-                                name="title"
-                                value={newAssignment.title}
-                                onChange={handleInputChange}
-                                placeholder="Enter assignment title"
-                                className="col-span-3"
-                                required
-                            />
-                        </div>
-
-                        {/* Description */}
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="description" className="text-right">
-                                Description <span className="text-red-500">*</span>
-                            </Label>
-                            <Textarea
-                                id="description"
-                                name="description"
-                                value={newAssignment.description}
-                                onChange={handleInputChange}
-                                placeholder="Enter assignment description"
-                                className="col-span-3"
-                                required
-                            />
-                        </div>
-
-                        {/* Subject */}
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="subject" className="text-right">
-                                Subject <span className="text-red-500">*</span>
-                            </Label>
-                            <Select
-                                value={newAssignment.subjectId}
-                                onValueChange={(value) => setNewAssignment((prev) => ({ ...prev, subjectId: value }))}
-                            >
-                                <SelectTrigger className="col-span-3">
-                                    <SelectValue placeholder="Select a subject" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {allSubjects.map((subject) => (
-                                        <SelectItem key={subject.id} value={subject.id}>
-                                            {subject.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Class */}
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="class" className="text-right">
-                                Class <span className="text-red-500">*</span>
-                            </Label>
-                            <Select
-                                value={newAssignment.classId}
-                                onValueChange={(value) => setNewAssignment((prev) => ({ ...prev, classId: value }))}
-                            >
-                                <SelectTrigger className="col-span-3">
-                                    <SelectValue placeholder="Select a class" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {allClasses.map((cls) => (
-                                        <SelectItem key={cls.id} value={cls.id}>
-                                            {cls.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Section */}
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="section" className="text-right">
-                                Section
-                            </Label>
-                            <Select
-                                value={newAssignment.sectionId}
-                                onValueChange={(value) => setNewAssignment((prev) => ({ ...prev, sectionId: value }))}
-                            >
-                                <SelectTrigger className="col-span-3">
-                                    <SelectValue placeholder="Select a section (optional)" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {allSections.map((section) => (
-                                        <SelectItem key={section.id} value={section.id}>
-                                            {section.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Due Date */}
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="dueDate" className="text-right">
-                                Due Date <span className="text-red-500">*</span>
-                            </Label>
-                            <div className="col-span-3">
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" className="w-full justify-start text-left font-normal">
-                                            <Calendar className="mr-2 h-4 w-4" />
-                                            {newAssignment.dueDate ? format(newAssignment.dueDate, "PPP") : "Select a date"}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0">
-                                        <CalendarComponent
-                                            mode="single"
-                                            selected={newAssignment.dueDate}
-                                            onSelect={handleDateChange}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
+                    {formLoading ? (
+                        <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="title" className="text-right">
+                                    Title <span className="text-red-500">*</span>
+                                </Label>
+                                <Skeleton className="h-10 w-full col-span-3" />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="description" className="text-right">
+                                    Description <span className="text-red-500">*</span>
+                                </Label>
+                                <Skeleton className="h-24 w-full col-span-3" />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="subject" className="text-right">
+                                    Subject <span className="text-red-500">*</span>
+                                </Label>
+                                <Skeleton className="h-10 w-full col-span-3" />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="class" className="text-right">
+                                    Class <span className="text-red-500">*</span>
+                                </Label>
+                                <Skeleton className="h-10 w-full col-span-3" />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="section" className="text-right">
+                                    Section
+                                </Label>
+                                <Skeleton className="h-10 w-full col-span-3" />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="dueDate" className="text-right">
+                                    Due Date <span className="text-red-500">*</span>
+                                </Label>
+                                <Skeleton className="h-10 w-full col-span-3" />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="status" className="text-right">
+                                    Status
+                                </Label>
+                                <Skeleton className="h-10 w-full col-span-3" />
+                            </div>
+                            <div className="grid grid-cols-4 items-start gap-4">
+                                <Label htmlFor="attachments" className="text-right pt-2">
+                                    Attachments
+                                </Label>
+                                <Skeleton className="h-10 w-full col-span-3" />
                             </div>
                         </div>
+                    ) : (
+                        <div className="grid gap-4 py-4">
+                            {/* Title */}
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="title" className="text-right">
+                                    Title <span className="text-red-500">*</span>
+                                </Label>
+                                <Input
+                                    id="title"
+                                    name="title"
+                                    value={newAssignment.title}
+                                    onChange={handleInputChange}
+                                    placeholder="Enter assignment title"
+                                    className="col-span-3"
+                                    required
+                                />
+                            </div>
 
-                        {/* Status */}
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="status" className="text-right">
-                                Status
-                            </Label>
-                            <Select
-                                value={newAssignment.status}
-                                onValueChange={(value: "active" | "inactive" | "draft") =>
-                                    setNewAssignment((prev) => ({ ...prev, status: value }))
-                                }
-                            >
-                                <SelectTrigger className="col-span-3">
-                                    <SelectValue placeholder="Select status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="active">Active</SelectItem>
-                                    <SelectItem value="inactive">Inactive</SelectItem>
-                                    <SelectItem value="draft">Draft</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                            {/* Description */}
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="description" className="text-right">
+                                    Description <span className="text-red-500">*</span>
+                                </Label>
+                                <Textarea
+                                    id="description"
+                                    name="description"
+                                    value={newAssignment.description}
+                                    onChange={handleInputChange}
+                                    placeholder="Enter assignment description"
+                                    className="col-span-3"
+                                    required
+                                />
+                            </div>
 
-                        {/* Attachments */}
-                        <div className="grid grid-cols-4 items-start gap-4">
-                            <Label htmlFor="attachments" className="text-right pt-2">
-                                Attachments
-                            </Label>
-                            <div className="col-span-3 space-y-4">
-                                <div className="flex items-center gap-2">
-                                    <Input id="attachments" type="file" onChange={handleFileChange} className="flex-1" multiple />
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="icon"
-                                        onClick={() => document.getElementById("attachments")?.click()}
-                                    >
-                                        <Upload className="h-4 w-4" />
-                                    </Button>
+                            {/* Subject */}
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="subject" className="text-right">
+                                    Subject <span className="text-red-500">*</span>
+                                </Label>
+                                <Select
+                                    value={newAssignment.subjectId}
+                                    onValueChange={(value) => setNewAssignment((prev) => ({ ...prev, subjectId: value }))}
+                                >
+                                    <SelectTrigger className="col-span-3 w-full">
+                                        <SelectValue placeholder="Select a subject" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {(formData.subjects || []).map((subject) => (
+                                            <SelectItem key={subject.id} value={subject.id}>
+                                                {subject.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Class */}
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="class" className="text-right">
+                                    Class <span className="text-red-500">*</span>
+                                </Label>
+                                <Select
+                                    value={newAssignment.classId}
+                                    onValueChange={(value) => setNewAssignment((prev) => ({ ...prev, classId: value }))}
+                                >
+                                    <SelectTrigger className="col-span-3 w-full">
+                                        <SelectValue placeholder="Select a class" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {(formData.classes || []).map((cls) => (
+                                            <SelectItem key={cls.id} value={cls.id}>
+                                                {cls.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Section */}
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="section" className="text-right">
+                                    Section <span className="text-red-500">*</span>
+                                </Label>
+                                <Select
+                                    value={newAssignment.sectionId}
+                                    onValueChange={(value) => setNewAssignment((prev) => ({ ...prev, sectionId: value }))}
+                                >
+                                    <SelectTrigger className="col-span-3 w-full">
+                                        <SelectValue placeholder="Select a section" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {(formData.sections || []).map((section) => (
+                                            <SelectItem key={section.id} value={section.id}>
+                                                {section.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Due Date */}
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="dueDate" className="text-right">
+                                    Due Date <span className="text-red-500">*</span>
+                                </Label>
+                                <div className="col-span-3">
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                                <Calendar className="mr-2 h-4 w-4" />
+                                                {newAssignment.dueDate ? format(newAssignment.dueDate, "PPP") : "Select a date"}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0">
+                                            <CalendarComponent
+                                                mode="single"
+                                                selected={newAssignment.dueDate}
+                                                onSelect={handleDateChange}
+                                                initialFocus
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
+                            </div>
 
-                                {/* Attachment List */}
-                                {attachments.length > 0 && (
-                                    <div className="border rounded-md p-2 space-y-2">
-                                        <p className="text-sm font-medium">Attached Files:</p>
-                                        <ul className="space-y-1">
-                                            {attachments.map((file, index) => (
-                                                <li key={index} className="flex items-center justify-between text-sm p-1 bg-gray-50 rounded">
-                                                    <span className="truncate max-w-[200px]">{file.name}</span>
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-6 w-6"
-                                                        onClick={() => handleRemoveAttachment(index)}
-                                                    >
-                                                        <X className="h-3 w-3" />
-                                                    </Button>
-                                                </li>
-                                            ))}
-                                        </ul>
+                            {/* Status */}
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="status" className="text-right">
+                                    Status
+                                </Label>
+                                <Select
+                                    value={newAssignment.status}
+                                    onValueChange={(value: "active" | "inactive" | "draft") =>
+                                        setNewAssignment((prev) => ({ ...prev, status: value }))
+                                    }
+                                >
+                                    <SelectTrigger className="col-span-3 w-full">
+                                        <SelectValue placeholder="Select status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="active">Active</SelectItem>
+                                        <SelectItem value="inactive">Inactive</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Attachments */}
+                            <div className="grid grid-cols-4 items-start gap-4">
+                                <Label htmlFor="attachments" className="text-right pt-2">
+                                    Attachments
+                                </Label>
+                                <div className="col-span-3 space-y-4">
+                                    <div className="flex items-center gap-2">
+                                        <Input id="attachments" type="file" onChange={handleFileChange} className="flex-1" multiple />
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={() => document.getElementById("attachments")?.click()}
+                                        >
+                                            <Upload className="h-4 w-4" />
+                                        </Button>
                                     </div>
-                                )}
+
+                                    {/* Attachment List */}
+                                    {attachments.length > 0 && (
+                                        <div className="border rounded-md p-2 space-y-2">
+                                            <p className="text-sm font-medium">Attached Files:</p>
+                                            <ul className="space-y-1">
+                                                {attachments.map((file, index) => (
+                                                    <li key={index} className="flex items-center justify-between text-sm p-1 bg-gray-50 rounded">
+                                                        <span className="truncate max-w-[200px]">{file.name}</span>
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-6 w-6"
+                                                            onClick={() => handleRemoveAttachment(index)}
+                                                        >
+                                                            <X className="h-3 w-3" />
+                                                        </Button>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                             Cancel

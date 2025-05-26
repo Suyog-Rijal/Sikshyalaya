@@ -236,7 +236,8 @@ class Routine(models.Model):
 
 class AttendanceSession(models.Model):
 	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-	academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='attendance_sessions', null=True)
+	academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='attendance_sessions',
+	                                  null=True)
 	school_class = models.ForeignKey(SchoolClass, on_delete=models.CASCADE, related_name='attendance_sessions')
 	section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name='attendance_sessions')
 	date = models.DateField(default=timezone.localdate)
@@ -293,16 +294,20 @@ class AttendanceRecord(models.Model):
 class Assignment(models.Model):
 	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 	school_class = models.ForeignKey(SchoolClass, on_delete=models.CASCADE, related_name='assignments')
-	section = models.ManyToManyField(Section, blank=True, related_name='assignments')
+	section = models.ManyToManyField(Section, blank=True, null=True, related_name='assignments')
 	subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='assignments')
 	teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='assignments')
 	status = models.BooleanField(default=True)
+	is_active = models.BooleanField(default=True)
 
 	title = models.CharField(max_length=255)
 	description = models.TextField()
 
 	due_date = models.DateField()
 	created_at = models.DateTimeField(auto_now_add=True)
+
+	def __str__(self):
+		return F"{self.title}"
 
 
 class AssignmentAttachment(models.Model):
@@ -315,8 +320,8 @@ class AssignmentAttachment(models.Model):
 
 class Submission(models.Model):
 	STATUS_CHOICES = [
-		('submitted', 'Submitted'),
-		('graded', 'Graded'),
+		('ng', 'Not Graded'),
+		('g', 'Graded'),
 	]
 	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 	assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='submissions')
@@ -324,44 +329,14 @@ class Submission(models.Model):
 	file = models.FileField(upload_to='submissions/')
 	submission_date = models.DateTimeField(auto_now_add=True)
 
-	status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='submitted')
+	status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='ng')
+	marks = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
 
 	class Meta:
 		unique_together = ['assignment', 'student']
 
 	def __str__(self):
 		return f"{self.assignment.title} - {self.student.get_fullname()}"
-
-
-class ChatRoom(models.Model):
-	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-	participants = models.ManyToManyField(CustomUser, related_name='chat_rooms')
-	created_at = models.DateTimeField(auto_now_add=True)
-
-	def get_participants(self):
-		return self.participants.all()
-
-
-class ChatMessage(models.Model):
-	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-	chat_room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name='messages')
-	sender = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='sent_messages')
-	message = models.TextField()
-	timestamp = models.DateTimeField(auto_now_add=True)
-
-	def __str__(self):
-		return f"{self.sender} - {self.timestamp.strftime('%Y-%m-%d %H:%M:%S')}"
-
-
-class ChatAttachments(models.Model):
-	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-	chat_message = models.ForeignKey(ChatMessage, on_delete=models.CASCADE, related_name='attachments')
-	file = models.FileField(upload_to='chat_attachments/')
-	created_at = models.DateTimeField(auto_now_add=True)
-	updated_at = models.DateTimeField(auto_now=True)
-
-	def __str__(self):
-		return f"Attachment for {self.chat_message.sender} - {self.created_at.strftime('%Y-%m-%d %H:%M:%S')}"
 
 
 class Announcement(models.Model):
@@ -373,108 +348,48 @@ class Announcement(models.Model):
 	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 	academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='announcements', null=True)
 	public_access = models.BooleanField(default=False)
-	school_class = models.ManyToManyField(SchoolClass, blank=True, related_name='announcements')
-	section = models.ManyToManyField(Section, blank=True, related_name='announcements')
+	school_class = models.ForeignKey(SchoolClass, blank=True, related_name='announcements', on_delete=models.CASCADE,
+	                                 null=True)
 	priority = models.CharField(choices=PRIORITY_CHOICES, default='normal', max_length=10)
 	is_expired = models.BooleanField(default=False)
-	
+
 	title = models.CharField(max_length=255)
 	description = models.TextField()
-	
+
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
-	
+
 	def __str__(self):
 		return f"{self.title} - {self.created_at.strftime('%Y-%m-%d %H:%M:%S')}"
 
+	def save(self, *args, **kwargs):
+		if not self.academic_year:
+			self.academic_year = AcademicYear.objects.get(is_active=True)
+
+		if self.public_access:
+			self.school_class = None
+		super().save(*args, **kwargs)
+
 
 class Exam(models.Model):
+	EXAM_TYPE_CHOICES = [
+		('terminal', 'Terminal Exam'),
+		('midterm', 'Midterm Exam'),
+		('final', 'Final Exam'),
+		('unit', 'Unit Test'),
+	]
 	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 	academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='exams', null=True)
-	school_class = models.ForeignKey(SchoolClass, on_delete=models.CASCADE, related_name='exams')
-	section = models.ManyToManyField(Section, blank=True, related_name='exams')
+	school_class = models.ForeignKey(SchoolClass, on_delete=models.CASCADE, related_name='exams', null=True)
 	subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='exams')
 	exam_date = models.DateField()
-	exam_time = models.TimeField()
-	duration = models.DurationField()
+	start_time = models.TimeField(null=True)
+	end_time = models.TimeField(null=True)
+	exam_type = models.CharField(max_length=10, choices=EXAM_TYPE_CHOICES, default='midterm')
 
 	created_at = models.DateTimeField(auto_now_add=True)
 
-
-class Leave(models.Model):
-	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-	student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='leaves')
-	academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='leaves', null=True)
-	leave_reason = models.TextField()
-	max_days = models.PositiveSmallIntegerField(default=30)
-	start_date = models.DateField()
-	end_date = models.DateField()
-	leave_status = models.CharField(max_length=20, default='pending')
-
-	created_at = models.DateTimeField(auto_now_add=True)
-
-
-class Fees(models.Model):
-	PAYMENT_STATUS_CHOICES = [
-		('PENDING', 'Pending'),
-		('SUCCESS', 'Success'),
-		('FAILED', 'Failed'),
-		('CANCELLED', 'Cancelled'),
-	]
-
-	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-	academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name='fees')
-	student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='fees')
-	total_amount = models.DecimalField(max_digits=10, decimal_places=2)
-	paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-	due_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-
-	payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='PENDING')
-
-	created_at = models.DateTimeField(auto_now_add=True)
-	updated_at = models.DateTimeField(auto_now=True)
-
-	def update_due_and_status(self):
-		self.due_amount = self.total_amount - self.paid_amount
-		if self.paid_amount >= self.total_amount:
-			self.payment_status = 'SUCCESS'
-		elif 0 < self.paid_amount < self.total_amount:
-			self.payment_status = 'PENDING'
-		else:
-			self.payment_status = 'PENDING'
-		self.save()
-
-	def __str__(self):
-		return f"{self.student.get_fullname()} - {self.academic_year}"
-
-
-class OnlinePaymentTransaction(models.Model):
-	PAYMENT_METHOD_CHOICES = [
-		('ESEWA', 'eSewa'),
-		('KHALTI', 'Khalti'),
-		('CARD', 'Card'),
-		('PAYPAL', 'PayPal'),
-	]
-
-	PAYMENT_STATUS_CHOICES = [
-		('PENDING', 'Pending'),
-		('SUCCESS', 'Success'),
-		('FAILED', 'Failed'),
-		('CANCELLED', 'Cancelled'),
-	]
-
-	id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-	fees = models.ForeignKey(Fees, on_delete=models.CASCADE, related_name='transactions')
-
-	transaction_id = models.CharField(max_length=100, unique=True)
-	payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES)
-	amount = models.DecimalField(max_digits=10, decimal_places=2)
-
-	status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='PENDING')
-	response_message = models.TextField(blank=True, null=True)  # Optional gateway response JSON or message
-
-	created_at = models.DateTimeField(auto_now_add=True)
-
-	def __str__(self):
-		return f"{self.fees.student.get_fullname()} | {self.payment_method} | {self.status}"
-
+	def save(self, *args, **kwargs):
+		if not self.academic_year:
+			self.academic_year = AcademicYear.objects.get(is_active=True)
+		super().save(*args, **kwargs)

@@ -12,6 +12,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { EllipsisVertical } from "lucide-react"
 import {useAuthStore} from "@/store/AuthStore.ts";
+import {useNavigate} from "react-router-dom";
 
 interface ParentCardProps {
     id: string
@@ -40,13 +41,13 @@ export function ParentCard({
                                addedDate,
                                avatarUrl,
                                student = [],
-                               onViewDetails,
                                onEdit,
                                onDelete,
                            }: ParentCardProps) {
 
 
     const {role} = useAuthStore();
+    const navigate = useNavigate()
 
     return (
         <div className="w-full max-w-sm rounded-lg bg-white p-4 shadow">
@@ -61,7 +62,7 @@ export function ParentCard({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-36">
                         <DropdownMenuGroup>
-                            <DropdownMenuItem onClick={() => onViewDetails?.(id)}>View</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => navigate("/parent/detail/" + id)}>View</DropdownMenuItem>
                             {
                                 role === "admin" && (
                                     <>
@@ -143,7 +144,7 @@ export function ParentCard({
 
                 {/* View Details Button */}
                 <div className="mt-4 flex justify-end">
-                    <Button onClick={() => onViewDetails?.(id)} variant="secondary" size="sm">
+                    <Button onClick={() => navigate("/parent/detail/" + id)} variant="secondary" size="sm">
                         View Details
                     </Button>
                 </div>

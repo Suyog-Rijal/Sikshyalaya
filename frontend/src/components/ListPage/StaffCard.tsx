@@ -93,7 +93,7 @@ export function StaffCard({
                             <DropdownMenuGroup>
                                 <DropdownMenuItem onClick={() => navigate("/staff/detail/" + id)}>View</DropdownMenuItem>
                                 <DropdownMenuItem>Edit</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setDeleteDialogOpen(true)}>Delete</DropdownMenuItem>
+                                <DropdownMenuItem className={'text-red-600 hover:!text-red-600'} onClick={() => setDeleteDialogOpen(true)}>Delete</DropdownMenuItem>
                             </DropdownMenuGroup>
                         </DropdownMenuContent>
                     </DropdownMenu>

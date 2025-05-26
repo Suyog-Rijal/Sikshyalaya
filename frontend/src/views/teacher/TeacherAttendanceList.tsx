@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import { PlusCircle } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import {TeacherAttendanceDataTable} from "@/views/teacher/TeacherAttendanceDatatable.tsx";
+import {useAuthStore} from "@/store/AuthStore.ts";
 
 interface Student {
     id: string
@@ -48,6 +49,7 @@ export default function TeacherAttendancePage() {
             setLoading(false)
         }
     }
+    const {role} = useAuthStore()
 
     const handleDateChange = (date: Date | undefined) => {
         if (date) {
@@ -115,10 +117,8 @@ export default function TeacherAttendancePage() {
                 })
                 .filter(Boolean)
 
-            // Call API with all updates
             await AxiosInstance.put("/api/academic/attendance-record-update/", updatesData)
 
-            // Update local state
             setAttendanceData((prev) =>
                 prev.map((record) => (selectedIds.includes(record.id) ? { ...record, status } : record)),
             )
@@ -132,31 +132,43 @@ export default function TeacherAttendancePage() {
 
     return (
         <div className="p-4 flex flex-col gap-4">
-            <PageHeader
-                title="Student Attendance"
-                breadcrumbs={[
-                    { label: "Dashboard", href: "/" },
-                    { label: "Teacher", href: "/teacher" },
-                    { label: "Attendance", href: "/teacher/attendance" },
-                ]}
-                onRefresh={fetchAttendanceRecords}
-                onPrint={() => console.log("Printing...")}
-                onExport={() => console.log("Exporting...")}
-                primaryAction={
-                    attendanceData.length === 0
-                        ? {
-                            label: "Take Today's Attendance",
-                            onClick: () => navigate("/attendance/session/create"),
-                            icon: <PlusCircle className="h-4 w-4" />,
+            {
+                role == "teacher" ? (
+                    <PageHeader
+                        title="Student Attendance"
+                        breadcrumbs={[
+                            { label: "Dashboard", href: "/" },
+                            { label: "Teacher", href: "/teacher" },
+                            { label: "Attendance", href: "/teacher/attendance" },
+                        ]}
+                        onRefresh={fetchAttendanceRecords}
+                        primaryAction={
+                            attendanceData.length === 0
+                                ? {
+                                    label: "Take Today's Attendance",
+                                    onClick: () => navigate("/attendance/session/create"),
+                                    icon: <PlusCircle className="h-4 w-4" />,
+                                }
+                                : {
+                                    label: "Attendance Already Taken",
+                                    className: "cursor-not-allowed disabled opacity-50",
+                                    onClick: () => navigate("/list/attendance"),
+                                    icon: <PlusCircle className="h-4 w-4" />,
+                                }
                         }
-                        : {
-                            label: "Attendance Already Taken",
-                            className: "cursor-not-allowed disabled opacity-50",
-                            onClick: () => navigate("/list/attendance"),
-                            icon: <PlusCircle className="h-4 w-4" />,
-                        }
-                }
-            />
+                    />
+                ): (
+                    <PageHeader
+                        title="Student Attendance"
+                        breadcrumbs={[
+                            { label: "Dashboard", href: "/" },
+                            { label: "Teacher", href: "/teacher" },
+                            { label: "Attendance", href: "/teacher/attendance" },
+                        ]}
+                        onRefresh={fetchAttendanceRecords}
+                    />
+                )
+            }
 
             <TeacherAttendanceDataTable
                 data={attendanceData}
@@ -166,6 +178,7 @@ export default function TeacherAttendancePage() {
                 loading={loading}
                 selectedDate={selectedDate}
                 onDateChange={handleDateChange}
+                role={`${role}`}
             />
         </div>
     )

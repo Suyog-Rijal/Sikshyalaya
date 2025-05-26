@@ -16,34 +16,30 @@ import { Toaster } from "@/components/ui/sonner.tsx";
 import { Logout } from "@/pages/Logout.tsx";
 import { useEffect } from "react";
 import {TeacherStudentList} from "@/views/teacher/TeacherStudentList.tsx";
-import {TeacherParentList} from "@/views/teacher/TeacherParentList.tsx";
 import AttendanceListPage from "@/pages/AdminAttendance.tsx";
 import {TeacherRoutineList} from "@/views/teacher/TeacherRoutineList.tsx";
 import TeacherAttendanceList from "@/views/teacher/TeacherAttendanceList.tsx";
 import AddAttendancePage from "@/views/teacher/AddAttendance.tsx";
 import TeacherAssignmentDetailPage from "@/views/teacher/TeacherAssignmentDetailPage.tsx";
 import TeacherAssignmentList from "@/views/teacher/TeacherAssignmentList.tsx";
-import AssignmentPage from "@/views/admin/AdminAssignmentPage.tsx";
-import AdminAssignmentDetail from "@/views/admin/AdminAssignmentDetailPage.tsx";
+
 import TeacherAssignmentEdit from "@/views/teacher/TeacherAssignmentEdit.tsx";
 import Chat from "@/pages/Chat.tsx";
 import AdminAnnouncementPage from "@/views/admin/AdminAnnouncement.tsx";
-import TeacherAnnouncementPage from "@/views/teacher/TeacherAnnouncementPage.tsx";
 import {ExamRoutinesPage} from "@/pages/Exam.tsx";
 import {LeavePage} from "@/components/Dashboard/Leave.tsx";
-import {TeacherDashboard} from "@/views/teacher/TeacherDashboard.tsx";
-import {StudentDashboard} from "@/views/student/StudentDashboard.tsx";
-import {StudentExam} from "@/views/student/StudentExam.tsx";
-import {StudentAssignment} from "@/views/student/StudentAssignment.tsx";
+
 import {StudentLeave} from "@/views/student/StudentLeave.tsx";
-import {StudentAnnouncement} from "@/views/student/StudentAnnouncement.tsx";
-import {StudentAttendancePage} from "@/views/student/StudentAttendance.tsx";
 import StudentProfilePage from "@/views/student/StudentProfile.tsx";
 import Fees from "@/views/admin/Fees.tsx";
-import {ParentDashboard} from "@/views/parent/Dashboard.tsx";
 import {StudentDetailPage} from "@/views/student/StudentDetail.tsx";
 import AdminFeesDashboard from "@/pages/AdminFees.tsx";
 import {EditStaff} from "@/views/admin/EditStaff.tsx";
+import {ClassDetailPage} from "@/views/admin/ClassDetail.tsx";
+import {ParentDetailPage} from "@/pages/ParentDetailPage.tsx";
+import ParentAttendance from "@/views/parent/ParentAttendance.tsx";
+
+import SubmissionPage from "@/views/student/StudentAssignment.tsx";
 
 function App() {
     const checkAuth = useAuthStore((s) => s.checkAuth);
@@ -70,17 +66,24 @@ function App() {
                             <Route path="/student/add" element={<AddStudent />} />
                             <Route path={'/students/detail/:id'} element={<StudentDetailPage />} />
 
-
                             <Route path="/classes/list" element={<ClassListPage />} />
+                            <Route path="/class/:id" element={<ClassDetailPage />} />
+
                             <Route path="/subject/list" element={<SubjectListPage />} />
                             <Route path="/routine/list" element={<RoutineListPage />} />
+
                             <Route path="/parent/list" element={<ParentListPage />} />
+                            <Route path="/parent/detail/:id" element={<ParentDetailPage />} />
+
                             <Route path="/list/attendance" element={<AttendanceListPage />} />
-                            <Route path="/assignment/list" element={<AssignmentPage />} />
-                            <Route path="/assignment/detail/:id" element={<AdminAssignmentDetail />} />
+
+                            <Route path="/assignment/list" element={<TeacherAssignmentList />} />
+                            <Route path="/assignment/detail/:id" element={<TeacherAssignmentDetailPage />} />
+
                             <Route path={'/messages'} element={<Chat />} />
                             <Route path={'announcement/list'} element={<AdminAnnouncementPage />} />
                             <Route path={'leave/'} element={<LeavePage />} />
+
                             <Route path={'exam/list'} element={<ExamRoutinesPage />} />
 
                             <Route path={'fees/'} element={<Fees />} />
@@ -92,18 +95,25 @@ function App() {
                 return (
                     <DashboardLayout>
                         <Routes>
-                            <Route index element={<TeacherDashboard />} />
+                            <Route index element={<TeacherStudentList />} />
+
                             <Route path="/student/list" element={<TeacherStudentList />} />
-                            <Route path="/parent/list" element={<TeacherParentList />} />
+                            <Route path={'/students/detail/:id'} element={<StudentDetailPage />} />
+
                             <Route path="/routine/list" element={<TeacherRoutineList />} />
+
                             <Route path="/subject/list" element={<SubjectListPage />} />
                             <Route path="/list/attendance" element={<TeacherAttendanceList />} />
                             <Route path="/attendance/session/create" element={<AddAttendancePage />} />
+
                             <Route path="/assignment/list" element={<TeacherAssignmentList />} />
                             <Route path="/assignment/detail/:id" element={<TeacherAssignmentDetailPage />} />s
                             <Route path={'/assignment/edit/:id'} element={<TeacherAssignmentEdit />} />
-                            <Route path={'/announcement/list'} element={<TeacherAnnouncementPage />} />
+
+                            <Route path={'/announcement/list'} element={<AdminAnnouncementPage />} />
+
                             <Route path={'/exam/list'} element={<ExamRoutinesPage />} />
+
                             <Route path={'/leave'} element={<LeavePage />} />
 
                             <Route path={'/messages'} element={<Chat />} />
@@ -129,14 +139,21 @@ function App() {
                 return (
                     <DashboardLayout>
                         <Routes>
-                            <Route index element={<StudentDashboard />} />
+                            <Route index element={<RoutineListPage />} />
                             <Route path="/routine/list" element={<RoutineListPage />} />
+
                             <Route path="/subject/list" element={<SubjectListPage />} />
-                            <Route path={"/exam/list"} element={<StudentExam />} />
-                            <Route path={"/assignment/list"} element={<StudentAssignment />} />
+
+                            <Route path={'/exam/list'} element={<ExamRoutinesPage />} />
+
+                            <Route path="/assignment/list" element={<TeacherAssignmentList />} />
+                            <Route path="/assignment/detail/:id" element={<SubmissionPage />} />s
+
                             <Route path={"/leave"} element={<StudentLeave />} />
-                            <Route path={'/announcement/list'} element={<StudentAnnouncement />} />
-                            <Route path={'/list/attendance'} element={<StudentAttendancePage />} />
+
+                            <Route path={'/announcement/list'} element={<AdminAnnouncementPage />} />
+
+                            <Route path={'/list/attendance'} element={<TeacherAttendanceList />} />
                             <Route path={'/profile'} element={<StudentProfilePage />} />
                             <Route path={'/messages'} element={<Chat />} />
 
@@ -148,14 +165,15 @@ function App() {
                 return (
                     <DashboardLayout>
                         <Routes>
-                            <Route index element={<ParentDashboard />} />
-                            <Route path="/routine/list" element={<RoutineListPage />} />
+                            <Route index element={<SubjectListPage />} />
                             <Route path="/subject/list" element={<SubjectListPage />} />
-                            <Route path={"/exam/list"} element={<StudentExam />} />
-                            <Route path={"/assignment/list"} element={<StudentAssignment />} />
+                            <Route path={"/exam/list"} element={<ExamRoutinesPage />} />
                             <Route path={"/leave"} element={<StudentLeave />} />
-                            <Route path={'/announcement/list'} element={<StudentAnnouncement />} />
-                            <Route path={'/list/attendance'} element={<StudentAttendancePage />} />
+
+                            <Route path={'/announcement/list'} element={<AdminAnnouncementPage />} />
+
+                            <Route path={'/list/attendance'} element={<ParentAttendance />} />
+
                             <Route path={'/profile'} element={<StudentProfilePage />} />
                             <Route path={'/messages'} element={<Chat />} />
                             <Route path={'fees/'} element={<Fees />} />

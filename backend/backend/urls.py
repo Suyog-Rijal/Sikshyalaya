@@ -17,6 +17,7 @@ Including another URLconf
 from django.conf import settings
 from django.contrib import admin
 from django.urls import path, include
+from drf_spectacular.utils import extend_schema_view
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from django.conf.urls.static import static
 
@@ -34,6 +35,7 @@ urlpatterns = [
     path('api/student/', include('student.urls')),
     path('api/parent/', include('parent.urls')),
     path('api/auth/', include('user.urls')),
+    path('api/chat/', include('chat.urls')),
 ]
 
 

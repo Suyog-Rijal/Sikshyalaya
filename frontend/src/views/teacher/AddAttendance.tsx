@@ -13,7 +13,8 @@ import { Check, Pencil, Search, X } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { z } from "zod"
-import {Link} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
+
 
 interface Student {
     id: string
@@ -85,6 +86,7 @@ export default function AttendancePage() {
     const handleRemarksChange = (id: string, remarks: string) => {
         setStudents((prev) => prev.map((student) => (student.id === id ? { ...student, remarks } : student)))
     }
+    const navigate = useNavigate()
 
     const handleSaveAttendance = async () => {
         try {
@@ -124,6 +126,8 @@ export default function AttendancePage() {
             await AxiosInstance.put(`/api/academic/attendance-record-update/`, attendanceData)
             toast.success("Attendance saved successfully")
             setValidationError(null)
+            navigate(`/list/attendance`)
+
         } catch (error) {
             console.error("Error saving attendance:", error)
         } finally {
@@ -274,10 +278,10 @@ export default function AttendancePage() {
                                                 </button>
                                             </div>
                                         </TableCell>
-                                        <TableCell>
+                                        <TableCell className={'w-96'}>
                                             {editingRemarks === student.id ? (
-                                                <div className="flex bg-yellow-500 gap-2">
-                                                    <div className="w-96 bg-pink-500 h-[60px]">
+                                                <div className="flex gap-2">
+                                                    <div className="w-full flex-1 h-[60px]">
                                                         <Textarea
                                                             value={remarksValue}
                                                             onChange={(e) => setRemarksValue(e.target.value)}

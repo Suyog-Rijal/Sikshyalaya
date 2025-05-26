@@ -33,6 +33,7 @@ interface TeacherAttendanceDataTableProps {
     selectedDate: Date
     onDateChange: (date: Date | undefined) => void
     loading: boolean
+    role: string
 }
 
 export function TeacherAttendanceDataTable({
@@ -43,6 +44,7 @@ export function TeacherAttendanceDataTable({
                                                selectedDate,
                                                onDateChange,
                                                loading,
+                                               role,
                                            }: TeacherAttendanceDataTableProps) {
     const [searchQuery, setSearchQuery] = useState("")
     const [rowsPerPage, setRowsPerPage] = useState("10")
@@ -204,21 +206,25 @@ export function TeacherAttendanceDataTable({
                         </div>
                     )}
 
-                    <div className="relative w-full sm:w-[250px]">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            type="search"
-                            placeholder="Search by student name..."
-                            className="pl-8"
-                            value={searchQuery}
-                            onChange={handleSearch}
-                        />
-                    </div>
+                    {
+                        role == "teacher" ? (
+                            <div className="relative w-full sm:w-[250px]">
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"/>
+                                <Input
+                                    type="search"
+                                    placeholder="Search by student name..."
+                                    className="pl-8"
+                                    value={searchQuery}
+                                    onChange={handleSearch}
+                                />
+                            </div>
+                        ): null
+                    }
 
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button variant="outline" className={cn("w-[180px] justify-start text-left font-normal")}>
-                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                <CalendarIcon className="mr-2 h-4 w-4"/>
                                 {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
                             </Button>
                         </PopoverTrigger>

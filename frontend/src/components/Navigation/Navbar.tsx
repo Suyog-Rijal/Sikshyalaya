@@ -7,11 +7,12 @@ import {Button} from "@/components/ui/button"
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/components/ui/dropdown-menu"
 import {Input} from "@/components/ui/input"
 import {Sheet, SheetContent, SheetTrigger} from "@/components/ui/sheet"
+import {useAuthStore} from "@/store/AuthStore.ts";
 
 export function Navbar() {
     const [isSearchOpen, setIsSearchOpen] = React.useState(false)
     const [isFullscreen, setIsFullscreen] = React.useState(false)
-
+    const {full_name, profile_picture} = useAuthStore();
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen().then(r => console.log(r))
@@ -113,13 +114,13 @@ export function Navbar() {
                     {/*<p className={'text-xs'}>Admin Admin</p>*/}
                     {/*<p className={'text-xs'}>Test Copeland</p>*/}
                     {/*<p className={'text-xs'}>Quinn Soto</p>*/}
-                    <p className={'text-xs'}>Castro Cusrtis</p>
+                    <p className={'text-xs'}>{full_name}</p>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="shadowed"
                                     className="relative ml-2 h-8 w-8 rounded-full cursor-pointer p-0 overflow-hidden">
                                 <img
-                                    src="https://scontent.fpkr1-1.fna.fbcdn.net/v/t39.30808-6/474068142_1602199393997697_2323060703896075487_n.jpg?stp=dst-jpg_p526x296_tt6&_nc_cat=101&ccb=1-7&_nc_sid=127cfc&_nc_ohc=y_aLfAosMA8Q7kNvgEnTF-W&_nc_oc=Adh_kCnZr5dZOTQNwVUUYOgytKhHagHG8ZKgdtWO9iGN7ALaRL-Lf4bQlkABPeNDeKk&_nc_zt=23&_nc_ht=scontent.fpkr1-1.fna&_nc_gid=AWtQJF2aWFJKY6vuDQSoznf&oh=00_AYFss97wfDk9pMbSKRYi532sulFSEYzCdoLDnmLJZNz6Aw&oe=67D715A7"
+                                    src={profile_picture || "https://via.placeholder.com/150"}
                                     alt=""
                                     className="rounded-full object-cover"
                                 />

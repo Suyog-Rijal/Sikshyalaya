@@ -1,878 +1,519 @@
 "use client"
 
 import type React from "react"
-
-import { useState, useRef, useEffect } from "react"
-import { format } from "date-fns"
-import {
-    Search,
-    Send,
-    MoreHorizontal,
-    Paperclip,
-    Check,
-    CheckCheck,
-    Clock,
-    X,
-    FileText,
-    ImageIcon,
-    Download,
-    User,
-    Plus,
-} from "lucide-react"
-
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { useEffect, useState, useRef, useCallback } from "react"
+import axiosInstance from "@/auth/AxiosInstance"
+import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Textarea } from "@/components/ui/textarea"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Search, MessageCircle, Send, ArrowLeft } from "lucide-react"
+import { cn } from "@/lib/utils"
 
-// Types
-interface ChatUser {
+export interface ChatUser {
     id: string
-    name: string
-    avatar?: string
-    role: string
-    unreadCount?: number
+    room_id: string
+    email: string
+    full_name: string
+    profile_picture: string | null
+    roles: "Student" | "Parent" | "Staff" | "Teacher" | "Admin"
 }
 
-interface Message {
-    id: string
-    senderId: string
-    receiverId: string
+export interface Message {
+    message_id: string
+    room_id: string
     content: string
     timestamp: string
-    status: "sending" | "sent" | "delivered" | "read" | "failed"
-    type: "text" | "image" | "file"
-    fileUrl?: string
-    fileName?: string
-    fileSize?: string
-    deleted?: boolean
+    sender: number
 }
 
-interface Conversation {
-    id: string
-    participants: ChatUser[]
-    lastMessage?: Message
+export interface CurrentUser {
+    id: number
+    email: string
+    full_name: string
 }
 
-// Dummy data
-const currentUser: ChatUser = {
-    id: "user-1",
-    name: "Slade Juarez",
-    avatar: "/green-tractor-field.png",
-    role: "Teacher",
+function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+    return <div className={cn("animate-pulse rounded-md bg-muted", className)} {...props} />
 }
 
-const dummyUsers: ChatUser[] = [
-    {
-        id: "user-2",
-        name: "Slade Juarez",
-        avatar: "/javascript-code-abstract.png",
-        role: "teacher",
-    },
-    {
-        id: "user-3",
-        name: "Wyoming Golden ",
-        avatar: "/musical-notes-flowing.png",
-        role: "Teacher",
-    },
-    {
-        id: "user-4",
-        name: "Admin Admin",
-        avatar: "/abstract-southwest.png",
-        role: "admin",
-        unreadCount: 1,
-    },
-]
-
-// Generate initial messages for each conversation (only 2 messages per conversation)
-const initialMessages: Record<string, Message[]> = {
-    "conv-user-2": [
-        {
-            id: "msg-1",
-            senderId: "user-2",
-            receiverId: "user-1",
-            content: "Test, Recently you have been doing late on assignment submission. Please be careful next time!",
-            timestamp: new Date().toISOString(),
-            status: "read",
-            type: "text",
-        },
-        {
-            id: "msg-2",
-            senderId: "user-1",
-            receiverId: "user-2",
-            content: "Thank you sir for reminding me. I will submit my today english assignment on time!",
-            timestamp: new Date(Date.now() - 5 * 60000).toISOString(), // 5 minutes ago
-            status: "read",
-            type: "text",
-        },
-    ],
-    "conv-user-3": [
-        {
-            id: "msg-1",
-            senderId: "user-1",
-            receiverId: "user-3",
-            content: "Hi Wyoming, do you have the lesson plans ready for next week?",
-            timestamp: new Date().toISOString(),
-            status: "read",
-            type: "text",
-        },
-        {
-            id: "msg-2",
-            senderId: "user-3",
-            receiverId: "user-1",
-            content: "Yes, I'll send them to you by tomorrow morning.",
-            timestamp: new Date(Date.now() - 10 * 60000).toISOString(), // 10 minutes ago
-            status: "read",
-            type: "text",
-        },
-    ],
-    "conv-user-4": [
-        {
-            id: "msg-1",
-            senderId: "user-1",
-            receiverId: "user-4",
-            content: "Hello Admin, I need help with the new grading system.",
-            timestamp: new Date().toISOString(),
-            status: "read",
-            type: "text",
-        },
-        {
-            id: "msg-2",
-            senderId: "user-4",
-            receiverId: "user-1",
-            content: "Sure, what specific issues are you having with it?",
-            timestamp: new Date(Date.now() - 15 * 60000).toISOString(), // 15 minutes ago
-            status: "delivered",
-            type: "text",
-        },
-    ],
-}
-
-// Generate dummy conversations
-const dummyConversations: Conversation[] = dummyUsers.map((user) => ({
-    id: `conv-${user.id}`,
-    participants: [user, currentUser],
-    lastMessage: initialMessages[`conv-${user.id}`][1], // Use the last message as the conversation preview
-}))
-
-// Full message history (not shown by default)
-const fullMessageHistory: Record<string, Message[]> = {
-    "conv-user-2": [
-        ...initialMessages["conv-user-2"],
-        {
-            id: "msg-3",
-            senderId: "user-1",
-            receiverId: "user-2",
-            content: "Have you completed your registration for all classes?",
-            timestamp: new Date(Date.now() - 2 * 3600000).toISOString(), // 2 hours ago
-            status: "read",
-            type: "text",
-        },
-        {
-            id: "msg-4",
-            senderId: "user-2",
-            receiverId: "user-1",
-            content: "Yes, I've registered for all required courses.",
-            timestamp: new Date(Date.now() - 1.5 * 3600000).toISOString(), // 1.5 hours ago
-            status: "read",
-            type: "text",
-        },
-        {
-            id: "msg-5",
-            senderId: "user-1",
-            receiverId: "user-2",
-            content: "Great! Here's the orientation schedule.",
-            timestamp: new Date(Date.now() - 1 * 3600000).toISOString(), // 1 hour ago
-            status: "read",
-            type: "text",
-        },
-        {
-            id: "msg-6",
-            senderId: "user-1",
-            receiverId: "user-2",
-            content: "Orientation_Schedule.pdf",
-            timestamp: new Date(Date.now() - 55 * 60000).toISOString(), // 55 minutes ago
-            status: "read",
-            type: "file",
-            fileUrl: "#",
-            fileName: "Orientation_Schedule.pdf",
-            fileSize: "1.2 MB",
-        },
-        {
-            id: "msg-7",
-            senderId: "user-2",
-            receiverId: "user-1",
-            content: "Thank you! I'll review it right away.",
-            timestamp: new Date(Date.now() - 45 * 60000).toISOString(), // 45 minutes ago
-            status: "read",
-            type: "text",
-        },
-    ],
-    "conv-user-3": [
-        ...initialMessages["conv-user-3"],
-        {
-            id: "msg-3",
-            senderId: "user-3",
-            receiverId: "user-1",
-            content: "I've also prepared some new materials for the science class.",
-            timestamp: new Date(Date.now() - 3 * 3600000).toISOString(), // 3 hours ago
-            status: "read",
-            type: "text",
-        },
-        {
-            id: "msg-4",
-            senderId: "user-1",
-            receiverId: "user-3",
-            content: "That's excellent! Can you share them with me?",
-            timestamp: new Date(Date.now() - 2.5 * 3600000).toISOString(), // 2.5 hours ago
-            status: "read",
-            type: "text",
-        },
-        {
-            id: "msg-5",
-            senderId: "user-3",
-            receiverId: "user-1",
-            content: "Science_Materials.jpg",
-            timestamp: new Date(Date.now() - 2 * 3600000).toISOString(), // 2 hours ago
-            status: "read",
-            type: "image",
-            fileUrl: "/science-materials.png",
-            fileName: "Science_Materials.jpg",
-            fileSize: "2.3 MB",
-        },
-    ],
-    "conv-user-4": [
-        ...initialMessages["conv-user-4"],
-        {
-            id: "msg-3",
-            senderId: "user-1",
-            receiverId: "user-4",
-            content: "I'm having trouble with the grade submission feature.",
-            timestamp: new Date(Date.now() - 4 * 3600000).toISOString(), // 4 hours ago
-            status: "read",
-            type: "text",
-        },
-        {
-            id: "msg-4",
-            senderId: "user-4",
-            receiverId: "user-1",
-            content: "I'll need to see the error. Can you send a screenshot?",
-            timestamp: new Date(Date.now() - 3.5 * 3600000).toISOString(), // 3.5 hours ago
-            status: "read",
-            type: "text",
-        },
-        {
-            id: "msg-5",
-            senderId: "user-1",
-            receiverId: "user-4",
-            content: "Error_Screenshot.png",
-            timestamp: new Date(Date.now() - 3 * 3600000).toISOString(), // 3 hours ago
-            status: "read",
-            type: "image",
-            fileUrl: "/error-screenshot.png",
-            fileName: "Error_Screenshot.png",
-            fileSize: "1.5 MB",
-        },
-        {
-            id: "msg-6",
-            senderId: "user-4",
-            receiverId: "user-1",
-            content: "Thanks, I'll look into this and get back to you soon.",
-            timestamp: new Date(Date.now() - 2 * 3600000).toISOString(), // 2 hours ago
-            status: "read",
-            type: "text",
-        },
-    ],
+function ChatUserSkeleton() {
+    return (
+        <div className="flex items-center p-4 space-x-3">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <div className="space-y-2 flex-1">
+                <Skeleton className="h-4 w-[200px]" />
+                <Skeleton className="h-3 w-[100px]" />
+            </div>
+        </div>
+    )
 }
 
 export default function Chat() {
-    const [searchQuery, setSearchQuery] = useState("")
-    const [searchMessagesQuery, setSearchMessagesQuery] = useState("")
-    const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(dummyConversations[0])
-    const [messages, setMessages] = useState<Message[]>(initialMessages["conv-user-2"])
+    // State management
+    const [chatUsers, setChatUsers] = useState<ChatUser[]>([])
+    const [messages, setMessages] = useState<{ [roomId: string]: Message[] }>({})
+    const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
+    const [selectedChat, setSelectedChat] = useState<ChatUser | null>(null)
     const [newMessage, setNewMessage] = useState("")
-    const [isSearchingMessages, setIsSearchingMessages] = useState(false)
-    const [showFullHistory, setShowFullHistory] = useState<Record<string, boolean>>({
-        "conv-user-2": false,
-        "conv-user-3": false,
-        "conv-user-4": false,
-    })
+    const [searchQuery, setSearchQuery] = useState("")
+    const [loading, setLoading] = useState(true)
+    const [isMobile, setIsMobile] = useState(false)
+
+    // WebSocket state
+    const [socket, setSocket] = useState<WebSocket | null>(null)
+    const [isConnected, setIsConnected] = useState(false)
+
     const messagesEndRef = useRef<HTMLDivElement>(null)
-    const fileInputRef = useRef<HTMLInputElement>(null)
+    const accessToken = localStorage.getItem("accessToken")
 
-    // Filter conversations based on search query
-    const filteredConversations = dummyConversations.filter((conv) => {
-        const searchTerm = searchQuery.toLowerCase()
-        const otherParticipant = conv.participants.find((p) => p.id !== currentUser.id)
+    // Check if mobile
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768)
+        checkMobile()
+        window.addEventListener("resize", checkMobile)
+        return () => window.removeEventListener("resize", checkMobile)
+    }, [])
 
-        return (
-            otherParticipant?.name.toLowerCase().includes(searchTerm) ||
-            otherParticipant?.role.toLowerCase().includes(searchTerm)
-        )
-    })
+    // Fetch current user
+    useEffect(() => {
+        const fetchCurrentUser = async () => {
+            try {
+                const response = await axiosInstance.get("/api/auth/me/")
+                setCurrentUser(response.data)
+            } catch (error) {
+                console.error("Error fetching current user:", error)
+                toast.error("Failed to fetch user information")
+            }
+        }
+        fetchCurrentUser()
+    }, [])
 
-    // Scroll to bottom when messages change
+    // Fetch chat users and initial messages
+    useEffect(() => {
+        const fetchChats = async () => {
+            try {
+                setLoading(true)
+                const response = await axiosInstance.get("/api/chat/get-users/")
+                const chatsData = response.data
+
+                // Transform the data to separate users and messages
+                const users: ChatUser[] = chatsData.map((chat: any) => ({
+                    id: chat.id,
+                    room_id: chat.room_id,
+                    email: chat.email,
+                    full_name: chat.full_name,
+                    profile_picture: chat.profile_picture,
+                    roles: chat.roles,
+                }))
+
+                setChatUsers(users)
+
+                // Initialize messages by room_id
+                const initialMessages: { [roomId: string]: Message[] } = {}
+                chatsData.forEach((chat: any) => {
+                    if (chat.messages && chat.messages.length > 0) {
+                        initialMessages[chat.room_id] = chat.messages
+                            .map((msg: any) => ({
+                                message_id: msg.id,
+                                room_id: chat.room_id,
+                                content: msg.content,
+                                timestamp: msg.timestamp,
+                                sender: msg.sender,
+                            }))
+                            .sort((a: Message, b: Message) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+                    } else {
+                        initialMessages[chat.room_id] = []
+                    }
+                })
+
+                setMessages(initialMessages)
+            } catch (error) {
+                console.error("Error fetching chats:", error)
+                toast.error("Failed to load chats")
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchChats()
+    }, [])
+
+    // WebSocket connection
+    useEffect(() => {
+        if (!accessToken) return
+
+        const wsScheme = window.location.protocol === "https:" ? "wss" : "ws"
+        const wsUrl = `${wsScheme}://127.0.0.1:8000/ws/chat/?token=${accessToken}`
+
+        const newSocket = new WebSocket(wsUrl)
+
+        newSocket.onopen = () => {
+            console.log("WebSocket connected")
+            setIsConnected(true)
+            setSocket(newSocket)
+        }
+
+        newSocket.onmessage = (event) => {
+            try {
+                const receivedMessage: Message = JSON.parse(event.data)
+                console.log("Received message:", receivedMessage)
+
+                // Only update messages for the specific room_id
+                setMessages((prev) => {
+                    const roomMessages = prev[receivedMessage.room_id] || []
+
+                    // Check if message already exists to avoid duplicates
+                    const messageExists = roomMessages.some((msg) => msg.message_id === receivedMessage.message_id)
+
+                    if (messageExists) {
+                        return prev
+                    }
+
+                    // Add new message and sort by timestamp
+                    const updatedMessages = [...roomMessages, receivedMessage].sort(
+                        (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+                    )
+
+                    return {
+                        ...prev,
+                        [receivedMessage.room_id]: updatedMessages,
+                    }
+                })
+            } catch (error) {
+                console.error("Error parsing WebSocket message:", error)
+            }
+        }
+
+        newSocket.onclose = () => {
+            console.log("WebSocket disconnected")
+            setIsConnected(false)
+            setSocket(null)
+        }
+
+        newSocket.onerror = (error) => {
+            console.error("WebSocket error:", error)
+            setIsConnected(false)
+        }
+
+        return () => {
+            newSocket.close()
+        }
+    }, [accessToken])
+
+    // Auto-scroll to bottom when new messages arrive
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-    }, [messages])
+    }, [messages, selectedChat])
 
-    // Handle sending a new message
-    const handleSendMessage = () => {
-        if (!newMessage.trim() || !selectedConversation) return
-
-        const newMsg: Message = {
-            id: `msg-${Date.now()}`,
-            senderId: currentUser.id,
-            receiverId: selectedConversation.participants.find((p) => p.id !== currentUser.id)?.id || "",
-            content: newMessage.trim(),
-            timestamp: new Date().toISOString(),
-            status: "sending",
-            type: "text",
-        }
-
-        // Add message to the conversation
-        setMessages((prev) => [...prev, newMsg])
-        setNewMessage("")
-
-        // Simulate message being sent
-        setTimeout(() => {
-            setMessages((prev) => prev.map((msg) => (msg.id === newMsg.id ? { ...msg, status: "delivered" } : msg)))
-        }, 1000)
+    // Utility functions
+    const getInitials = (name: string) => {
+        return name
+            .split(" ")
+            .map((word) => word.charAt(0))
+            .join("")
+            .toUpperCase()
+            .slice(0, 2)
     }
 
-    // Handle file upload
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files
-        if (!files || files.length === 0 || !selectedConversation) return
-
-        const file = files[0]
-        const isImage = file.type.startsWith("image/")
-
-        const newMsg: Message = {
-            id: `msg-${Date.now()}`,
-            senderId: currentUser.id,
-            receiverId: selectedConversation.participants.find((p) => p.id !== currentUser.id)?.id || "",
-            content: file.name,
-            timestamp: new Date().toISOString(),
-            status: "sending",
-            type: isImage ? "image" : "file",
-            fileUrl: isImage ? URL.createObjectURL(file) : undefined,
-            fileName: file.name,
-            fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-        }
-
-        // Add message to the conversation
-        setMessages((prev) => [...prev, newMsg])
-
-        // Simulate message being sent
-        setTimeout(() => {
-            setMessages((prev) => prev.map((msg) => (msg.id === newMsg.id ? { ...msg, status: "delivered" } : msg)))
-        }, 1500)
-
-        // Reset file input
-        if (fileInputRef.current) {
-            fileInputRef.current.value = ""
+    const getRoleBadgeColor = (role: ChatUser["roles"]) => {
+        switch (role) {
+            case "Admin":
+                return "bg-red-50 border-2 border-red-200 text-red-800"
+            case "Teacher":
+                return "bg-blue-50 border-2 border-blue-200 text-blue-800"
+            case "Staff":
+                return "bg-green-50 border-2 border-green-200 text-green-800"
+            case "Parent":
+                return "bg-purple-50 border-2 border-purple-200 text-purple-800"
+            case "Student":
+                return "bg-orange-50 border-2 border-orange-200 text-orange-800"
+            default:
+                return "bg-gray-50 border-2 border-gray-200 text-gray-800"
         }
     }
 
-    // Handle message deletion
-    const handleDeleteMessage = (messageId: string) => {
-        setMessages((prev) =>
-            prev.map((msg) => (msg.id === messageId ? { ...msg, deleted: true, content: "This message was deleted" } : msg)),
-        )
-    }
-
-    // Toggle full message history
-    const toggleFullHistory = (conversationId: string) => {
-        if (showFullHistory[conversationId]) {
-            // If currently showing full history, switch back to initial messages
-            setMessages(initialMessages[conversationId] || [])
-        } else {
-            // If currently showing initial messages, switch to full history
-            setMessages(fullMessageHistory[conversationId] || [])
-        }
-
-        // Update the state
-        setShowFullHistory((prev) => ({
-            ...prev,
-            [conversationId]: !prev[conversationId],
-        }))
-    }
-
-    // Format timestamp
-    const formatMessageTime = (timestamp: string) => {
+    const formatTime = (timestamp: string) => {
         const date = new Date(timestamp)
-        const now = new Date()
-        const isToday =
-            date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
+        return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    }
 
-        if (isToday) {
-            return format(date, "h:mm a")
+    const formatDate = (timestamp: string) => {
+        const date = new Date(timestamp)
+        const today = new Date()
+        const yesterday = new Date(today)
+        yesterday.setDate(yesterday.getDate() - 1)
+
+        if (date.toDateString() === today.toDateString()) {
+            return "Today"
+        } else if (date.toDateString() === yesterday.toDateString()) {
+            return "Yesterday"
         } else {
-            return format(date, "MMM d, h:mm a")
+            return date.toLocaleDateString()
         }
     }
 
-    // Filter messages based on search query
-    const filteredMessages = messages.filter((message) => {
-        if (!searchMessagesQuery) return true
+    // Check if room has messages (for dot indicator)
+    const hasMessages = (roomId: string) => {
+        const roomMessages = messages[roomId] || []
+        return roomMessages.length > 0
+    }
 
-        const searchTerm = searchMessagesQuery.toLowerCase()
-        if (message.type === "text") {
-            return message.content.toLowerCase().includes(searchTerm)
-        } else if (message.type === "file" || message.type === "image") {
-            return message.fileName?.toLowerCase().includes(searchTerm) || false
+    // Get messages for selected chat room only
+    const getCurrentRoomMessages = () => {
+        if (!selectedChat) return []
+        return messages[selectedChat.room_id] || []
+    }
+
+    // Group messages by date
+    const getGroupedMessages = () => {
+        const roomMessages = getCurrentRoomMessages()
+        return roomMessages.reduce((groups: { [key: string]: Message[] }, message) => {
+            const date = formatDate(message.timestamp)
+            if (!groups[date]) {
+                groups[date] = []
+            }
+            groups[date].push(message)
+            return groups
+        }, {})
+    }
+
+    // Send message
+    const sendMessage = useCallback(() => {
+        if (!newMessage.trim() || !selectedChat?.room_id || !socket || !isConnected) {
+            return
         }
-        return false
+
+        const messageData = {
+            room_id: selectedChat.room_id,
+            content: newMessage.trim(),
+        }
+
+        try {
+            socket.send(JSON.stringify(messageData))
+            setNewMessage("")
+        } catch (error) {
+            console.error("Error sending message:", error)
+            toast.error("Failed to send message")
+        }
+    }, [newMessage, selectedChat, socket, isConnected])
+
+    const handleKeyPress = (e: React.KeyboardEvent) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault()
+            sendMessage()
+        }
+    }
+
+    const handleChatSelect = (chat: ChatUser) => {
+        setSelectedChat(chat)
+    }
+
+    const handleBackToList = () => {
+        setSelectedChat(null)
+    }
+
+    // Filter chats based on search
+    const filteredChats = chatUsers.filter((chat) => {
+        const searchTerm = searchQuery.toLowerCase()
+        return (
+            chat.full_name.toLowerCase().includes(searchTerm) ||
+            chat.email.toLowerCase().includes(searchTerm) ||
+            chat.roles.toLowerCase().includes(searchTerm)
+        )
     })
 
-    // Get message status icon
-    const getMessageStatusIcon = (status: Message["status"]) => {
-        switch (status) {
-            case "sending":
-                return <Clock className="h-3 w-3 text-gray-400" />
-            case "sent":
-                return <Check className="h-3 w-3 text-gray-400" />
-            case "delivered":
-                return <CheckCheck className="h-3 w-3 text-gray-400" />
-            case "read":
-                return <CheckCheck className="h-3 w-3 text-blue-500" />
-            case "failed":
-                return <X className="h-3 w-3 text-red-500" />
-            default:
-                return null
-        }
-    }
-
-    // Get other participant from conversation
-    const getOtherParticipant = (conversation: Conversation): ChatUser => {
-        return conversation.participants.find((p) => p.id !== currentUser.id) || currentUser
-    }
-
-    // Handle conversation selection
-    const handleSelectConversation = (conversation: Conversation) => {
-        setSelectedConversation(conversation)
-        const convId = conversation.id
-
-        // Reset to initial messages when switching conversations
-        setMessages(initialMessages[convId] || [])
-
-        // Reset the full history flag
-        setShowFullHistory((prev) => ({
-            ...prev,
-            [convId]: false,
-        }))
-    }
+    const groupedMessages = getGroupedMessages()
 
     return (
-        <div className="flex h-[92vh]">
-            {/* Left sidebar - Contacts */}
-            <div className="w-1/3 flex flex-col h-full border-r">
-                {/* Current user */}
-                <div className="p-4 border-b flex items-center justify-between">
-                    <div className="flex items-center">
-                        <Avatar className="h-8 w-8 mr-2">
-                            <AvatarImage src={currentUser.avatar || "/placeholder.svg"} alt={currentUser.name} />
-                            <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div className="font-medium">{currentUser.name}</div>
+        <div className="flex h-screen bg-gray-50">
+            {/* Chat List Sidebar */}
+            <div className={cn("w-80 bg-white border-r border-gray-200 flex flex-col", isMobile && selectedChat && "hidden")}>
+                {/* Header */}
+                <div className="p-4 border-b border-gray-200">
+                    <div className="flex items-center justify-between mb-4">
+                        <h1 className="text-xl font-semibold text-gray-900">Messages</h1>
+                        <div
+                            className={cn("w-3 h-3 rounded-full", isConnected ? "bg-green-500" : "bg-red-500")}
+                            title={isConnected ? "Connected" : "Disconnected"}
+                        />
                     </div>
-                </div>
 
-                {/* Search */}
-                <div className="p-3 border-b">
+                    {/* Search */}
                     <div className="relative">
-                        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <Input
-                            placeholder="Search contacts..."
+                            placeholder="Search conversations..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-8"
+                            className="pl-10 bg-gray-50 border-gray-200"
                         />
                     </div>
                 </div>
 
-                {/* Contacts list */}
-                <ScrollArea className="h-full overflow-hidden">
-                    <div className="p-2">
-                        {filteredConversations.length > 0 ? (
-                            filteredConversations.map((conversation) => {
-                                const otherUser = getOtherParticipant(conversation)
-                                const isSelected = selectedConversation?.id === conversation.id
-                                const hasUnread = otherUser.unreadCount && otherUser.unreadCount > 0
-
-                                return (
-                                    <div
-                                        key={conversation.id}
-                                        className={cn(
-                                            "flex items-center p-3 rounded-md cursor-pointer transition-colors",
-                                            isSelected ? "bg-gray-100" : "hover:bg-gray-50",
-                                        )}
-                                        onClick={() => handleSelectConversation(conversation)}
-                                    >
-                                        <Avatar className="h-10 w-10 mr-3">
-                                            <AvatarImage src={otherUser.avatar || "/placeholder.svg"} alt={otherUser.name} />
-                                            <AvatarFallback>
-                                                {otherUser.name
-                                                    .split(" ")
-                                                    .map((n) => n[0])
-                                                    .join("")}
-                                            </AvatarFallback>
-                                        </Avatar>
-
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex justify-between items-center">
-                                                <div className="font-medium truncate">{otherUser.name}</div>
-                                                {conversation.lastMessage && (
-                                                    <div className="text-xs text-gray-500">
-                                                        {formatMessageTime(conversation.lastMessage.timestamp)}
-                                                    </div>
+                {/* Chat List */}
+                <div className="flex-1 overflow-y-auto">
+                    {loading ? (
+                        <div className="space-y-1">
+                            {Array.from({ length: 8 }).map((_, index) => (
+                                <ChatUserSkeleton key={index} />
+                            ))}
+                        </div>
+                    ) : (
+                        <>
+                            {filteredChats.length > 0 ? (
+                                <div className="space-y-1">
+                                    {filteredChats.map((chat) => (
+                                        <div
+                                            key={chat.id}
+                                            className={cn(
+                                                "flex items-center p-4 hover:bg-gray-50 cursor-pointer transition-colors border-b border-gray-50",
+                                                selectedChat?.id === chat.id && "bg-blue-50 border-blue-100",
+                                            )}
+                                            onClick={() => handleChatSelect(chat)}
+                                        >
+                                            <div className="relative">
+                                                <Avatar className="h-12 w-12 mr-3">
+                                                    <AvatarImage src={chat.profile_picture || "/placeholder.svg"} alt={chat.full_name} />
+                                                    <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-500 text-white font-medium">
+                                                        {getInitials(chat.full_name)}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                {/* Message indicator dot */}
+                                                {hasMessages(chat.room_id) && (
+                                                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white" />
                                                 )}
                                             </div>
 
-                                            <div className="flex justify-between items-center mt-1">
-                                                <div className="text-xs text-gray-500 truncate max-w-[150px]">
-                                                    {conversation.lastMessage?.type === "text"
-                                                        ? conversation.lastMessage.content
-                                                        : conversation.lastMessage?.type === "image"
-                                                            ? "📷 Image"
-                                                            : "📎 File"}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <h3 className="font-medium text-gray-900 truncate">{chat.full_name}</h3>
+                                                    <span
+                                                        className={cn("px-2 py-1 text-xs font-medium rounded-full", getRoleBadgeColor(chat.roles))}
+                                                    >
+                            {chat.roles}
+                          </span>
                                                 </div>
-
-                                                {hasUnread && (
-                                                    <div className="ml-2 h-5 w-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs">
-                                                        {otherUser.unreadCount}
-                                                    </div>
-                                                )}
+                                                <p className="text-sm text-gray-500 truncate">{chat.email}</p>
                                             </div>
                                         </div>
-                                    </div>
-                                )
-                            })
-                        ) : (
-                            <div className="flex flex-col items-center justify-center py-10 text-center">
-                                <User className="h-10 w-10 text-gray-300 mb-2" />
-                                <p className="text-gray-500">No contacts found</p>
-                                <p className="text-xs text-gray-400 mt-1">Try adjusting your search</p>
-                            </div>
-                        )}
-                    </div>
-                </ScrollArea>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-64 text-center px-4">
+                                    <MessageCircle className="h-12 w-12 text-gray-300 mb-3" />
+                                    <h3 className="text-lg font-medium text-gray-900 mb-1">
+                                        {searchQuery ? "No matching conversations" : "No conversations found"}
+                                    </h3>
+                                    <p className="text-gray-500">
+                                        {searchQuery
+                                            ? "Try searching with a different name"
+                                            : "Start a new conversation by contacting users"}
+                                    </p>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
             </div>
 
-            {/* Right side - Chat area */}
-            <div className="w-2/3 flex flex-col h-full">
-                {selectedConversation ? (
+            {/* Chat Area */}
+            <div className={cn("flex-1 flex flex-col bg-white", isMobile && !selectedChat && "hidden")}>
+                {selectedChat ? (
                     <>
-                        {/* Chat header */}
-                        <div className="p-4 border-b flex items-center justify-between">
+                        {/* Chat Header */}
+                        <div className="p-4 border-b border-gray-200 bg-white">
                             <div className="flex items-center">
-                                <Avatar className="h-8 w-8 mr-2">
-                                    <AvatarImage
-                                        src={getOtherParticipant(selectedConversation).avatar || "/placeholder.svg"}
-                                        alt={getOtherParticipant(selectedConversation).name}
-                                    />
-                                    <AvatarFallback>
-                                        {getOtherParticipant(selectedConversation)
-                                            .name.split(" ")
-                                            .map((n) => n[0])
-                                            .join("")}
+                                {isMobile && (
+                                    <Button variant="ghost" size="sm" onClick={handleBackToList} className="mr-2">
+                                        <ArrowLeft className="h-4 w-4" />
+                                    </Button>
+                                )}
+                                <Avatar className="h-10 w-10 mr-3">
+                                    <AvatarImage src={selectedChat.profile_picture || "/placeholder.svg"} alt={selectedChat.full_name} />
+                                    <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-500 text-white font-medium">
+                                        {getInitials(selectedChat.full_name)}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                    <div className="font-medium">{getOtherParticipant(selectedConversation).name}</div>
-                                    <div className="text-xs text-gray-500">{getOtherParticipant(selectedConversation).role}</div>
+                                    <h2 className="font-semibold text-gray-900">{selectedChat.full_name}</h2>
+                                    <p className="text-sm text-gray-500">{selectedChat.roles}</p>
                                 </div>
                             </div>
-
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => setIsSearchingMessages(!isSearchingMessages)}>
-                                        {isSearchingMessages ? "Exit Search" : "Search Messages"}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => toggleFullHistory(selectedConversation.id)}>
-                                        {showFullHistory[selectedConversation.id] ? "Show Less Messages" : "Show More Messages"}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem>Clear Chat History</DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
                         </div>
 
-                        {/* Message search bar - only shown when searching */}
-                        {isSearchingMessages && (
-                            <div className="p-3 border-b">
-                                <div className="relative">
-                                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                    <Input
-                                        placeholder="Search in conversation..."
-                                        value={searchMessagesQuery}
-                                        onChange={(e) => setSearchMessagesQuery(e.target.value)}
-                                        className="pl-8"
-                                    />
+                        {/* Messages */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                            {Object.keys(groupedMessages).length === 0 ? (
+                                <div className="flex items-center justify-center h-full">
+                                    <div className="text-center">
+                                        <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                                        <p className="text-gray-500">No messages yet. Start the conversation!</p>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-
-                        {/* Messages area */}
-                        <ScrollArea className="h-full overflow-hidden">
-                            <div className="p-4 space-y-4">
-                                {/* Show more messages button (only if not showing full history) */}
-                                {!showFullHistory[selectedConversation.id] &&
-                                    fullMessageHistory[selectedConversation.id]?.length > 2 && (
-                                        <div className="flex justify-center">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="text-xs"
-                                                onClick={() => toggleFullHistory(selectedConversation.id)}
-                                            >
-                                                <Plus className="h-3 w-3 mr-1" />
-                                                Show Previous Messages
-                                            </Button>
+                            ) : (
+                                Object.entries(groupedMessages).map(([date, dateMessages]) => (
+                                    <div key={date}>
+                                        {/* Date separator */}
+                                        <div className="flex items-center justify-center my-4">
+                                            <div className="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">{date}</div>
                                         </div>
-                                    )}
 
-                                {filteredMessages.map((message, index) => {
-                                    const isCurrentUser = message.senderId === currentUser.id
-
-                                    // Check if we need to show date separator
-                                    const showDateSeparator =
-                                        index === 0 ||
-                                        new Date(message.timestamp).toDateString() !==
-                                        new Date(messages[index - 1].timestamp).toDateString()
-
-                                    return (
-                                        <div key={message.id}>
-                                            {showDateSeparator && (
-                                                <div className="flex items-center justify-center my-4">
-                                                    <div className="bg-gray-100 text-gray-500 text-xs px-3 py-1 rounded-full">
-                                                        {format(new Date(message.timestamp), "MMMM d, yyyy")}
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            <div className={cn("flex", isCurrentUser ? "justify-end" : "justify-start")}>
-                                                {!isCurrentUser && (
-                                                    <Avatar className="h-8 w-8 mr-2 mt-1 flex-shrink-0">
-                                                        <AvatarImage
-                                                            src={getOtherParticipant(selectedConversation).avatar || "/placeholder.svg"}
-                                                            alt={getOtherParticipant(selectedConversation).name}
-                                                        />
-                                                        <AvatarFallback>
-                                                            {getOtherParticipant(selectedConversation)
-                                                                .name.split(" ")
-                                                                .map((n) => n[0])
-                                                                .join("")}
-                                                        </AvatarFallback>
-                                                    </Avatar>
-                                                )}
-
-                                                <div className={cn("max-w-[70%] group")}>
-                                                    {message.deleted ? (
-                                                        <div
-                                                            className={cn(
-                                                                "px-4 py-2.5 rounded-lg text-sm italic",
-                                                                isCurrentUser
-                                                                    ? "bg-primary/30 text-primary-foreground/70"
-                                                                    : "bg-gray-100 text-gray-500",
-                                                            )}
-                                                        >
-                                                            {message.content}
-                                                        </div>
-                                                    ) : message.type === "text" ? (
-                                                        <div className="relative">
-                                                            <div
-                                                                className={cn(
-                                                                    "px-4 py-2.5 rounded-lg text-sm",
-                                                                    isCurrentUser ? "bg-primary text-primary-foreground" : "bg-gray-100 text-gray-800",
-                                                                )}
-                                                            >
-                                                                {message.content}
-                                                            </div>
-                                                            {isCurrentUser && (
-                                                                <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                    <DropdownMenu>
-                                                                        <DropdownMenuTrigger asChild>
-                                                                            <Button
-                                                                                variant="ghost"
-                                                                                size="icon"
-                                                                                className="h-6 w-6 bg-primary/20 hover:bg-primary/30"
-                                                                            >
-                                                                                <MoreHorizontal className="h-3 w-3 text-primary-foreground" />
-                                                                            </Button>
-                                                                        </DropdownMenuTrigger>
-                                                                        <DropdownMenuContent align="end">
-                                                                            <DropdownMenuItem onClick={() => handleDeleteMessage(message.id)}>
-                                                                                Delete Message
-                                                                            </DropdownMenuItem>
-                                                                        </DropdownMenuContent>
-                                                                    </DropdownMenu>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    ) : message.type === "image" ? (
-                                                        <div
-                                                            className={cn(
-                                                                "rounded-lg overflow-hidden border relative",
-                                                                isCurrentUser ? "bg-primary/10" : "bg-gray-100",
-                                                            )}
-                                                        >
-                                                            {isCurrentUser && (
-                                                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                                                    <DropdownMenu>
-                                                                        <DropdownMenuTrigger asChild>
-                                                                            <Button
-                                                                                variant="ghost"
-                                                                                size="icon"
-                                                                                className="h-6 w-6 bg-white/80 backdrop-blur-sm"
-                                                                            >
-                                                                                <MoreHorizontal className="h-3 w-3" />
-                                                                            </Button>
-                                                                        </DropdownMenuTrigger>
-                                                                        <DropdownMenuContent align="end">
-                                                                            <DropdownMenuItem onClick={() => handleDeleteMessage(message.id)}>
-                                                                                Delete
-                                                                            </DropdownMenuItem>
-                                                                        </DropdownMenuContent>
-                                                                    </DropdownMenu>
-                                                                </div>
-                                                            )}
-                                                            <div className="p-2 flex items-center gap-2 border-b bg-white">
-                                                                <ImageIcon className="h-4 w-4 text-gray-500" />
-                                                                <span className="text-xs font-medium">{message.fileName}</span>
-                                                            </div>
-                                                            <img
-                                                                src={message.fileUrl || "/placeholder.svg"}
-                                                                alt={message.fileName || "Image"}
-                                                                className="max-w-full"
-                                                            />
-                                                            <div className="p-2 flex justify-between items-center bg-white">
-                                                                <span className="text-xs text-gray-500">{message.fileSize}</span>
-                                                                <Button variant="ghost" size="sm" className="h-7 text-xs">
-                                                                    <Download className="h-3 w-3 mr-1" />
-                                                                    Download
-                                                                </Button>
-                                                            </div>
-                                                        </div>
-                                                    ) : (
-                                                        <div
-                                                            className={cn(
-                                                                "rounded-lg border relative",
-                                                                isCurrentUser ? "bg-primary/10" : "bg-gray-100",
-                                                            )}
-                                                        >
-                                                            {isCurrentUser && (
-                                                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                                                    <DropdownMenu>
-                                                                        <DropdownMenuTrigger asChild>
-                                                                            <Button
-                                                                                variant="ghost"
-                                                                                size="icon"
-                                                                                className="h-6 w-6 bg-white/80 backdrop-blur-sm"
-                                                                            >
-                                                                                <MoreHorizontal className="h-3 w-3" />
-                                                                            </Button>
-                                                                        </DropdownMenuTrigger>
-                                                                        <DropdownMenuContent align="end">
-                                                                            <DropdownMenuItem onClick={() => handleDeleteMessage(message.id)}>
-                                                                                Delete
-                                                                            </DropdownMenuItem>
-                                                                        </DropdownMenuContent>
-                                                                    </DropdownMenu>
-                                                                </div>
-                                                            )}
-                                                            <div className="p-3 flex items-center gap-3 bg-white rounded-lg">
-                                                                <div className="bg-gray-100 p-2 rounded-md">
-                                                                    <FileText className="h-6 w-6 text-gray-500" />
-                                                                </div>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <p className="truncate font-medium text-sm">{message.fileName}</p>
-                                                                    <p className="text-xs text-gray-500">{message.fileSize}</p>
-                                                                </div>
-                                                                <Button variant="ghost" size="sm" className="h-7 text-xs">
-                                                                    <Download className="h-3 w-3 mr-1" />
-                                                                    Download
-                                                                </Button>
-                                                            </div>
-                                                        </div>
-                                                    )}
-
+                                        {/* Messages for this date */}
+                                        {dateMessages.map((message) => {
+                                            const isOwnMessage = currentUser && message.sender === currentUser.id
+                                            return (
+                                                <div
+                                                    key={message.message_id}
+                                                    className={cn("flex mb-4", isOwnMessage ? "justify-end" : "justify-start")}
+                                                >
                                                     <div
                                                         className={cn(
-                                                            "flex items-center text-xs text-gray-400 mt-1",
-                                                            isCurrentUser ? "justify-end" : "justify-start",
+                                                            "max-w-xs lg:max-w-md px-4 py-2 rounded-lg",
+                                                            isOwnMessage
+                                                                ? "bg-blue-500 text-white rounded-br-sm"
+                                                                : "bg-gray-100 text-gray-900 rounded-bl-sm",
                                                         )}
                                                     >
-                                                        <span>{formatMessageTime(message.timestamp)}</span>
-                                                        {isCurrentUser && <span className="ml-1">{getMessageStatusIcon(message.status)}</span>}
+                                                        <p className="text-sm">{message.content}</p>
+                                                        <p className={cn("text-xs mt-1", isOwnMessage ? "text-blue-100" : "text-gray-500")}>
+                                                            {formatTime(message.timestamp)}
+                                                        </p>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                                <div ref={messagesEndRef} />
-                            </div>
-                        </ScrollArea>
+                                            )
+                                        })}
+                                    </div>
+                                ))
+                            )}
+                            <div ref={messagesEndRef} />
+                        </div>
 
-                        {/* Message input */}
-                        <div className="p-3 border-t">
-                            <div className="flex items-center gap-2">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="flex-shrink-0"
-                                    onClick={() => {
-                                        if (fileInputRef.current) {
-                                            fileInputRef.current.click()
-                                        }
-                                    }}
-                                >
-                                    <Paperclip className="h-4 w-4" />
-                                </Button>
-                                <div className="flex-1 relative">
-                                    <Textarea
-                                        placeholder="Type a message..."
-                                        value={newMessage}
-                                        onChange={(e) => setNewMessage(e.target.value)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === "Enter" && !e.shiftKey) {
-                                                e.preventDefault()
-                                                handleSendMessage()
-                                            }
-                                        }}
-                                        className="min-h-[40px] max-h-[120px] py-2 px-3 resize-none"
-                                    />
-                                    <input
-                                        type="file"
-                                        ref={fileInputRef}
-                                        onChange={handleFileUpload}
-                                        className="hidden"
-                                        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
-                                    />
-                                </div>
-                                <Button className="flex-shrink-0" onClick={handleSendMessage} disabled={!newMessage.trim()}>
-                                    <Send className="h-4 w-4 mr-2" />
-                                    Send
+                        {/* Message Input */}
+                        <div className="p-4 border-t border-gray-200 bg-white">
+                            <div className="flex items-center space-x-2">
+                                <Input
+                                    placeholder="Type a message..."
+                                    value={newMessage}
+                                    onChange={(e) => setNewMessage(e.target.value)}
+                                    onKeyPress={handleKeyPress}
+                                    disabled={!isConnected}
+                                    className="flex-1"
+                                />
+                                <Button onClick={sendMessage} disabled={!newMessage.trim() || !isConnected} size="sm">
+                                    <Send className="h-4 w-4" />
                                 </Button>
                             </div>
+                            {!isConnected && <p className="text-xs text-red-500 mt-1">Disconnected - trying to reconnect...</p>}
                         </div>
                     </>
                 ) : (
-                    <div className="flex flex-col items-center justify-center h-full p-4 text-center">
-                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                            <User className="h-8 w-8 text-gray-400" />
+                    <div className="flex-1 flex items-center justify-center">
+                        <div className="text-center">
+                            <MessageCircle className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                            <h2 className="text-xl font-medium text-gray-900 mb-2">Select a conversation</h2>
+                            <p className="text-gray-500">Choose a contact from the sidebar to start messaging</p>
                         </div>
-                        <h3 className="text-lg font-medium mb-2">Select a conversation</h3>
-                        <p className="text-muted-foreground max-w-md">Choose a contact from the list to start messaging</p>
                     </div>
                 )}
             </div>
